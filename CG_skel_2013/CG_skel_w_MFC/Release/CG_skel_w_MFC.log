@@ -1,0 +1,42 @@
+﻿Build started 24-Oct-17 6:44:28 PM.
+     1>Project "C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\CG_skel_w_MFC\CG_skel_w_MFC.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         D:\software\visual studio 2013\VC\bin\CL.exe /c /I../glew/include /I../freeglut/include /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D FREEGLUT_STATIC /D GLEW_STATIC /D WIN32 /D _DEBUG /D _CONSOLE /D _AFXDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Release\CG_skel_w_MFC.pch" /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         D:\software\visual studio 2013\VC\bin\CL.exe /c /I../glew/include /I../freeglut/include /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D FREEGLUT_STATIC /D GLEW_STATIC /D WIN32 /D _DEBUG /D _CONSOLE /D _AFXDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Release\CG_skel_w_MFC.pch" /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt CG_skel_w_MFC.cpp InitShader.cpp MeshModel.cpp Renderer.cpp Scene.cpp
+         CG_skel_w_MFC.cpp
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\vec.h(128): warning C4244: 'return' : conversion from 'double' to 'GLfloat', possible loss of data
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\mat.h(542): warning C4244: 'initializing' : conversion from 'double' to 'GLfloat', possible loss of data
+         InitShader.cpp
+     1>InitShader.cpp(11): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 D:\software\visual studio 2013\VC\include\stdio.h(211) : see declaration of 'fopen'
+         MeshModel.cpp
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\vec.h(128): warning C4244: 'return' : conversion from 'double' to 'GLfloat', possible loss of data
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\mat.h(542): warning C4244: 'initializing' : conversion from 'double' to 'GLfloat', possible loss of data
+         Renderer.cpp
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\vec.h(128): warning C4244: 'return' : conversion from 'double' to 'GLfloat', possible loss of data
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\mat.h(542): warning C4244: 'initializing' : conversion from 'double' to 'GLfloat', possible loss of data
+         Scene.cpp
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\vec.h(128): warning C4244: 'return' : conversion from 'double' to 'GLfloat', possible loss of data
+     1>c:\users\dolbb\dropbox\dropbox\technion\computergraphics\commonsolution\cg_skel_2013\cg_skel_w_mfc\mat.h(542): warning C4244: 'initializing' : conversion from 'double' to 'GLfloat', possible loss of data
+       ResourceCompile:
+         C:\Program Files (x86)\Windows Kits\8.1\bin\x86\rc.exe /D _AFXDLL /l"0x0409" /nologo /fo"Release\CG_skel_w_MFC.res" CG_skel_w_MFC.rc 
+       Link:
+         D:\software\visual studio 2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\Release\CG_skel_w_MFC.exe" /INCREMENTAL:NO /NOLOGO ../freeglut/lib/freeglut_static.lib ../glew/lib/glew.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:"D:\software\visual studio 2013\VC\Include\Manifest\dpiaware.manifest" /PDB:"C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\Release\CG_skel_w_MFC.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\Release\CG_skel_w_MFC.lib" /MACHINE:X86 /SAFESEH Release\CG_skel_w_MFC.res
+         Release\CG_skel_w_MFC.obj
+         Release\InitShader.obj
+         Release\MeshModel.obj
+         Release\Renderer.obj
+         Release\Scene.obj
+         Release\stdafx.obj
+         C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\freeglut\lib\freeglut_static.lib
+         C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\glew\lib\glew.lib
+     1>LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+         Generating code
+         Finished generating code
+         CG_skel_w_MFC.vcxproj -> C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\Release\CG_skel_w_MFC.exe
+     1>Done Building Project "C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\CG_skel_w_MFC\CG_skel_w_MFC.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.93

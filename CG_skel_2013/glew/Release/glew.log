@@ -1,0 +1,24 @@
+﻿Build started 24-Oct-17 6:44:23 PM.
+     1>Project "C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\glew\glew.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         D:\software\visual studio 2013\VC\bin\CL.exe /c /Iinclude/ /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D GLEW_STATIC /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TC /analyze- /errorReport:prompt src\glew.c src\glewinfo.c src\visualinfo.c
+         glew.c
+         glewinfo.c
+     1>src\glewinfo.c(9133): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 D:\software\visual studio 2013\VC\include\stdio.h(211) : see declaration of 'fopen'
+         visualinfo.c
+     1>src\visualinfo.c(149): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 D:\software\visual studio 2013\VC\include\stdio.h(211) : see declaration of 'fopen'
+     1>src\visualinfo.c(234): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1361,5): warning MSB8012: TargetPath(C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\Release\glew.lib) does not match the Library's OutputFile property value (C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\glew\lib\glew.lib). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
+       Lib:
+         D:\software\visual studio 2013\VC\bin\Lib.exe /OUT:"lib\glew.lib" /NOLOGO /LTCG Release\glew.obj
+         Release\glewinfo.obj
+         Release\visualinfo.obj
+     1>glewinfo.obj : warning LNK4006: _main already defined in visualinfo.obj; second definition ignored
+         glew.vcxproj -> C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\Release\glew.lib
+     1>Done Building Project "C:\Users\dolbb\Dropbox\Dropbox\technion\ComputerGraphics\commonSolution\CG_skel_2013\glew\glew.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.23
