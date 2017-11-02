@@ -1,7 +1,7 @@
 ========================================================================
     CONSOLE APPLICATION : CG_skel_w_MFC Project Overview
 ========================================================================
-
+//this is a comment
 AppWizard has created this CG_skel_w_MFC application for you.
 
 This file contains a summary of what you will find in each of the files that
