@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glew", "glew\glew.vcxproj", "{E354A711-C2D4-4492-A756-1000564DCCB8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "freeglut", "freeglut\freeglut.vcxproj", "{7FFB8BD3-9807-4B3B-867F-CDBD36BC48A1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CG_skel_w_MFC", "CG_skel_w_MFC\CG_skel_w_MFC.vcxproj", "{849F10CE-4916-4A83-A3CB-A19AF397A995}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E354A711-C2D4-4492-A756-1000564DCCB8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E354A711-C2D4-4492-A756-1000564DCCB8}.Debug|Win32.Build.0 = Debug|Win32
+		{E354A711-C2D4-4492-A756-1000564DCCB8}.Release|Win32.ActiveCfg = Release|Win32
+		{E354A711-C2D4-4492-A756-1000564DCCB8}.Release|Win32.Build.0 = Release|Win32
+		{7FFB8BD3-9807-4B3B-867F-CDBD36BC48A1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7FFB8BD3-9807-4B3B-867F-CDBD36BC48A1}.Debug|Win32.Build.0 = Debug|Win32
+		{7FFB8BD3-9807-4B3B-867F-CDBD36BC48A1}.Release|Win32.ActiveCfg = Release|Win32
+		{7FFB8BD3-9807-4B3B-867F-CDBD36BC48A1}.Release|Win32.Build.0 = Release|Win32
+		{849F10CE-4916-4A83-A3CB-A19AF397A995}.Debug|Win32.ActiveCfg = Debug|Win32
+		{849F10CE-4916-4A83-A3CB-A19AF397A995}.Debug|Win32.Build.0 = Debug|Win32
+		{849F10CE-4916-4A83-A3CB-A19AF397A995}.Release|Win32.ActiveCfg = Release|Win32
+		{849F10CE-4916-4A83-A3CB-A19AF397A995}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
