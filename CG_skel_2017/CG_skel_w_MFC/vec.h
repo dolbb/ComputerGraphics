@@ -241,13 +241,19 @@ struct vec3 {
 	}
 
     vec3 operator * ( const GLfloat s ) const
-	{ return vec3( s*x, s*y, s*z ); }
+	{ 
+		return vec3( s*x, s*y, s*z );
+	}
 
     vec3 operator * ( const vec3& v ) const
-	{ return vec3( x*v.x, y*v.y, z*v.z ); }
+	{
+		return vec3( x*v.x, y*v.y, z*v.z ); 
+	}
 
     friend vec3 operator * ( const GLfloat s, const vec3& v )
-	{ return v * s; }
+	{
+		return v * s; 
+	}
 
     vec3 operator / ( const GLfloat s ) const 
 	{
