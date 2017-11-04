@@ -22,7 +22,6 @@ class mat2 {
     mat2( const vec2& a, const vec2& b )
 	{ _m[0] = a;  _m[1] = b;  }
 
-	/*FIXED*/
     mat2( GLfloat m00, GLfloat m01, GLfloat m10, GLfloat m11 ){
 		_m[0] = vec2( m00, m01 );
 		_m[1] = vec2( m10, m11 ); 
@@ -52,7 +51,7 @@ class mat2 {
 	
     mat2 operator - ( const mat2& m ) const{
 		return mat2(_m[0] - m[0], _m[1] - m[1]); 
-	} /*FIXED*/
+	}
 
     mat2 operator * ( const GLfloat s ) const 
 	{ return mat2( s*_m[0], s*_m[1] ); }
@@ -70,7 +69,7 @@ class mat2 {
 					_m[0][0] * m[0][1] + _m[0][1] * m[1][1],	/*element m01*/
 					_m[1][0] * m[0][0] + _m[1][1] * m[1][0],	/*element m10*/
 					_m[1][0] * m[0][1] + _m[1][1] * m[1][1]);	/*element m11*/
-    }/*FIXED*/
+    }
 
     //
     //  --- (modifying) Arithmetic Operators ---
@@ -84,7 +83,7 @@ class mat2 {
     mat2& operator -= ( const mat2& m ) {
 	_m[0] -= m[0];  _m[1] -= m[1];  
 	return *this;
-    }/*FIXED*/
+    }
 
     mat2& operator *= ( const GLfloat s ) {
 	_m[0] *= s;  _m[1] *= s;   
@@ -94,7 +93,7 @@ class mat2 {
     mat2& operator *= ( const mat2& m ) {
 		mat2  a(*this * m);
 		return *this = a;
-    }/*FIXED*/
+    }
     
     mat2& operator /= ( const GLfloat s ) {
 
@@ -279,7 +278,7 @@ class mat3 {
 	return vec3(dot(_m[0], v),
 				dot(_m[1], v),
 				dot(_m[2], v));
-    }/*FIXED*/
+    }
 	
     //
     //  --- Insertion and Extraction Operators ---
@@ -293,36 +292,40 @@ class mat3 {
     }
 
     friend std::istream& operator >> ( std::istream& is, mat3& m )
-	{ return is >> m._m[0] >> m._m[1] >> m._m[2] ; }
+	{
+		return is >> m._m[0] >> m._m[1] >> m._m[2] ; 
+	}
 
     //
     //  --- Conversion Operators ---
     //
 
     operator const GLfloat* () const
-	{ return static_cast<const GLfloat*>( &_m[0].x ); }
+	{
+		return static_cast<const GLfloat*>( &_m[0].x ); 
+	}
 
     operator GLfloat* ()
-	{ return static_cast<GLfloat*>( &_m[0].x ); }
+	{
+		return static_cast<GLfloat*>( &_m[0].x ); 
+	}
 };
 
 //
 //  --- Non-class mat3 Methods ---
 //
 
-inline
-mat3 matrixCompMult( const mat3& A, const mat3& B ) {
+inline mat3 matrixCompMult( const mat3& A, const mat3& B ) {
     return mat3( A[0][0]*B[0][0], A[0][1]*B[0][1], A[0][2]*B[0][2],
 		 A[1][0]*B[1][0], A[1][1]*B[1][1], A[1][2]*B[1][2],
 		 A[2][0]*B[2][0], A[2][1]*B[2][1], A[2][2]*B[2][2] );
 }
 
-inline
-mat3 transpose( const mat3& A ) {
+inline mat3 transpose( const mat3& A ) {
     return mat3(A[0][0], A[0][1], A[0][2], 
 				A[1][0], A[1][1], A[1][2], 
 				A[2][0], A[2][1], A[2][2]); 
-}/*FIXED*/
+}
 
 //----------------------------------------------------------------------------
 //
@@ -559,7 +562,7 @@ mat4 Translate( const GLfloat x, const GLfloat y, const GLfloat z )
 {
     mat4 c;
     c[0][3] = x;
-    c[1][3] = y;  /*FIXED*/
+    c[1][3] = y;
     c[2][3] = z;
     return c;
 }
@@ -586,7 +589,7 @@ mat4 Scale( const GLfloat x, const GLfloat y, const GLfloat z )
 {
     mat4 c;
     c[0][0] = x;
-    c[1][1] = y; /*FIXED*/
+    c[1][1] = y;
     c[2][2] = z;
     return c;
 }

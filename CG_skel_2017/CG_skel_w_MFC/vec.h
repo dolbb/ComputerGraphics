@@ -57,7 +57,7 @@ struct vec2 {
     vec2 operator + (const vec2& v) const
 	{
 		return vec2( x + v.x, y + v.y ); 
-	}	/*FIXED*/
+	}
 
     vec2 operator - ( const vec2& v ) const
 	{
@@ -94,7 +94,7 @@ struct vec2 {
 		x += v.x;  
 		y += v.y;   
 		return *this; 
-	}	/*FIXED*/
+	}
 
     vec2& operator -= ( const vec2& v )
 	{ 
@@ -161,17 +161,17 @@ struct vec2 {
 
 inline GLfloat dot( const vec2& u, const vec2& v ) 
 {
-    return ((u.x * v.x) + (u.y * v.y)); /*FIXED*/
+    return ((u.x * v.x) + (u.y * v.y));
 }
 
 inline GLfloat length( const vec2& v ) 
 {
-    return std::sqrt(dot(v,v)); /*FIXED*/
+    return std::sqrt(dot(v,v));
 }
 
 inline vec2 normalize( const vec2& v ) 
 {
-    return v / length(v); /*FIXED*/
+    return v / length(v);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -287,7 +287,7 @@ struct vec3 {
 		y *= s;
 		z *= s;
 		return *this;
-	} /*FIXED*/
+	}
 
     vec3& operator *= ( const vec3& v )
 	{
@@ -354,7 +354,7 @@ inline vec3 normalize( const vec3& v ) {
 inline vec3 cross(const vec3& a, const vec3& b )
 {
     return vec3((a.y*b.z - a.z*b.y),(a.z*b.x - a.x*b.z),(a.x*b.y - a.y*b.x));
-}	/*FIXED*/
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
