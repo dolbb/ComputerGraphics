@@ -11,7 +11,7 @@ Renderer::Renderer() :m_width(512), m_height(512)
 	InitOpenGLRendering();
 	CreateBuffers(512,512);
 }
-Renderer::Renderer(int width, int height) :m_width(width), m_height(m_height)
+Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
 {
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
