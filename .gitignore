@@ -10,3 +10,5 @@ Release/
 *.db-shm
 *.db-wal
 *.aps
+CG_skel_2017/CG_skel.sln
+CG_skel_2017/CG_skel_w_MFC/CG_skel_w_MFC.aps
