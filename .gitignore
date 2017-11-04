@@ -1,3 +1,12 @@
 freeglut/
 glew/
 Release/
+*.sdf
+*.suo
+*.db
+*.opendb
+*.suo
+*.ipch
+*.db-shm
+*.db-wal
+*.aps
