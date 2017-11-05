@@ -122,7 +122,9 @@ void MeshModel::loadFile(string fileName)
 	//Then vertex_positions should contain:
 	//vertex_positions={v1,v2,v3,v1,v3,v4}
 	vertex_positions_size = faces.size() * 3;
-	vertex_positions = new vec3[vertex_positions_size]; 
+	vertex_normals_size = vertex_positions_size;
+	vertex_positions = new vec3[vertex_positions_size];
+	vertex_normals = new vec3[vertex_normals_size];
 	// iterate through all stored faces and create triangles
 	int k = 0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it)
@@ -130,11 +132,12 @@ void MeshModel::loadFile(string fileName)
 		for (int i = 0; i <= 2; i++)
 		{
 			vertex_positions[k + i] = vertices[(it->v[i])-1];
+			int cur_vn = it->vn[i];
+			//in case a vertex normal is undefined the normal is set to the origin
+			vertex_normals[k + i] = cur_vn > 0 ? normals[cur_vn-1] : vec3();
 		}
 		k+=3;
 	}
-	//TODO: HANDLE NORMALS
-
 }
 
 

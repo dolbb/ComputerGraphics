@@ -12,6 +12,8 @@ protected :
 	MeshModel() {}
 	vec3* vertex_positions;
 	int	  vertex_positions_size;
+	vec3* vertex_normals;
+	int   vertex_normals_size;
 	mat4  _world_transform;
 	mat3  _normal_transform;
 
