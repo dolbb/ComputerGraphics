@@ -34,20 +34,18 @@ void Renderer::CreateBuffers(int width, int height)
 void Renderer::SetDemoBuffer()
 {
 	//vertical line
-	for(int i=0; i<m_width; i++)
+	for (int i = 0; i<m_width; i++)
 	{
-		m_outBuffer[INDEX(m_width,256,i,0)]=1;	m_outBuffer[INDEX(m_width,256,i,1)]=0;	m_outBuffer[INDEX(m_width,256,i,2)]=0;
+		m_outBuffer[INDEX(m_width, 256, i, 0)] = 1;	m_outBuffer[INDEX(m_width, 256, i, 1)] = 0;	m_outBuffer[INDEX(m_width, 256, i, 2)] = 0;
 
 	}
 	//horizontal line
-	for(int i=0; i<m_width; i++)
+	for (int i = 0; i<m_width; i++)
 	{
-		m_outBuffer[INDEX(m_width,i,256,0)]=1;	m_outBuffer[INDEX(m_width,i,256,1)]=0;	m_outBuffer[INDEX(m_width,i,256,2)]=1;
+		m_outBuffer[INDEX(m_width, i, 256, 0)] = 1;	m_outBuffer[INDEX(m_width, i, 256, 1)] = 0;	m_outBuffer[INDEX(m_width, i, 256, 2)] = 1;
 
 	}
 }
-
-
 
 
 
