@@ -21,8 +21,6 @@ Renderer::~Renderer(void)
 {
 }
 
-
-
 void Renderer::CreateBuffers(int width, int height)
 {
 	m_width=width;
