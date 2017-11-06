@@ -125,19 +125,32 @@ void MeshModel::loadFile(string fileName)
 	vertex_normals_size = vertex_positions_size;
 	vertex_positions = new vec3[vertex_positions_size];
 	vertex_normals = new vec3[vertex_normals_size];
+	face_normals_size = faces.size();
+	face_normals = new vec3[face_normals_size];
+
 	// iterate through all stored faces and create triangles
 	int k = 0;
+	int f = 0;
+	vec3 O;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it)
 	{
 		for (int i = 0; i <= 2; i++)
 		{
 			vertex_positions[k + i] = vertices[(it->v[i])-1];
+
 			int cur_vn = it->vn[i];
-			//in case a vertex normal is undefined the normal is set to the origin
+			//in case a vertex normal is undefined the normal is set to the (0,0,0) vector
 			vertex_normals[k + i] = cur_vn > 0 ? normals[cur_vn-1] : vec3();
+ 
 		}
 		k+=3;
+		//face normal is calculated using the center point of the triangle, denoted O.
+		//the face normal is defined as the cross product of the following vectors: cross((v1-O),(v2-O))
+		O = ((vertices[it->v[0] - 1] + vertices[it->v[1] - 1] + vertices[it->v[2] - 1]) / 3);
+		face_normals[f] = cross((vertices[it->v[0] - 1] - O), (vertices[it->v[1] - 1] - O));
+		f+=1;
 	}
+	
 }
 
 
