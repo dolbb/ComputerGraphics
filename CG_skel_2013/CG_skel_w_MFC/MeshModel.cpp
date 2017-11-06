@@ -6,6 +6,12 @@
 #include <fstream>
 #include <sstream>
 
+#define AXIS_EXTREMUM 6
+#define TRIANGLE_VERTICES 3
+#define X_FIELD 0
+#define Y_FIELD 1
+#define Z_FIELD 2
+
 using namespace std;
 
 struct FaceIdcs
@@ -131,13 +137,36 @@ void MeshModel::loadFile(string fileName)
 	// iterate through all stored faces and create triangles
 	int k = 0;
 	int f = 0;
+	bool initialized = false;
 	vec3 O;
+	vec3 current_vector;
+	//the variables axis_min/max are used to define the bounding box vertices
+	GLfloat axis_extremum[6];
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it)
 	{
-		for (int i = 0; i <= 2; i++)
+		for (int i = 0; i <= TRIANGLE_VERTICES-1; i++)
 		{
-			vertex_positions[k + i] = vertices[(it->v[i])-1];
-
+			if (!initialized)
+			{
+				current_vector = vertices[(it->v[0]) - 1];
+				axis_extremum[0] = axis_extremum[1] = current_vector[X_FIELD];
+				axis_extremum[2] = axis_extremum[3] = current_vector[Y_FIELD];
+				axis_extremum[4] = axis_extremum[5] = current_vector[Z_FIELD];
+				initialized = true;
+			}
+			current_vector = vertices[(it->v[i]) - 1];
+			vertex_positions[k + i] = current_vector;
+			for (int i = 0; i <= AXIS_EXTREMUM-1; i++)
+			{
+				if (i % 2 == 0)
+				{
+					axis_extremum[i] = axis_extremum[i] <= current_vector[i / 2] ? axis_extremum[i] : current_vector[i / 2];
+				}
+				else
+				{
+					axis_extremum[i] = axis_extremum[i] >= current_vector[i / 2] ? axis_extremum[i] : current_vector[i / 2];
+				}
+			}
 			int cur_vn = it->vn[i];
 			//in case a vertex normal is undefined the normal is set to the (0,0,0) vector
 			vertex_normals[k + i] = cur_vn > 0 ? normals[cur_vn-1] : vec3();
@@ -149,6 +178,18 @@ void MeshModel::loadFile(string fileName)
 		O = ((vertices[it->v[0] - 1] + vertices[it->v[1] - 1] + vertices[it->v[2] - 1]) / 3);
 		face_normals[f] = cross((vertices[it->v[0] - 1] - O), (vertices[it->v[1] - 1] - O));
 		f+=1;
+	}
+	int t = 0;
+	for (int i = 0; i <= 1; i++)
+	{
+		for (int j = 0; j <= 1; j++)
+		{
+			for (int k = 0; k <= 1; k++)
+			{
+				bounding_box_vertices[t] = vec3(axis_extremum[i], axis_extremum[j], axis_extremum[k]);
+				t += 1;
+			}
+		}
 	}
 	
 }

@@ -20,6 +20,7 @@ protected :
 	//face_normals[i]->normal(vertex_positions[i],vertex_positions[i+1],vertex_positions[i+2])
 	vec3* face_normals;
 	int   face_normals_size;
+	vec3* bounding_box_vertices;
 	mat4  _world_transform;
 	mat3  _normal_transform;
 
