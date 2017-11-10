@@ -220,13 +220,11 @@ void MeshModel::rotate(vec3 vec){
 	mat4 rotateMatY = RotateY(vec[Y_AXIS]);
 	mat4 rotateMatZ = RotateZ(vec[Z_AXIS]);
 	mat4 totalRotation = rotateMatZ * rotateMatY * rotateMatX;
-	
 	transformation(totalRotation);
 }
 void MeshModel::scale(vec3 vec){
 	/*create the scaling matrix from the left:*/
 	mat4 scalingMat = Scale(vec);
-
 	transformation(scalingMat);
 }
 
