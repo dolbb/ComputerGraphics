@@ -8,8 +8,6 @@
 #include <sstream>
 
 #define TRIANGLE_VERTICES 3
-#define CONNECTED_VERTICES 3
-enum axis{X_AXIS, Y_AXIS, Z_AXIS};
 enum extremumFunctionOpCodes{MIN_MODE, MAX_MODE};
 enum axisExtremumValues{X_MIN, X_MAX, Y_MIN, Y_MAX, Z_MIN, Z_MAX};
 
@@ -39,6 +37,7 @@ MeshModel::MeshModel(string fileName)
 	initVertexNormals(faces, normals);
 	initFaceNormals(faces, vertices);
 	initBoundingBox(faces, vertices);
+	actionType = OBJECT_ACTION;
 }
 
 MeshModel::~MeshModel(void)
@@ -46,7 +45,6 @@ MeshModel::~MeshModel(void)
 	delete vertexPositions;
 	delete vertexNormals;
 	delete faceNormals;
-	delete boundingBoxVertices;
 }
 
 void MeshModel::loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>& vertices, vector<vec3>& normals)
@@ -103,7 +101,7 @@ void MeshModel::initVertexPositions(vector<FaceIdcs>& faces, vector<vec3>& verti
 	int currentFace = 0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++)
 	{
-		for (int i = 0; i <= TRIANGLE_VERTICES - 1; i++)
+		for (int i = 0; i < TRIANGLE_VERTICES ; i++)
 		{
 			vertexPositions[(currentFace * 3) + i] = vertices[(it->v[i]) - 1];
 		}
@@ -118,7 +116,7 @@ void MeshModel::initVertexNormals(vector<FaceIdcs>& faces, vector<vec3>& normals
 	int currentNormal = 0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++)
 	{
-		for (int i = 0; i <= TRIANGLE_VERTICES - 1; i++)
+		for (int i = 0; i < TRIANGLE_VERTICES ; i++)
 		{
 			currentNormal = it->vn[i];
 			vertexNormals[(currentFace * 3) + i] = currentNormal > 0 ? normals[(it->vn[i]) - 1] : vec3();
@@ -198,7 +196,6 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 		*/
 	GLfloat axisExtremum[6];
 	calculateAxisExtremum(axisExtremum, vertices);
-	boundingBoxVertices = new vec3[BOX_VERTICES];
 	int currentVertex = 0;
 	for (int i = X_MIN; i <= X_MAX; i++)
 	{
@@ -215,4 +212,38 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 void MeshModel::draw()
 {
 	
+}
+void MeshModel::rotate(vec3 vec){
+	/*create the rotating matrixs from the left:*/
+	//TODO: check if order is needed or all is cool:
+	mat4 rotateMatX = RotateX(vec[X_AXIS]);
+	mat4 rotateMatY = RotateY(vec[Y_AXIS]);
+	mat4 rotateMatZ = RotateZ(vec[Z_AXIS]);
+	mat4 totalRotation = rotateMatZ * rotateMatY * rotateMatX;
+	
+	transformation(totalRotation);
+}
+void MeshModel::scale(vec3 vec){
+	/*create the scaling matrix from the left:*/
+	mat4 scalingMat = Scale(vec);
+
+	transformation(scalingMat);
+}
+
+void MeshModel::translate(vec3 vec){
+	/*create the translation matrix from the left:*/
+	mat4 translationMat = Translate(vec);
+	transformation(translationMat);
+}
+
+void MeshModel::transformation(mat4 mat){
+	/*operate over the wanted transform:*/
+	if (actionType == OBJECT_ACTION){
+		mat *= selfTransform;
+		selfTransform = mat;
+	}
+	else{
+		mat *= worldTransform;
+		worldTransform = mat;
+	}
 }

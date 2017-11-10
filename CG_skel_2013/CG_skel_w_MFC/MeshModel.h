@@ -8,6 +8,8 @@
 
 using namespace std;
 
+enum axis{ X_AXIS, Y_AXIS, Z_AXIS };
+
 class MeshModel : public Model
 {
 private:
@@ -53,6 +55,7 @@ private:
 	void initFaceNormals(vector<FaceIdcs>& faces, vector<vec3>& vertices);
 	void initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices);
 
+	enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
 protected :
 	MeshModel() {}
 	/*
@@ -74,17 +77,34 @@ protected :
 	vec3* faceNormals;
 	int   faceNormalsSize;
 	
-	vec3* boundingBoxVertices;
 	/*
 		boundingBoxDisplayed == true <=> bounding box should be drawn.
 	*/
 	bool boundingBoxDisplayed;
+	vec3 boundingBoxVertices[BOX_VERTICES];
+	/*
+		the following matrixes operate as the transformation functions, over the data
+	*/
 	mat4 worldTransform;
+	mat4 selfTransform;
+	//TODO: check if needed:
 	mat3 normalTransform;
+	/*
+		actionType will determine if an operator should be in world frame or self frame.
+	*/
+	ActionType actionType;
 
 public:
 	MeshModel(string fileName);
 	~MeshModel(void);
 	void loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>& vertices, vector<vec3>& normals);
 	void draw();
+
+	/*
+	the following functions will check worldAction flag and will change the propper matrix accordingly
+	*/
+	void rotate(vec3 vec);
+	void scale(vec3 vec);
+	void translate(vec3 vec);
+	void transformation(mat4 mat);
 };
