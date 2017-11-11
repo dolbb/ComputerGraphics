@@ -5,6 +5,8 @@
 #include <string>
 
 #define BOX_VERTICES 8
+#define FACES_NUM_IN_PYRAMID 6
+#define VERTEX_NUM_IN_FACE 3
 
 using namespace std;
 
@@ -98,7 +100,7 @@ public:
 	MeshModel(string fileName);
 	~MeshModel(void);
 	void loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>& vertices, vector<vec3>& normals);
-	void draw();
+	void draw(Renderer *renderer);
 
 	/*
 	the following functions will check worldAction flag and will change the propper matrix accordingly
@@ -107,4 +109,56 @@ public:
 	void scale(vec3 vec);
 	void translate(vec3 vec);
 	void transformation(mat4 mat);
+};
+
+/*=======================================================
+		NEW CLASS PrimMeshModel - MANUAL MESHMODEL:
+=======================================================*/
+
+class PrimMeshModel : MeshModel
+{
+	PrimMeshModel(){
+		/*init the fields needed to make a pyramid:*/
+		vertexPositionsSize = FACES_NUM_IN_PYRAMID * VERTEX_NUM_IN_FACE;
+		vertexNormalsSize = 0;
+		vertexPositions = new vec3[vertexPositionsSize];
+		vertexNormals = NULL;
+		
+		/*define the needed vertices:*/
+		vec3 vHead( 0,  0,  0);
+		vec3 vLeg1( 1,  1, -1);
+		vec3 vLeg2( 1, -1, -1);
+		vec3 vLeg3(-1, -1, -1);
+		vec3 vLeg4(-1,  1, -1);
+
+		/*use the vertices to create the wanted faces:*/
+		/*set sides of pyramid:*/
+		vertexPositions[0]	=	vHead;
+		vertexPositions[1]	=	vLeg1;
+		vertexPositions[2]	=	vLeg4;
+		
+		vertexPositions[3]	=	vHead;
+		vertexPositions[4]	=	vLeg4;
+		vertexPositions[5]	=	vLeg3;
+		
+		vertexPositions[6]	=	vHead;
+		vertexPositions[7]	=	vLeg3;
+		vertexPositions[8]	=	vLeg2;
+		
+		vertexPositions[9]	=	vHead;
+		vertexPositions[10] =	vLeg2;
+		vertexPositions[11] =	vLeg1;
+		/*bottom of pyramid divided into 2 triangles:*/
+		vertexPositions[12] =	vLeg1;
+		vertexPositions[13] =	vLeg3;
+		vertexPositions[14] =	vLeg4;
+		
+		vertexPositions[15] =	vLeg3;
+		vertexPositions[16] =	vLeg1;
+		vertexPositions[17] =	vLeg2;
+	};
+	PrimMeshModel(string fileName){ };
+	~PrimMeshModel(void){
+		delete vertexPositions;
+	};
 };

@@ -209,9 +209,13 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 	}
 }
 
-void MeshModel::draw()
+void MeshModel::draw(Renderer *renderer)
 {
-	
+	mat4 transMat = worldTransform * selfTransform;
+	//TODO: check if normalTransform needs any manipulation(or during each transformation?).
+	renderer->SetObjectMatrices(transMat, normalTransform);
+	//TODO: check DrawTriangles signature after renderer update.
+	renderer->DrawTriangles(vertexPositions, vertexPositionsSize, vertexNormals, vertexNormalsSize);
 }
 void MeshModel::rotate(vec3 vec){
 	/*create the rotating matrixs from the left:*/

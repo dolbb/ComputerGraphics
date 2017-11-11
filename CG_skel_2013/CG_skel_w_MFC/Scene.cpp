@@ -14,7 +14,16 @@ void Scene::draw()
 {
 	// 1. Send the renderer the current camera transform and the projection
 	// 2. Tell all models to draw themselves
-
+	//TODO: use a proper matrix for both these funcs:
+	mat4 m;
+	m_renderer->SetCameraTransform(m);
+	m_renderer->SetProjection(m);
+	if (models.empty()){
+		return;
+	}
+	for (vector<Model*>::iterator it = models.begin(); it != models.end(); ++it){
+		(*it)->draw(m_renderer);
+	}
 	m_renderer->SwapBuffers();
 }
 
