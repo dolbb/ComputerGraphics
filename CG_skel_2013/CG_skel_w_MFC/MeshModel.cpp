@@ -37,6 +37,9 @@ MeshModel::MeshModel(string fileName)
 	initVertexNormals(faces, normals);
 	initFaceNormals(faces, vertices);
 	initBoundingBox(faces, vertices);
+	cout << "Please enter your object's name: ";
+	cin >> name;
+	cout << endl;
 	actionType = OBJECT_ACTION;
 }
 
@@ -155,7 +158,7 @@ public:
 	}
 	bool operator()(vec3 v1, vec3 v2)
 	{
-		if (v1[axis] <= v2[axis])
+		if (v1[axis] < v2[axis])
 			return true;
 		else
 			return false;
@@ -173,12 +176,12 @@ void calculateAxisExtremum(GLfloat* axisExtremum, vector<vec3>& vertices)
 		{
 			switch (mode)
 			{
-				case 0:
+				case MIN_MODE:
 					axisMinVector = *min_element(vertices.begin(), vertices.end(), findExtremumInAxis(axis));
 					axisExtremum[current] = axisMinVector[axis];
 				break;
 
-				case 1:
+				case MAX_MODE:
 					axisMaxVector = *max_element(vertices.begin(), vertices.end(), findExtremumInAxis(axis));
 					axisExtremum[current] = axisMaxVector[axis];
 				break;

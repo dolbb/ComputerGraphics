@@ -50,8 +50,13 @@ void reshape( int width, int height )
 void keyboard( unsigned char key, int x, int y )
 {
 	switch ( key ) {
+	//ESC
 	case 033:
 		exit( EXIT_SUCCESS );
+		break;
+
+	case 'z':
+		scene->selectActiveModel();
 		break;
 	}
 }
@@ -114,6 +119,7 @@ void mainMenu(int id)
 		break;
 	}
 }
+
 
 void initMenu()
 {

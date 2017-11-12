@@ -63,7 +63,11 @@ void Renderer::SetDemoBuffer()
 
 	}
 }
+//TODO: IMPLEMENT DRAW TRIANGLES
+void Renderer::DrawTriangles(vec3* vertexPositions, int vertexPositionsSize, vec3* vertexNormals, int vertexNormalsSize)
+{
 
+}
 int quarterFromSlope(float slope)
 {
 	//holds the current line quarter in radians, using quarterInRad we can determaine which quarter we are in.

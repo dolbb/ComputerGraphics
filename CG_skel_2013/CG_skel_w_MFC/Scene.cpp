@@ -7,7 +7,16 @@ using namespace std;
 void Scene::loadOBJModel(string fileName)
 {
 	MeshModel *model = new MeshModel(fileName);
-	models.push_back(model);
+	string chosenName = model->getName();
+	while (models.find(chosenName) != models.end())
+	{
+		cout << "the chosen name already exists, please enter a new name: ";
+		cin >> chosenName;
+		model->setName(chosenName);
+		cout << endl;
+	}
+	pair<string,Model*> insertedObject = make_pair(chosenName,model);
+	models.insert(insertedObject);
 }
 
 void Scene::draw()
@@ -21,10 +30,36 @@ void Scene::draw()
 	if (models.empty()){
 		return;
 	}
-	for (vector<Model*>::iterator it = models.begin(); it != models.end(); ++it){
-		(*it)->draw(m_renderer);
+	for (map<string,Model*>::iterator it = models.begin(); it != models.end(); ++it){
+		it->second->draw(m_renderer);
 	}
 	m_renderer->SwapBuffers();
+}
+
+void Scene::selectActiveModel()
+{
+	cout << "The scene has the following models:" << endl;
+	int count = 1;
+	for (map<string, Model*>::iterator it = models.begin(); it != models.end(); ++it, count++)
+	{
+		cout << count << ": " << it->first << endl;
+	}
+	string chosenObject;
+	bool scanned = false;
+	cout << endl;
+	do
+	{
+		cout << "please enter the name of the object you would like to select: ";
+		cout << endl;
+		cin >> chosenObject;
+		scanned = models.find(chosenObject) != models.end();
+		if (!scanned)
+		{
+			cout << "the object name you entered does not exist." << endl;
+		}
+	} while (!scanned);
+	activeModel = models[chosenObject];
+	cout << "the object " << chosenObject << " was selected succesfully" << endl;
 }
 
 void Scene::drawDemo()

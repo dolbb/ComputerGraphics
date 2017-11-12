@@ -3,6 +3,7 @@
 #include "gl/glew.h"
 #include <vector>
 #include <string>
+#include <map>
 #include "Renderer.h"
 using namespace std;
 
@@ -10,6 +11,16 @@ class Model {
 public:
 	virtual ~Model() {}
 	void virtual draw(Renderer *renderer) = 0;
+	const string getName()
+	{
+		return name;
+	}
+	void setName(const string chosenName)
+	{
+		name = chosenName;
+	}
+protected:
+	string name;
 };
 
 
@@ -36,11 +47,13 @@ public:
 };
 
 class Scene {
-
-	vector<Model*> models;
+private:
+	map<string, Model*> models;
 	vector<Light*> lights;
 	vector<Camera*> cameras;
 	Renderer *m_renderer;
+
+	Model* activeModel;
 
 public:
 	Scene() {};
@@ -48,8 +61,6 @@ public:
 	void loadOBJModel(string fileName);
 	void draw();
 	void drawDemo();
+	void selectActiveModel();
 	
-	int activeModel;
-	int activeLight;
-	int activeCamera;
 };
