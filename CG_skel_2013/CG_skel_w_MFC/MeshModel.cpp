@@ -37,9 +37,6 @@ MeshModel::MeshModel(string fileName)
 	initVertexNormals(faces, normals);
 	initFaceNormals(faces, vertices);
 	initBoundingBox(faces, vertices);
-	cout << "Please enter your object's name: ";
-	cin >> name;
-	cout << endl;
 	actionType = OBJECT_ACTION;
 }
 

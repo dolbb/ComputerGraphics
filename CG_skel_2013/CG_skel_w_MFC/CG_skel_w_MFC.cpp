@@ -58,6 +58,13 @@ void keyboard( unsigned char key, int x, int y )
 	case 'z':
 		scene->selectActiveModel();
 		break;
+
+	case 'x':
+		scene->createCamera();
+		break;
+	case 'c':
+		scene->selectActiveCamera();
+		break;
 	}
 }
 

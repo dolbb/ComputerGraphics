@@ -28,7 +28,7 @@ class Light {
 
 };
 
-class Camera {
+class Camera : public Model {
 	mat4 cTransform;
 	mat4 projection;
 
@@ -43,24 +43,26 @@ public:
 		const float zNear, const float zFar );
 	mat4 Perspective( const float fovy, const float aspect,
 		const float zNear, const float zFar);
-
+	void draw(Renderer *renderer){}
 };
 
 class Scene {
 private:
 	map<string, Model*> models;
 	vector<Light*> lights;
-	vector<Camera*> cameras;
+	map<string, Camera*> cameras;
 	Renderer *m_renderer;
 
-	Model* activeModel;
+	Model*  activeModel;
+	Camera* activeCamera;
 
 public:
 	Scene() {};
 	Scene(Renderer *renderer) : m_renderer(renderer) {};
 	void loadOBJModel(string fileName);
+	void createCamera();
 	void draw();
 	void drawDemo();
 	void selectActiveModel();
-	
+	void selectActiveCamera();
 };
