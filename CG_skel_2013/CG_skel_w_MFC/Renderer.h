@@ -36,7 +36,7 @@ public:
 	void Init();
 	void DrawTriangles(vec3* vertexPositions, int vertexPositionsSize, vec3* vertexNormals, int vertexNormalsSize);
 	void drawLine(vec2 v0, vec2 v1);
-	void setLineInBuffer(int* lineParameters, float *m_outBuffer);
+	void setLineInBuffer(int xMin, int xMax, int yMin, int yMax, int horizontalDirection, int verticalDirection, int swapped, float *m_outBuffer);
 	void plotPixel(int x, int y, float* m_outBuffer);
 	void SetCameraTransform(const mat4& chosenCameraTransform);
 	void SetProjection(const mat4& chosenProjection);
