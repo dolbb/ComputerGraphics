@@ -66,15 +66,14 @@ void Renderer::SetDemoBuffer()
 //TODO: IMPLEMENT DRAW TRIANGLES
 void Renderer::DrawTriangles(vec3* vertexPositions, int vertexPositionsSize, vec3* vertexNormals, int vertexNormalsSize)
 {
-
+	//TODO: add pipeLine matrices multiplication and iterate over data.
 }
 int quarterFromSlope(float slope)
 {
 	//holds the current line quarter in radians, using quarterInRad we can determaine which quarter we are in.
 	float quarterInRad = atan(slope);
 	/*
-	     Quarters:
-
+		indexes
 		    |
 		 4\3|2/1
 		   \|/
@@ -82,7 +81,6 @@ int quarterFromSlope(float slope)
            /|\		 
 		 5/6|7\8
 		    |
-
 	*/
 
 	//given a negative angle we will add 2*M_PI untill we get the same angle looking anticlockwise from the positive x axis.
@@ -232,8 +230,8 @@ void Renderer::setLineInBuffer(int lineParameters[AXIS_PARAMETERS], float *m_out
 void Renderer::drawLine(vec2 v0, vec2 v1)
 {
 	int lineParameters[AXIS_PARAMETERS];
-	float slope = ((v1[0] - v0[0]) / (v1[1] - v0[1]));
-	//(x1-x0)/(y1-y0)
+	//TODO: check divide by 0:
+	float slope = ((v1[1] - v0[1]) / (v1[0] - v0[0])); //(y1-y0)/(x1-x0)
 	int quarter = quarterFromSlope(slope);
 	switch (quarter)
 	{
