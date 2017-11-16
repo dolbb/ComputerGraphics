@@ -5,7 +5,10 @@
 #include "GL\freeglut.h"
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
-enum axis{x,y};
+#define TRIANGLE_VERTICES 3
+#define BOUNDING_BOX_VERTICES 8
+enum axis{x,y,z};
+enum{w=3};
 
 Renderer::Renderer() :m_width(512), m_height(512)
 {
@@ -60,18 +63,97 @@ void Renderer::SetDemoBuffer()
 
 	}
 }
-//TODO: IMPLEMENT DRAW TRIANGLES
-void Renderer::DrawTriangles(vec3* vertexPositions, int vertexPositionsSize, vec3* vertexNormals, int vertexNormalsSize)
-{
-	//TODO: add pipeLine matrices multiplication and iterate over data.
-}
 /*
-	setLineParameters function gets 2 points in the XY plane, v0, v1, representing the end points of the drawn line,
-	parameters array which will hold the needed information for Bresenham's line drawing algorithm, horizontal direction and vertical
-	direction that will be used to initialize the horizontal and vertical starting and ending points and horizontal and vertical progression
-	values that represents the step in the given direction (+1, -1).
+	processVertex will get a 3d vector representing a vertex and will process it through the graphic pipeline,
+	the function will return a 2d vector in screen coordinates.
 */
+vec2 Renderer::processVertex(vec3 vertex)
+{
+	vec4 homogenous = vertex;
+	mat4 pipline = projection*cameraTransform*objectTransform;
+	homogenous = pipline*homogenous;
+	homogenous / homogenous[w];
+}
 
+bool isBoundingBoxEdge(int i, int j)
+{
+	switch (i)
+	{
+	case 0:
+		if (j == 1 || j == 2 || j == 4)
+			return true;
+		else
+			return false;
+	case 1:
+		if (j == 3 || j == 5)
+			return true;
+		else
+			return false;
+	case 2:
+		if (j == 3 || j == 6)
+			return true;
+		else
+			return false;
+	case 4:
+		if (j == 5 || j == 6)
+			return true;
+		else
+			return false;
+	case 7:
+		if (j == 3 || j == 5 || j == 6)
+			return true;
+		else
+			return false;
+	}
+}
+
+void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize)
+{
+	vec3 faceCenter;
+	vec3 v0, v1, v2;
+	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
+	{
+		faceCenter = vec3((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3);
+		drawLine(processVertex(faceCenter), processVertex(faceCenter + faceNormals[currentFace]));
+	}
+}
+
+void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize)
+{
+	for (int i = 0; i < vertexSize; i++)
+	{
+		//TODO: CHECK IF NORMALIZE IS NEEDED
+		drawLine(processVertex(vertexPositions[i]), processVertex(vertexPositions[i] + vertexNormals[i]));
+	}
+}
+
+void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
+{
+	for (int i = 0; i < BOUNDING_BOX_VERTICES; i++)
+	{
+		for (int j = i + 1; j < BOUNDING_BOX_VERTICES; j++)
+		{
+			if (isBoundingBoxEdge(i, j))
+			{
+				drawLine(processVertex(boundingBoxVertices[i]), processVertex(boundingBoxVertices[j]));
+			}
+		}
+	}
+}
+
+void Renderer::DrawTriangles(vec3* vertexPositions, int vertexPositionsSize)
+{
+	vec2 v0, v1, v2;
+	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
+	{
+		v0 = processVertex(vertexPositions[i]);
+		v1 = processVertex(vertexPositions[i+1]);
+		v2 = processVertex(vertexPositions[i+2]);
+		drawLine(v0, v1);
+		drawLine(v0, v2);
+		drawLine(v1, v2);
+	}
+}
 void Renderer::plotPixel(int x, int y, float* m_outBuffer)
 {
 	m_outBuffer[INDEX(m_width, x, y, 0)] = 0;
