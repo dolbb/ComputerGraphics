@@ -71,41 +71,28 @@ vec2 Renderer::processVertex(vec3 vertex)
 {
 	vec4 homogenous = vertex;
 	mat4 pipline = projection*cameraTransform*objectTransform;
-	homogenous = pipline*homogenous;
+	homogenous = pipline * homogenous;
 	homogenous / homogenous[w];
-	return vec4to2(homogenous);
+	return vec2(homogenous[x], homogenous[y]);
 }
 
 bool isBoundingBoxEdge(int i, int j)
 {
+	bool showFlag = false;
 	switch (i)
 	{
 	case 0:
-		if (j == 1 || j == 2 || j == 4)
-			return true;
-		else
-			return false;
+		if (j == 1 || j == 2 || j == 4) showFlag = true; break;
 	case 1:
-		if (j == 3 || j == 5)
-			return true;
-		else
-			return false;
+		if (j == 3 || j == 5) showFlag = true; break;
 	case 2:
-		if (j == 3 || j == 6)
-			return true;
-		else
-			return false;
+		if (j == 3 || j == 6) showFlag = true; break;
 	case 4:
-		if (j == 5 || j == 6)
-			return true;
-		else
-			return false;
+		if (j == 5 || j == 6) showFlag = true; break;
 	case 7:
-		if (j == 3 || j == 5 || j == 6)
-			return true;
-		else
-			return false;
+		if (j == 3 || j == 5 || j == 6) showFlag = true;
 	}
+	return showFlag;
 }
 
 void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize)
@@ -142,7 +129,7 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 	}
 }
 
-void Renderer::DrawTriangles(vec3* vertexPositions, int vertexPositionsSize)
+void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 {
 	vec2 v0, v1, v2;
 	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)

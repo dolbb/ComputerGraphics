@@ -38,7 +38,7 @@ public:
 	void drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize);
 	void drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize);
 	void drawBoundingBox(vec3* boundingBoxVertices);
-	void DrawTriangles(vec3* vertexPositions, int vertexPositionsSize);
+	void drawTriangles(vec3* vertexPositions, int vertexPositionsSize);
 	void drawLine(vec2 v0, vec2 v1);
 	void setLineInBuffer(int xMin, int xMax, int yMin, int yMax, int horizontalDirection, int verticalDirection, int swapped, float *m_outBuffer);
 	void plotPixel(int x, int y, float* m_outBuffer);

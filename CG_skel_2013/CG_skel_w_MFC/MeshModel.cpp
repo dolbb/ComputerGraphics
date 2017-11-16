@@ -7,7 +7,9 @@
 #include <fstream>
 #include <sstream>
 
-#define TRIANGLE_VERTICES 3
+#define TRIANGLE_VERTICES	3
+#define INVALID_SIZE		-1
+#define VALID_EMPTY_SIZE	0
 enum extremumFunctionOpCodes{MIN_MODE, MAX_MODE};
 enum axisExtremumValues{X_MIN, X_MAX, Y_MIN, Y_MAX, Z_MIN, Z_MAX};
 
@@ -27,7 +29,11 @@ vec2 vec2fFromStream(std::istream & aStream)
 	return vec2(x, y);
 }
 
-MeshModel::MeshModel(string fileName)
+MeshModel::MeshModel(string fileName) :
+vertexPositions(NULL), vertexPositionsSize(INVALID_SIZE),
+vertexNormals(NULL), vertexNormalsSize(INVALID_SIZE),
+faceNormals(NULL), faceNormalsSize(INVALID_SIZE),
+boundingBoxDisplayed(false), actionType(OBJECT_ACTION)
 {
 	vector<FaceIdcs> faces;
 	vector<vec3>	 vertices;
@@ -42,15 +48,14 @@ MeshModel::MeshModel(string fileName)
 
 MeshModel::~MeshModel(void)
 {
-	delete vertexPositions;
-	delete vertexNormals;
-	delete faceNormals;
+	delete[] vertexPositions;
+	delete[] vertexNormals;
+	delete[] faceNormals;
 }
 
 void MeshModel::loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>& vertices, vector<vec3>& normals)
 {
 	ifstream ifile(fileName.c_str());
-
 	while (!ifile.eof())
 	{
 		string curLine;
@@ -68,11 +73,13 @@ void MeshModel::loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>&
 		if (lineType == "vn")
 		{
 			normals.push_back(vec3fFromStream(issLine));
+			vertexNormalsSize = VALID_EMPTY_SIZE;
 			continue;
 		}	
 		if (lineType == "f")
 		{
 			faces.push_back(FaceIdcs(issLine));
+			vertexPositionsSize = VALID_EMPTY_SIZE;
 			continue;
 		}
 		if (lineType == "#" || lineType == "") 
@@ -110,16 +117,18 @@ void MeshModel::initVertexPositions(vector<FaceIdcs>& faces, vector<vec3>& verti
 
 void MeshModel::initVertexNormals(vector<FaceIdcs>& faces, vector<vec3>& normals)
 {
-	vertexNormalsSize = vertexPositionsSize;
-	vertexNormals = new vec3[vertexNormalsSize];
-	int currentFace = 0;
-	int currentNormal = 0;
-	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++)
-	{
-		for (int i = 0; i < TRIANGLE_VERTICES ; i++)
+	if (vertexNormalsSize == VALID_EMPTY_SIZE){
+		vertexNormalsSize = vertexPositionsSize;
+		vertexNormals = new vec3[vertexNormalsSize];
+		int currentFace = 0;
+		int currentNormal = 0;
+		for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++)
 		{
-			currentNormal = it->vn[i];
-			vertexNormals[(currentFace * 3) + i] = currentNormal > 0 ? normals[(it->vn[i]) - 1] : vec3();
+			for (int i = 0; i < TRIANGLE_VERTICES; i++)
+			{
+				currentNormal = it->vn[i];
+				vertexNormals[(currentFace * 3) + i] = currentNormal > 0 ? normals[(it->vn[i]) - 1] : vec3();
+			}
 		}
 	}
 }
@@ -209,14 +218,35 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 	}
 }
 
-void MeshModel::draw(Renderer *renderer)
-{
-	mat4 transMat = worldTransform * selfTransform;
+void MeshModel::draw(Renderer *renderer){
+	mat4 vertexTransMat = worldVertexTransform * selfVertexTransform;
+	mat3 normalTransMat = worldNormalTransform * selfNormalTransform;
 	//TODO: check if normalTransform needs any manipulation(or during each transformation?).
-	renderer->SetObjectMatrices(transMat, normalTransform);
-	//TODO: check DrawTriangles signature after renderer update.
-	renderer->DrawTriangles(vertexPositions, vertexPositionsSize, vertexNormals, vertexNormalsSize);
+	renderer->SetObjectMatrices(vertexTransMat, normalTransMat);
+	//draw all the needed objects:
+	renderer->drawTriangles(vertexPositions, vertexPositionsSize);
+	if (vertexNormalsDisplayed){
+		renderer->drawVertexNormals(vertexPositions, vertexNormals, vertexNormalsSize);
+	}
+	if (faceNormalsDisplayed){
+		renderer->drawFaceNormals(vertexPositions, faceNormals, vertexNormalsSize);
+	}
+	if (boundingBoxDisplayed){
+		renderer->drawBoundingBox(boundingBoxVertices);
+	}
 }
+
+void MeshModel::drawingFeaturesStateSelection(ActivationElement e){
+	switch (e){
+	case	SHOW_VERTEX_NORMALS:vertexNormalsDisplayed	= true;		break;
+	case	SHOW_FACE_NORMALS:	faceNormalsDisplayed	= true;		break;
+	case	SHOW_BOUNDING_BOX:	boundingBoxDisplayed	= true;		break;
+	case	HIDE_VERTEX_NORMALS:vertexNormalsDisplayed	= false;	break;
+	case	HIDE_FACE_NORMALS:	faceNormalsDisplayed	= false;	break;
+	case	HIDE_BOUNDING_BOX:	boundingBoxDisplayed	= false;	break;
+	}
+}
+
 void MeshModel::rotate(vec3 vec){
 	/*create the rotating matrixs from the left:*/
 	//TODO: check if order is needed or all is cool:
@@ -224,28 +254,55 @@ void MeshModel::rotate(vec3 vec){
 	mat4 rotateMatY = RotateY(vec[Y_AXIS]);
 	mat4 rotateMatZ = RotateZ(vec[Z_AXIS]);
 	mat4 totalRotation = rotateMatZ * rotateMatY * rotateMatX;
-	transformation(totalRotation);
+	vertexTransformation(totalRotation);
+	normalTransformation(totalRotation);
 }
+
 void MeshModel::scale(vec3 vec){
 	/*create the scaling matrix from the left:*/
-	mat4 scalingMat = Scale(vec);
-	transformation(scalingMat);
+	mat4 vScalingMat = Scale(vec);
+	//init with the assumption that its a uniformic scaling:
+	mat4 nScalingMat = vScalingMat;
+	//update the vertex transformation mat:
+	vertexTransformation(vScalingMat);
+	//if we have a non-uniformic scaling, we need to change the scaling mat accordingly:
+	if (!(vec[X_AXIS] == vec[Y_AXIS] && vec[Z_AXIS] == vec[Y_AXIS])){
+		nScalingMat = Scale(vec3(1 / vec[X_AXIS], 1 / vec[Y_AXIS], 1 / vec[Z_AXIS]));
+	}
+	normalTransformation(nScalingMat);
+}
+
+void MeshModel::uniformicScale(GLfloat a){
+	/*create the scaling matrix from the left:*/
+	scale(vec3(a, a, a));
 }
 
 void MeshModel::translate(vec3 vec){
 	/*create the translation matrix from the left:*/
 	mat4 translationMat = Translate(vec);
-	transformation(translationMat);
+	vertexTransformation(translationMat);
 }
 
-void MeshModel::transformation(mat4 mat){
+void MeshModel::vertexTransformation(mat4& mat){
 	/*operate over the wanted transform:*/
 	if (actionType == OBJECT_ACTION){
-		mat *= selfTransform;
-		selfTransform = mat;
+		selfVertexTransform = mat * selfVertexTransform;
 	}
 	else{
-		mat *= worldTransform;
-		worldTransform = mat;
+		worldVertexTransform = mat * worldVertexTransform;
+	}
+}
+
+void MeshModel::normalTransformation(mat4& m4){
+	mat3 mat(	m4[0][0], m4[0][1], m4[0][2],
+				m4[1][0], m4[1][1], m4[1][2],
+				m4[2][0], m4[2][1], m4[2][2]);
+	/*operate over the wanted transform:*/	
+	if (actionType == OBJECT_ACTION){
+		
+		selfNormalTransform = mat * selfNormalTransform;
+	}
+	else{
+		worldNormalTransform = mat * worldNormalTransform;
 	}
 }

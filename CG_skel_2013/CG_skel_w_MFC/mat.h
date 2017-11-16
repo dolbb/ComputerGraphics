@@ -1,6 +1,8 @@
 #pragma once
 #include "vec.h"
 
+#define Error( str ) do { std::cerr << "[" __FILE__ ":" << __LINE__ << "] " \
+				    << str << std::endl; } while(0)
 
 //----------------------------------------------------------------------------
 //
@@ -274,11 +276,15 @@ class mat3 {
     //  --- Matrix / Vector operators ---
     //
 
-    vec3 operator * ( const vec3& v ) const {  // m * v
-	return vec3(dot(_m[0], v),
-				dot(_m[1], v),
-				dot(_m[2], v));
-    }
+	vec3 operator * (const vec3& v) const {  // m * v
+		return vec3(dot(_m[0], v),
+			dot(_m[1], v),
+			dot(_m[2], v));
+	}
+
+	friend vec3 operator * (const vec3& v, const mat3& m){  // v * m
+		return m * v;
+	}
 	
     //
     //  --- Insertion and Extraction Operators ---
@@ -389,10 +395,8 @@ class mat4 {
 	{ return mat4( s*_m[0], s*_m[1], s*_m[2], s*_m[3] ); }
 
     mat4 operator / ( const GLfloat s ) const {
-
-	
-	GLfloat r = GLfloat(1.0) / s;
-	return *this * r;
+		GLfloat r = GLfloat(1.0) / s;
+		return *this * r;
     }
 
     friend mat4 operator * ( const GLfloat s, const mat4& m )
@@ -517,22 +521,20 @@ mat4 transpose( const mat4& A ) {
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#define Error( str ) do { std::cerr << "[" __FILE__ ":" << __LINE__ << "] " \
-				    << str << std::endl; } while(0)
-
-inline
+/* following function was given to us and was changed to a mat4 operator.
 vec4 mvmult( const mat4& a, const vec4& b )
 {
     Error( "replace with vector matrix multiplcation operator" );
 
     vec4 c;
     int i, j;
-    for(i=0; i<4; i++) {
-	c[i] =0.0;
-	for(j=0;j<4;j++) c[i]+=a[i][j]*b[j];
+	for (i = 0 ; i<4 ; ++i) {
+		c[i] = 0.0;
+		for(j=0;j<4;j++) 
+			c[i]+=a[i][j]*b[j];
     }
     return c;
-}
+}*/
 
 //----------------------------------------------------------------------------
 //

@@ -11,12 +11,10 @@ class Model {
 public:
 	virtual ~Model() {}
 	void virtual draw(Renderer *renderer) = 0;
-	const string getName()
-	{
+	const string getName(){
 		return name;
 	}
-	void setName(const string chosenName)
-	{
+	void setName(const string chosenName){
 		name = chosenName;
 	}
 protected:

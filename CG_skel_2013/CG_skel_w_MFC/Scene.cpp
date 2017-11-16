@@ -42,18 +42,21 @@ void Scene::createCamera()
 
 void Scene::draw()
 {
-	// 1. Send the renderer the current camera transform and the projection
-	// 2. Tell all models to draw themselves
-	//TODO: use a proper matrix for both these funcs:
+	//check if we have nothing to draw:
+	if (models.empty()){return;}
+
+	//create and init m to be the camera transformation mat:
 	mat4 m;
+	//TODO: CALL activeCamera->setTransformation(m);
+	// 1. Send the renderer the current camera transform and the projection:
 	m_renderer->SetCameraTransform(m);
-	m_renderer->SetProjection(m);
-	if (models.empty()){
-		return;
-	}
+	
+	// 2. Tell all models to draw themselves:
 	for (map<string,Model*>::iterator it = models.begin(); it != models.end(); ++it){
 		it->second->draw(m_renderer);
 	}
+
+	// 3. activate the drawing:
 	m_renderer->SwapBuffers();
 }
 

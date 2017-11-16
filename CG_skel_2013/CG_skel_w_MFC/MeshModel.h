@@ -4,16 +4,19 @@
 #include "mat.h"
 #include <string>
 
-#define BOX_VERTICES 8
+#define BOX_VERTICES_NUM 8
 #define FACES_NUM_IN_PYRAMID 6
 #define VERTEX_NUM_IN_FACE 3
 
 using namespace std;
 
 enum axis{ X_AXIS, Y_AXIS, Z_AXIS };
+enum ActivationElement{ 
+	SHOW_VERTEX_NORMALS, SHOW_FACE_NORMALS, SHOW_BOUNDING_BOX ,
+	HIDE_VERTEX_NORMALS, HIDE_FACE_NORMALS, HIDE_BOUNDING_BOX
+};
 
-class MeshModel : public Model
-{
+class MeshModel : public Model{
 private:
 	struct FaceIdcs
 	{
@@ -56,9 +59,8 @@ private:
 	void initVertexNormals(vector<FaceIdcs>& faces, vector<vec3>& normals);
 	void initFaceNormals(vector<FaceIdcs>& faces, vector<vec3>& vertices);
 	void initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices);
-
-	enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
 protected :
+	enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
 	MeshModel() {}
 	/*
 		in this section we save data in divisions per face - meaning vertex_positions is all the vertexes
@@ -70,27 +72,32 @@ protected :
 	*/
 	vec3* vertexPositions;
 	int	  vertexPositionsSize;
+	bool vertexNormalsDisplayed;
 	vec3* vertexNormals;
 	int   vertexNormalsSize;
 	/*
 		face_normals and bounding box are calculated in the constructor, and are saved for further use.
 		indexing in face_normals match the normals indexes as given in the obj file.
 	*/
+	bool faceNormalsDisplayed;
 	vec3* faceNormals;
 	int   faceNormalsSize;
-	
 	/*
 		boundingBoxDisplayed == true <=> bounding box should be drawn.
+		index in the boundingBoxVertices is the xyz value inside as 0 is min value and 1 is
+		max value.
+		for example: if we want x=min, y=min, z=max we shall access cell xyz=001=1.
 	*/
 	bool boundingBoxDisplayed;
-	vec3 boundingBoxVertices[BOX_VERTICES];
+	vec3 boundingBoxVertices[BOX_VERTICES_NUM];
 	/*
 		the following matrixes operate as the transformation functions, over the data
 	*/
-	mat4 worldTransform;
-	mat4 selfTransform;
-	//TODO: check if needed:
-	mat3 normalTransform;
+	mat4 worldVertexTransform;
+	mat4 selfVertexTransform;
+	
+	mat3 worldNormalTransform;
+	mat3 selfNormalTransform;
 	/*
 		actionType will determine if an operator should be in world frame or self frame.
 	*/
@@ -101,21 +108,23 @@ public:
 	~MeshModel(void);
 	void loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>& vertices, vector<vec3>& normals);
 	void draw(Renderer *renderer);
-
+	void drawingFeaturesStateSelection(ActivationElement e);
 	/*
-	the following functions will check worldAction flag and will change the propper matrix accordingly
+		the following functions will check worldAction flag and will change the propper matrix accordingly
 	*/
 	void rotate(vec3 vec);
 	void scale(vec3 vec);
+	void uniformicScale(GLfloat a);
 	void translate(vec3 vec);
-	void transformation(mat4 mat);
+	void vertexTransformation(mat4& mat);
+	void normalTransformation(mat4& m4);
 };
 
 /*=======================================================
 		NEW CLASS PrimMeshModel - MANUAL MESHMODEL:
 =======================================================*/
 
-class PrimMeshModel : MeshModel
+class PrimMeshModel : public MeshModel
 {
 	PrimMeshModel(){
 		/*init the fields needed to make a pyramid:*/
@@ -148,6 +157,7 @@ class PrimMeshModel : MeshModel
 		vertexPositions[9]	=	vHead;
 		vertexPositions[10] =	vLeg2;
 		vertexPositions[11] =	vLeg1;
+		
 		/*bottom of pyramid divided into 2 triangles:*/
 		vertexPositions[12] =	vLeg1;
 		vertexPositions[13] =	vLeg3;

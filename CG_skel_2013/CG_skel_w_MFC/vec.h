@@ -553,9 +553,4 @@ inline vec3 cross(const vec4& a, const vec4& b )
 		 a.x * b.y - a.y * b.x );
 }
 
-vec2 vec4to2(const vec4& v)
-{
-	return vec2(v.x, v.y);
-}
-
 //----------------------------------------------------------------------------
