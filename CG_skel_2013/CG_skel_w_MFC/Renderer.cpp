@@ -73,6 +73,7 @@ vec2 Renderer::processVertex(vec3 vertex)
 	mat4 pipline = projection*cameraTransform*objectTransform;
 	homogenous = pipline*homogenous;
 	homogenous / homogenous[w];
+	return vec4to2(homogenous);
 }
 
 bool isBoundingBoxEdge(int i, int j)
