@@ -236,14 +236,11 @@ void MeshModel::draw(Renderer *renderer){
 	}
 }
 
-void MeshModel::drawingFeaturesStateSelection(ActivationElement e){
+void MeshModel::featuresStateSelection(ActivationElement e){
 	switch (e){
-	case	SHOW_VERTEX_NORMALS:vertexNormalsDisplayed	= true;		break;
-	case	SHOW_FACE_NORMALS:	faceNormalsDisplayed	= true;		break;
-	case	SHOW_BOUNDING_BOX:	boundingBoxDisplayed	= true;		break;
-	case	HIDE_VERTEX_NORMALS:vertexNormalsDisplayed	= false;	break;
-	case	HIDE_FACE_NORMALS:	faceNormalsDisplayed	= false;	break;
-	case	HIDE_BOUNDING_BOX:	boundingBoxDisplayed	= false;	break;
+	case	TOGGLE_VERTEX_NORMALS:vertexNormalsDisplayed = !vertexNormalsDisplayed;	break;
+	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = !faceNormalsDisplayed;	break;
+	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed = !boundingBoxDisplayed;	break;
 	}
 }
 

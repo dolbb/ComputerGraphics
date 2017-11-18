@@ -4,6 +4,82 @@
 #include <string>
 
 using namespace std;
+#define SCALE_FACTOR		0.01
+#define TRANSLATE_FACTOR	1.0
+#define ROTATE_FACTOR		1.0
+#define ZERO_GLFLOAT		0.0
+
+/*========================================================
+				camera implementation
+========================================================*/
+
+Camera::Camera() : cameraPyramid(new PrimMeshModel){}
+
+//TODO: check if needed or even ever called:
+void Camera::setTransformation(const mat4& transform){
+	cTransform = transform;
+}
+
+void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
+	//TODO: remember to update the pyramid accordingly.
+	vec4 n = normalize(eye - at);
+	vec4 u = normalize(cross(up, n));
+	vec4 v = normalize(cross(n,u));
+	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
+	mat4 C(u, v, n, t);
+	cTransform = C * Translate(-eye);
+}
+
+void Camera::Ortho(const float left, const float right, const float bottom,
+					const float top, const float zNear, const float zFar){
+	mat4 T = Translate(-(right+left)/2, -(bottom,top)/2 , zNear+zFar);
+	mat4 S = Scale(2 / (right - left), 2 / (top - bottom), 2 / (zNear - zFar));
+	mat4 M;
+	M[2][2] = 0.0;
+	projection = M * S * T;
+}
+
+void Camera::Frustum(const float left, const float right, const float bottom,
+						const float top, const float zNear, const float zFar){
+	//create H = a sheering mat to symmetrize the frustrum:
+	mat4 H;
+	H[0][2] = -(left + right) / (2 * zNear);
+	H[1][2] = -(top + bottom) / (2 * zNear);
+	
+	//create S = a scaling mat to set the angle of view to 45 deg:
+	mat4 S;
+	S[0][0] = -2 * zNear / (right - left);
+	S[1][1] = -2 * zNear / (top - bottom);
+	
+	//create N = a normalizing mat to transform z into [-1,1] range:
+	mat4 N;
+	GLfloat alpha = (zFar + zNear) / (zFar - zNear);
+	GLfloat beta = (2 * zFar * zNear) / (zFar - zNear);;
+	N[2][2] = alpha;
+	N[2][3] = beta;
+	N[3][2] = -1;
+	N[3][3] = 0;
+
+	//eventually save all to projection mat.
+	projection = N * S * H;
+}
+
+void Camera::Perspective(const float fovy, const float aspect, const float zNear,
+	const float zFar){
+
+}
+
+void Camera::draw(Renderer *renderer){
+	cameraPyramid->draw(renderer);
+}
+
+mat4 Camera::getTotalTransformation(){
+	return projection*cTransform;
+}
+
+/*========================================================
+					scene implementation
+========================================================*/
 void Scene::loadOBJModel(string fileName)
 {
 	MeshModel *model = new MeshModel(fileName);
@@ -46,9 +122,9 @@ void Scene::draw()
 	if (models.empty()){return;}
 
 	//create and init m to be the camera transformation mat:
-	mat4 m;
-	//TODO: CALL activeCamera->setTransformation(m);
-	// 1. Send the renderer the current camera transform and the projection:
+	mat4 m = activeCamera->getTotalTransformation();
+
+	// 1. Send the renderer the current camera transform and the projection combination mat:
 	m_renderer->SetCameraTransform(m);
 	
 	// 2. Tell all models to draw themselves:
@@ -57,6 +133,12 @@ void Scene::draw()
 	}
 
 	// 3. activate the drawing:
+	m_renderer->SwapBuffers();
+}
+
+void Scene::drawDemo()
+{
+	m_renderer->SetDemoBuffer();
 	m_renderer->SwapBuffers();
 }
 
@@ -112,8 +194,63 @@ void Scene::selectActiveCamera()
 	cout << "the camera " << chosenObject << " was selected succesfully" << endl;
 }
 
-void Scene::drawDemo()
-{
-	m_renderer->SetDemoBuffer();
-	m_renderer->SwapBuffers();
+void Scene::featuresStateSelection(ActivationElement e){
+	(static_cast<MeshModel*>(activeModel))->featuresStateSelection(e);
+}
+
+void Scene::addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name){
+	PrimMeshModel* pyramidMesh = new PrimMeshModel();
+	models.insert(pair<string, Model*>(name, pyramidMesh));
+}
+
+void Scene::operate(OperationType type, int dx, int dy, Frames frame){
+	switch (frame){
+	case MODEL: handleModelFrame(type, dx, dy); break;
+	case WORLD: handleWorldFrame(type, dx, dy); break;
+	case CAMERA_POSITION: handleCameraPosFrame(type, dx, dy); break;
+	case CAMERA_VIEW: handleCameraViewFrame(type, dx, dy); break;
+	}
+	draw();
+}
+
+void Scene::handleModelFrame(OperationType type, int dx, int dy){
+	MeshModel* model = static_cast<MeshModel*>(activeModel);
+	switch (type){
+		//TODO: FILL IN THE CASES:
+	case TRANSLATE:
+	case ROTATE: 
+	case SCALE: 
+	}
+}
+void Scene::handleWorldFrame(OperationType type, int dx, int dy){
+	switch (type){
+		//TODO: FILL IN THE CASES:
+	case TRANSLATE:
+	case ROTATE:
+	case SCALE:
+	}
+}
+void Scene::handleCameraPosFrame(OperationType type, int dx, int dy){
+	switch (type){
+		//TODO: FILL IN THE CASES:
+	case TRANSLATE:
+	case ROTATE:
+	case SCALE:
+	}
+}
+void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
+	switch (type){
+		//TODO: FILL IN THE CASES:
+	case TRANSLATE: 
+	case ROTATE: 
+	case SCALE:
+	}
+}
+
+void Scene::setProjection(ProjectionType type, float* a){
+	switch (type){
+	case ORTHO:	activeCamera->Ortho(a[0], a[1], a[2], a[3], a[4], a[5]); break;
+	case FRUSTUM: activeCamera->Frustum(a[0], a[1], a[2], a[3], a[4], a[5]); break;
+	case PERSPECTIVE: activeCamera->Perspective(a[0], a[1], a[2], a[3]); break;
+	}
 }
