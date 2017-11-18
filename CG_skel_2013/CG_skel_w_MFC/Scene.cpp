@@ -66,7 +66,7 @@ void Camera::Frustum(const float left, const float right, const float bottom,
 
 void Camera::Perspective(const float fovy, const float aspect, const float zNear,
 	const float zFar){
-
+	//TODO: IMPLEMENT;
 }
 
 void Camera::draw(Renderer *renderer){
