@@ -4,16 +4,26 @@
 #include <string>
 
 using namespace std;
-#define SCALE_FACTOR		0.01
-#define TRANSLATE_FACTOR	1.0
-#define ROTATE_FACTOR		1.0
-#define ZERO_GLFLOAT		0.0
+#define SCALE_FACTOR		  0.01
+#define TRANSLATE_FACTOR	  1.0
+#define ROTATE_FACTOR		  1.0
+#define ZERO_GLFLOAT		  0.0
+#define DEFAULT_CAMERA_Z      100
+#define DEFAULT_CAMERA_LEFT   -100
+#define DEFAULT_CAMERA_RIGHT  100
+#define DEFAULT_CAMERA_TOP    100
+#define DEFAULT_CAMERA_BOTTOM -100
+#define DEFAULT_CAMERA_ZNEAR  0
+#define DEFAULT_CAMERA_ZFAR  -100
 
 /*========================================================
 				camera implementation
 ========================================================*/
 
-Camera::Camera() : cameraPyramid(new PrimMeshModel){}
+Camera::Camera() : cameraPyramid(new PrimMeshModel)
+{
+
+}
 
 //TODO: check if needed or even ever called:
 void Camera::setTransformation(const mat4& transform){
@@ -32,6 +42,12 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 
 void Camera::Ortho(const float left, const float right, const float bottom,
 					const float top, const float zNear, const float zFar){
+	if (right == left || top == bottom || zFar == zNear)
+	{
+		//prevent divide by 0
+		cout << "different values are required for the bounding points,the frustrum was not created" << endl;
+		return;
+	}
 	mat4 T = Translate(-(right+left)/2, -(bottom,top)/2 , zNear+zFar);
 	mat4 S = Scale(2 / (right - left), 2 / (top - bottom), 2 / (zNear - zFar));
 	mat4 M;
@@ -41,6 +57,13 @@ void Camera::Ortho(const float left, const float right, const float bottom,
 
 void Camera::Frustum(const float left, const float right, const float bottom,
 						const float top, const float zNear, const float zFar){
+	
+	if (right == left || top == bottom || zFar == zNear)
+	{
+		//prevent divide by 0
+		cout << "different values are required for the bounding points,the frustrum was not created" << endl;
+		return;
+	}
 	//create H = a sheering mat to symmetrize the frustrum:
 	mat4 H;
 	H[0][2] = -(left + right) / (2 * zNear);
@@ -73,8 +96,14 @@ void Camera::draw(Renderer *renderer){
 	cameraPyramid->draw(renderer);
 }
 
-mat4 Camera::getTotalTransformation(){
-	return projection*cTransform;
+mat4 Camera::getCameraProjection()
+{
+	return projection;
+}
+
+mat4 Camera::getCameraTransformation()
+{
+	return cTransform;
 }
 
 /*========================================================
@@ -92,10 +121,16 @@ void Scene::loadOBJModel(string fileName)
 		cout << "the chosen name already exists, please enter a new name: ";
 		cin >> chosenName;
 		model->setName(chosenName);
-		cout << endl;
 	}
 	pair<string,Model*> insertedObject = make_pair(chosenName,model);
 	models.insert(insertedObject);
+	cout << "the object " << chosenName << " has been loaded succesfully." << endl;
+	if (models.size() == 1)
+	{
+		activeModel = model;
+	}
+	refreshView();
+	draw();
 }
 
 void Scene::createCamera()
@@ -120,13 +155,14 @@ void Scene::draw()
 {
 	//check if we have nothing to draw:
 	if (models.empty()){return;}
-
-	//create and init m to be the camera transformation mat:
-	mat4 m = activeCamera->getTotalTransformation();
-
-	// 1. Send the renderer the current camera transform and the projection combination mat:
-	m_renderer->SetCameraTransform(m);
 	
+	// 1. Send the renderer the current camera transform and the projection
+	if (activeCamera != NULL)
+	{
+		m_renderer->SetCameraTransform(activeCamera->getCameraTransformation());
+		m_renderer->SetCameraTransform(activeCamera->getCameraProjection());
+	}	
+
 	// 2. Tell all models to draw themselves:
 	for (map<string,Model*>::iterator it = models.begin(); it != models.end(); ++it){
 		it->second->draw(m_renderer);
@@ -194,8 +230,11 @@ void Scene::selectActiveCamera()
 	cout << "the camera " << chosenObject << " was selected succesfully" << endl;
 }
 
+
 void Scene::featuresStateSelection(ActivationElement e){
 	(static_cast<MeshModel*>(activeModel))->featuresStateSelection(e);
+	refreshView();
+	draw();
 }
 
 void Scene::addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name){
@@ -218,32 +257,44 @@ void Scene::handleModelFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE:
+		break;
 	case ROTATE: 
+		break;
 	case SCALE: 
+		break;
 	}
 }
 void Scene::handleWorldFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE:
+		break;
 	case ROTATE:
+		break;
 	case SCALE:
+		break;
 	}
 }
 void Scene::handleCameraPosFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE:
+		break;
 	case ROTATE:
+		break;
 	case SCALE:
+		break;
 	}
 }
 void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE: 
+		break;
 	case ROTATE: 
+		break;
 	case SCALE:
+		break;
 	}
 }
 
@@ -253,4 +304,8 @@ void Scene::setProjection(ProjectionType type, float* a){
 	case FRUSTUM: activeCamera->Frustum(a[0], a[1], a[2], a[3], a[4], a[5]); break;
 	case PERSPECTIVE: activeCamera->Perspective(a[0], a[1], a[2], a[3]); break;
 	}
+}
+void Scene::refreshView()
+{
+	m_renderer->refresh();
 }

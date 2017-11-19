@@ -34,6 +34,7 @@ public:
 	Renderer(int width, int height);
 	~Renderer(void);
 	void Init();
+	void resizeBuffers(int chosenWidth, int chosenHeight);
 	vec2 processVertex(vec3 vertex);
 	void drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize);
 	void drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize);
@@ -49,4 +50,5 @@ public:
 	void ClearColorBuffer();
 	void ClearDepthBuffer();
 	void SetDemoBuffer();
+	void refresh();
 };

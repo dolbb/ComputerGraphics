@@ -116,6 +116,7 @@ public:
 	void translate(vec3 vec);
 	void vertexTransformation(mat4& mat);
 	void normalTransformation(mat4& m4);
+	const vec3& getCenterOfMass();
 };
 
 /*=======================================================

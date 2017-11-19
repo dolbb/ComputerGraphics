@@ -44,6 +44,9 @@ boundingBoxDisplayed(false), actionType(OBJECT_ACTION)
 	initFaceNormals(faces, vertices);
 	initBoundingBox(faces, vertices);
 	actionType = OBJECT_ACTION;
+	vertexNormalsDisplayed = false;
+	faceNormalsDisplayed = false;
+	boundingBoxDisplayed = false;
 }
 
 MeshModel::~MeshModel(void)
@@ -85,10 +88,6 @@ void MeshModel::loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>&
 		if (lineType == "#" || lineType == "") 
 		{
 			continue;
-		}
-		else
-		{
-			cout<< "Found unknown line Type \"" << lineType << "\"";
 		}
 	}
 }
@@ -218,29 +217,39 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 	}
 }
 
+const vec3& MeshModel::getCenterOfMass()
+{
+	vec3 mass;
+	for (int i = 0; i < vertexPositionsSize; i++)
+	{
+		mass += vertexPositions[i];
+	}
+	return mass / vertexPositionsSize;
+}
+
 void MeshModel::draw(Renderer *renderer){
 	mat4 vertexTransMat = worldVertexTransform * selfVertexTransform;
 	mat3 normalTransMat = worldNormalTransform * selfNormalTransform;
 	//TODO: check if normalTransform needs any manipulation(or during each transformation?).
 	renderer->SetObjectMatrices(vertexTransMat, normalTransMat);
 	//draw all the needed objects:
-	renderer->drawTriangles(vertexPositions, vertexPositionsSize);
-	if (vertexNormalsDisplayed){
-		renderer->drawVertexNormals(vertexPositions, vertexNormals, vertexNormalsSize);
-	}
-	if (faceNormalsDisplayed){
-		renderer->drawFaceNormals(vertexPositions, faceNormals, vertexNormalsSize);
-	}
-	if (boundingBoxDisplayed){
-		renderer->drawBoundingBox(boundingBoxVertices);
-	}
+		renderer->drawTriangles(vertexPositions, vertexPositionsSize);
+		if (vertexNormalsDisplayed){
+			renderer->drawVertexNormals(vertexPositions, vertexNormals, vertexNormalsSize);
+		}
+		if (faceNormalsDisplayed){
+			renderer->drawFaceNormals(vertexPositions, faceNormals, vertexNormalsSize);
+		}
+		if (boundingBoxDisplayed){
+			renderer->drawBoundingBox(boundingBoxVertices);
+		}
 }
 
 void MeshModel::featuresStateSelection(ActivationElement e){
 	switch (e){
-	case	TOGGLE_VERTEX_NORMALS:vertexNormalsDisplayed = !vertexNormalsDisplayed;	break;
-	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = !faceNormalsDisplayed;	break;
-	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed = !boundingBoxDisplayed;	break;
+	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = !vertexNormalsDisplayed;	break;
+	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed   = !faceNormalsDisplayed;		break;
+	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed   = !boundingBoxDisplayed;		break;
 	}
 }
 

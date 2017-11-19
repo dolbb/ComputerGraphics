@@ -10,10 +10,12 @@
 enum axis{x,y,z};
 enum{w=3};
 
-Renderer::Renderer() :m_width(512), m_height(512)
+Renderer::Renderer() :m_width(512), m_height(512), projection()
 {
 	InitOpenGLRendering();
 	CreateBuffers(512,512);
+	//set projection to orthographic by default
+	projection[2][2] = 0;
 }
 Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
 {
@@ -22,7 +24,12 @@ Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
 }
 Renderer::~Renderer(void)
 {
-	delete m_outBuffer;
+	delete[] m_outBuffer;
+}
+void Renderer::resizeBuffers(int chosenWidth, int chosenHeight)
+{
+	delete[] m_outBuffer;
+	CreateBuffers(chosenWidth, chosenHeight);
 }
 void Renderer::SetCameraTransform(const mat4& chosenCameraTransform)
 {
@@ -52,15 +59,6 @@ void Renderer::SetDemoBuffer()
 		m_outBuffer[INDEX(m_width, 256, i, 0)] = 1;
 		m_outBuffer[INDEX(m_width, 256, i, 1)] = 0;
 		m_outBuffer[INDEX(m_width, 256, i, 2)] = 0;
-
-	}
-	//horizontal line
-	for (int i = 0; i<m_width; i++)
-	{
-		m_outBuffer[INDEX(m_width, i, 256, 0)] = 1;
-		m_outBuffer[INDEX(m_width, i, 256, 1)] = 0;
-		m_outBuffer[INDEX(m_width, i, 256, 2)] = 1;
-
 	}
 }
 /*
@@ -72,8 +70,12 @@ vec2 Renderer::processVertex(vec3 vertex)
 	vec4 homogenous = vertex;
 	mat4 pipline = projection*cameraTransform*objectTransform;
 	homogenous = pipline * homogenous;
-	homogenous / homogenous[w];
-	return vec2(homogenous[x], homogenous[y]);
+	//normal display coordinates
+	homogenous /= homogenous[w];
+	//convert to screen coordinates
+	int xScreen = (homogenous[x] + 1)*(m_width / 2);
+	int yScreen = (homogenous[y] + 1)*(m_height / 2);
+	return vec2(xScreen, yScreen);
 }
 
 bool isBoundingBoxEdge(int i, int j)
@@ -102,7 +104,7 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
 	{
 		faceCenter = vec3((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3);
-		drawLine(processVertex(faceCenter), processVertex(faceCenter + faceNormals[currentFace]));
+		drawLine(processVertex(faceCenter), processVertex(normalize(faceCenter + faceNormals[currentFace])));
 	}
 }
 
@@ -144,9 +146,9 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 }
 void Renderer::plotPixel(int x, int y, float* m_outBuffer)
 {
-	m_outBuffer[INDEX(m_width, x, y, 0)] = 0;
-	m_outBuffer[INDEX(m_width, x, y, 1)] = 0;
-	m_outBuffer[INDEX(m_width, x, y, 2)] = 0;
+	m_outBuffer[INDEX(m_width, x, y, 0)] = 255;
+	m_outBuffer[INDEX(m_width, x, y, 1)] = 255;
+	m_outBuffer[INDEX(m_width, x, y, 2)] = 255;
 }
 /*
 	setLineInBuffer will update the output buffer with a line corresponding to the data in lineParameters array using
@@ -204,7 +206,7 @@ void Renderer::drawLine(vec2 v0, vec2 v1)
 	int xMin = v0[x] <= v1[x] ? v0[x] : v1[x];
 	int xMax = v0[x] >= v1[x] ? v0[x] : v1[x];
 	int yMin = v0[y] <= v1[y] ? v0[y] : v1[y];
-	int yMax = v0[y] <= v1[y] ? v0[y] : v1[y];
+	int yMax = v0[y] >= v1[y] ? v0[y] : v1[y];
 	float slope = 0;
 	int verticalDirection, horizontalDirection;
 	setDirections(slope, verticalDirection, horizontalDirection);
@@ -316,4 +318,17 @@ void Renderer::SwapBuffers()
 	a = glGetError();
 	glutSwapBuffers();
 	a = glGetError();
+}
+void Renderer::refresh()
+{
+	for (int i = 0; i < m_width; i++)
+	{
+		for (int j = 0; j < m_height; j++)
+		{
+			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
+		}
+	}
+	SwapBuffers();
 }
