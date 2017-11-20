@@ -60,6 +60,7 @@ void display( void )
 void reshape( int width, int height )
 {
 	renderer->resizeBuffers(width, height);
+	scene->refreshView();
 	scene->draw();
 }
 

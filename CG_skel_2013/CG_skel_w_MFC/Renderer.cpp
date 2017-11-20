@@ -32,15 +32,18 @@ void Renderer::resizeBuffers(int chosenWidth, int chosenHeight)
 void Renderer::SetCameraTransform(const mat4& chosenCameraTransform)
 {
 	cameraTransform = chosenCameraTransform;
+	updateTotalPipline();
 }
 void Renderer::SetProjection(const mat4& chosenProjection)
 {
 	projection = chosenProjection;
+	updateTotalPipline();
 }
 void Renderer::SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& chosenNormalTransform)
 {
 	objectTransform = chosenObjectTransform;
 	normalTransform = chosenNormalTransform;
+	updateTotalPipline();
 }
 void Renderer::CreateBuffers(int width, int height)
 {
@@ -51,12 +54,22 @@ void Renderer::CreateBuffers(int width, int height)
 }
 void Renderer::SetDemoBuffer()
 {
-	//vertical line
+	//cout << m_width << endl << m_height << endl;
+	
+	//horizontal line
 	for (int i = 0; i<m_width; i++)
 	{
-		m_outBuffer[INDEX(m_width, 256, i, 0)] = 1;
-		m_outBuffer[INDEX(m_width, 256, i, 1)] = 0;
-		m_outBuffer[INDEX(m_width, 256, i, 2)] = 0;
+		m_outBuffer[INDEX(m_width, i, m_height / 2, 0)] = 1;
+		m_outBuffer[INDEX(m_width, i, m_height / 2, 1)] = 0;
+		m_outBuffer[INDEX(m_width, i, m_height / 2, 2)] = 0;
+	}
+
+	//vertical line
+	for (int i = 0; i<m_height; i++)
+	{
+		m_outBuffer[INDEX(m_width, m_width / 2, i, 0)] = 1;
+		m_outBuffer[INDEX(m_width, m_width / 2, i, 1)] = 0;
+		m_outBuffer[INDEX(m_width, m_width / 2, i, 2)] = 0;
 	}
 }
 /*
@@ -66,8 +79,7 @@ void Renderer::SetDemoBuffer()
 vec2 Renderer::processVertex(vec3 vertex)
 {
 	vec4 homogenous = vertex;
-	mat4 pipline = projection*cameraTransform*objectTransform;
-	homogenous = pipline * homogenous;
+	homogenous = totalPipline * homogenous;
 	//normal display coordinates
 	homogenous /= homogenous[w];
 	//convert to screen coordinates
@@ -144,6 +156,7 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 }
 void Renderer::plotPixel(int x, int y, float* m_outBuffer)
 {
+	if (x < 0 || x > m_width || y < 0 || y > m_height){ return; }
 	m_outBuffer[INDEX(m_width, x, y, 0)] = 255;
 	m_outBuffer[INDEX(m_width, x, y, 1)] = 255;
 	m_outBuffer[INDEX(m_width, x, y, 2)] = 255;
@@ -162,32 +175,25 @@ void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizont
 	int deltaNe = 2 * verticalDelta - 2 * horizontalDelta;
 	int y = yMin;
 	int x = xMin;
-	if (swapped)
-	{
+	if (swapped){
 		plotPixel(y, x, m_outBuffer);
 	}
-	else
-	{
+	else{
 		plotPixel(x, y, m_outBuffer);
 	}
 	x += horizontalDirection;
-	for (; x < xMax; x+=horizontalDirection)
-	{
-		if (d < 0)
-		{
+	for (; x < xMax; x+=horizontalDirection){
+		if (d < 0){
 			d += deltaE;
 		}
-		else
-		{
+		else{
 			y += verticalDirection;
 			d += deltaNe;
 		}
-		if (swapped)
-		{
+		if (swapped){
 			plotPixel(y, x, m_outBuffer);
 		}
-		else
-		{
+		else{
 			plotPixel(x, y, m_outBuffer);
 		}
 	}
@@ -266,6 +272,10 @@ void Renderer::drawLine(vec2 v0, vec2 v1)
 			setLineInBuffer(yMax, yMin, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
 		}
 	}
+}
+
+void Renderer::updateTotalPipline(){
+	totalPipline = projection*cameraTransform*objectTransform;
 }
 
 /////////////////////////////////////////////////////

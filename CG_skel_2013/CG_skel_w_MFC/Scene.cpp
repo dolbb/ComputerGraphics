@@ -153,7 +153,7 @@ void Scene::draw()
 	if (activeCamera != NULL)
 	{
 		m_renderer->SetCameraTransform(activeCamera->getCameraTransformation());
-		m_renderer->SetCameraTransform(activeCamera->getCameraProjection());
+		m_renderer->SetProjection(activeCamera->getCameraProjection());
 	}	
 
 	// 2. Tell all models to draw themselves:

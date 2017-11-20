@@ -94,8 +94,7 @@ private:
 	void handleCameraViewFrame(OperationType type, int dx, int dy);
 public:
 	Scene(){};
-	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(NULL), activeModel(NULL) {
-		activeCamera = new Camera();
+	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera), activeModel(NULL) {
 		activeCamera->Ortho(DEFAULT_LEFT, DEFAULT_RIGHT, DEFAULT_BOTTOM, DEFAULT_TOP, DEFAULT_ZNEAR, DEFAULT_ZFAR);
 		pair<string, Camera*> insertedObject = make_pair("Default camera", activeCamera);
 		cameras.insert(insertedObject);
