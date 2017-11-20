@@ -162,7 +162,14 @@ void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizont
 	int deltaNe = 2 * verticalDelta - 2 * horizontalDelta;
 	int y = yMin;
 	int x = xMin;
-	plotPixel(x, y, m_outBuffer);
+	if (swapped)
+	{
+		plotPixel(y, x, m_outBuffer);
+	}
+	else
+	{
+		plotPixel(x, y, m_outBuffer);
+	}
 	x += horizontalDirection;
 	for (; x < xMax; x+=horizontalDirection)
 	{
@@ -223,8 +230,9 @@ void Renderer::drawLine(vec2 v0, vec2 v1)
 	else
 	{
 		swapped = 1;
-		setDirections(slope, verticalDirection, horizontalDirection);
-		setLineInBuffer(xMin, xMax, yMin, yMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
+		horizontalDirection = 1;
+		verticalDirection = 1;
+		setLineInBuffer(yMin, yMax, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
 		return;
 	}
 	if (slope >= -1 && slope <= 1)
