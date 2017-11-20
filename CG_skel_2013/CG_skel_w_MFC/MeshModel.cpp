@@ -228,6 +228,7 @@ const vec3& MeshModel::getCenterOfMass()
 }
 
 void MeshModel::draw(Renderer *renderer){
+	if (renderer == NULL){ return; }
 	mat4 vertexTransMat = worldVertexTransform * selfVertexTransform;
 	mat3 normalTransMat = worldNormalTransform * selfNormalTransform;
 	//TODO: check if normalTransform needs any manipulation(or during each transformation?).

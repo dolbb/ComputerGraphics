@@ -15,8 +15,7 @@ Renderer::Renderer() :m_width(512), m_height(512), projection()
 	InitOpenGLRendering();
 	CreateBuffers(512,512);
 }
-Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
-{
+Renderer::Renderer(int width, int height){
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
 }
@@ -27,6 +26,7 @@ Renderer::~Renderer(void)
 void Renderer::resizeBuffers(int chosenWidth, int chosenHeight)
 {
 	delete[] m_outBuffer;
+	m_outBuffer = NULL;
 	CreateBuffers(chosenWidth, chosenHeight);
 }
 void Renderer::SetCameraTransform(const mat4& chosenCameraTransform)
@@ -51,22 +51,19 @@ void Renderer::CreateBuffers(int width, int height)
 	m_height=height;
 	CreateOpenGLBuffer(); //Do not remove this line.
 	m_outBuffer = new float[3*m_width*m_height];
+	refresh();
 }
 void Renderer::SetDemoBuffer()
-{
-	//cout << m_width << endl << m_height << endl;
-	
+{	
 	//horizontal line
-	for (int i = 0; i<m_width; i++)
-	{
+	for (int i = 0; i<m_width; i++){
 		m_outBuffer[INDEX(m_width, i, m_height / 2, 0)] = 1;
 		m_outBuffer[INDEX(m_width, i, m_height / 2, 1)] = 0;
 		m_outBuffer[INDEX(m_width, i, m_height / 2, 2)] = 0;
 	}
 
 	//vertical line
-	for (int i = 0; i<m_height; i++)
-	{
+	for (int i = 0; i<m_height; i++){
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 0)] = 1;
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 1)] = 0;
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 2)] = 0;
@@ -78,13 +75,15 @@ void Renderer::SetDemoBuffer()
 */
 vec2 Renderer::processVertex(vec3 vertex)
 {
-	vec4 homogenous = vertex;
-	homogenous = totalPipline * homogenous;
-	//normal display coordinates
-	homogenous /= homogenous[w];
+	vec4 homogenous(vertex);
+	vec4 presentedVec = totalPipline * homogenous;
+	
+	//normalize display coordinates
+	presentedVec /= presentedVec[w];
+	
 	//convert to screen coordinates
-	int xScreen = (homogenous[x] + 1)*(m_width / 2);
-	int yScreen = (homogenous[y] + 1)*(m_height / 2);
+	int xScreen = (presentedVec[x] + 1)*(m_width / 2);
+	int yScreen = (presentedVec[y] + 1)*(m_height / 2);
 	return vec2(xScreen, yScreen);
 }
 
@@ -109,6 +108,7 @@ bool isBoundingBoxEdge(int i, int j)
 
 void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize)
 {
+	if (faceNormals == NULL) {return;}
 	vec3 faceCenter;
 	vec3 v0, v1, v2;
 	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
@@ -120,6 +120,7 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 
 void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize)
 {
+	if (vertexNormals == NULL) { return; }
 	for (int i = 0; i < vertexSize; i++)
 	{
 		//TODO: CHECK IF NORMALIZE IS NEEDED
@@ -143,6 +144,7 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 
 void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 {
+	if (vertexPositions == NULL) { return; }
 	vec2 v0, v1, v2;
 	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
 	{
@@ -156,7 +158,7 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 }
 void Renderer::plotPixel(int x, int y, float* m_outBuffer)
 {
-	if (x < 0 || x > m_width || y < 0 || y > m_height){ return; }
+	if (m_outBuffer == NULL || x < 0 || x >= m_width || y < 0 || y >= m_height){ return; }
 	m_outBuffer[INDEX(m_width, x, y, 0)] = 255;
 	m_outBuffer[INDEX(m_width, x, y, 1)] = 255;
 	m_outBuffer[INDEX(m_width, x, y, 2)] = 255;
@@ -168,6 +170,7 @@ void Renderer::plotPixel(int x, int y, float* m_outBuffer)
 */
 void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizontalDirection, int verticalDirection,int swapped, float *m_outBuffer)
 {
+	if (m_outBuffer == NULL) { return; }
 	int verticalDelta = yMax - yMin;
 	int horizontalDelta = xMax - xMin;
 	int d = 2 * verticalDelta - horizontalDelta;

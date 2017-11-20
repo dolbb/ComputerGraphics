@@ -86,6 +86,7 @@ void Camera::Perspective(const float fovy, const float aspect, const float zNear
 }
 
 void Camera::draw(Renderer *renderer){
+	if (renderer == NULL) { return; }
 	cameraPyramid->draw(renderer);
 }
 
@@ -291,6 +292,7 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 }
 
 void Scene::setProjection(ProjectionType type, float* a){
+	if (a == NULL) { return; }
 	switch (type){
 	case ORTHO:	activeCamera->Ortho(a[0], a[1], a[2], a[3], a[4], a[5]); break;
 	case FRUSTUM: activeCamera->Frustum(a[0], a[1], a[2], a[3], a[4], a[5]); break;

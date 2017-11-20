@@ -341,9 +341,7 @@ int my_main( int argc, char **argv )
 	}
 	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 
-	
-	
-	renderer = new Renderer(512,512);
+	renderer = new Renderer();
 	scene = new Scene(renderer);
 	//----------------------------------------------------------------------------
 	// Initialize Callbacks
@@ -355,7 +353,6 @@ int my_main( int argc, char **argv )
 	glutReshapeFunc( reshape );
 	initMenu();
 	
-	scene->refreshView();
 	glutMainLoop();
 	delete scene;
 	delete renderer;
