@@ -14,8 +14,6 @@ Renderer::Renderer() :m_width(512), m_height(512), projection()
 {
 	InitOpenGLRendering();
 	CreateBuffers(512,512);
-	//set projection to orthographic by default
-	projection[2][2] = 0;
 }
 Renderer::Renderer(int width, int height) :m_width(width), m_height(height)
 {
@@ -165,6 +163,7 @@ void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizont
 	int y = yMin;
 	int x = xMin;
 	plotPixel(x, y, m_outBuffer);
+	x += horizontalDirection;
 	for (; x < xMax; x+=horizontalDirection)
 	{
 		if (d < 0)
@@ -203,41 +202,57 @@ void setDirections(float slope, int& verticalDirection, int& horizontalDirection
 
 void Renderer::drawLine(vec2 v0, vec2 v1)
 {
+	//set the end points of progression for horizontal and vertical axis
 	int xMin = v0[x] <= v1[x] ? v0[x] : v1[x];
 	int xMax = v0[x] >= v1[x] ? v0[x] : v1[x];
 	int yMin = v0[y] <= v1[y] ? v0[y] : v1[y];
 	int yMax = v0[y] >= v1[y] ? v0[y] : v1[y];
+
 	float slope = 0;
 	int verticalDirection, horizontalDirection;
-	setDirections(slope, verticalDirection, horizontalDirection);
 	int swapped = 0;
+
+	//prevent devision by 0, if dx=0 then the progression is in the y axis only
 	if (v1[x] - v0[x] != 0)
 	{
 		slope = ((v1[y] - v0[y]) / (v1[x] - v0[x])); //(y1-y0)/(x1-x0)
+		setDirections(slope, verticalDirection, horizontalDirection);
 	}
-	else{
+
+	//in this case we draw a line on the y axis.
+	else
+	{
 		swapped = 1;
+		setDirections(slope, verticalDirection, horizontalDirection);
 		setLineInBuffer(xMin, xMax, yMin, yMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
 		return;
 	}
 	if (slope >= -1 && slope <= 1)
 	{
+		//horizontal direction is positive x, vertical direction is positive y
 		if (slope >= 0 && slope <= 1)
 		{
 			setLineInBuffer(xMin, xMax, yMin, yMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
 		}
+
+		//horizontal direction is positive x, vertical direction is negative y
 		else
 		{
 			setLineInBuffer(xMin, xMax, yMax, yMin, horizontalDirection, verticalDirection, swapped, m_outBuffer);
 		}
 	}
+
+	//in this case we have slope>1 or slope<-1, x and y axis are swapped
 	else
 	{
 		swapped = 1;
+		//horizontal direction is positive y, vertical direction is positive x
 		if (slope > 1)
 		{
 			setLineInBuffer(yMin, yMax, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
 		}
+
+		//horizontal direction is negative y, vertical direction is positive x
 		else
 		{
 			setLineInBuffer(yMax, yMin, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);

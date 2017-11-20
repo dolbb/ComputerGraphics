@@ -8,13 +8,6 @@ using namespace std;
 #define TRANSLATE_FACTOR	  1.0
 #define ROTATE_FACTOR		  1.0
 #define ZERO_GLFLOAT		  0.0
-#define DEFAULT_CAMERA_Z      100
-#define DEFAULT_CAMERA_LEFT   -100
-#define DEFAULT_CAMERA_RIGHT  100
-#define DEFAULT_CAMERA_TOP    100
-#define DEFAULT_CAMERA_BOTTOM -100
-#define DEFAULT_CAMERA_ZNEAR  0
-#define DEFAULT_CAMERA_ZFAR  -100
 
 /*========================================================
 				camera implementation
@@ -218,7 +211,6 @@ void Scene::selectActiveCamera()
 	do
 	{
 		cout << "please enter the name of the camera you would like to select: ";
-		cout << endl;
 		cin >> chosenObject;
 		scanned = cameras.find(chosenObject) != cameras.end();
 		if (!scanned)

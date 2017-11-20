@@ -23,6 +23,13 @@ enum ProjectionType{
 	ORTHO, FRUSTUM, PERSPECTIVE
 };
 
+#define DEFAULT_LEFT   -1
+#define DEFAULT_RIGHT   1
+#define DEFAULT_BOTTOM -1
+#define DEFAULT_TOP     1
+#define DEFAULT_ZNEAR  -1
+#define DEFAULT_ZFAR    1
+
 class Model {
 protected:
 	string name;
@@ -87,7 +94,12 @@ private:
 	void handleCameraViewFrame(OperationType type, int dx, int dy);
 public:
 	Scene(){};
-	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(NULL), activeModel(NULL) {};
+	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(NULL), activeModel(NULL) {
+		activeCamera = new Camera();
+		activeCamera->Ortho(DEFAULT_LEFT, DEFAULT_RIGHT, DEFAULT_BOTTOM, DEFAULT_TOP, DEFAULT_ZNEAR, DEFAULT_ZFAR);
+		pair<string, Camera*> insertedObject = make_pair("Default camera", activeCamera);
+		cameras.insert(insertedObject);
+	};
 	void loadOBJModel(string fileName);
 	void createCamera();
 	void draw();
