@@ -28,7 +28,6 @@ void Camera::setTransformation(const mat4& transform){
 }
 
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
-	//TODO: remember to update the pyramid accordingly.
 	cEye = eye;
 	cAt = at;
 	cUp = up;
@@ -38,6 +37,14 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
 	mat4 C(u, v, n, t);
 	cTransform = C * Translate(-eye);
+
+	//TODO: remember to update the pyramid accordingly.
+	MeshModel* m = changeToMeshModel(cameraPyramid);
+	m->resetTransformations();
+	vec3 R(eye[0], eye[1], eye[2]);
+	vec3 T(eye[0], eye[1], eye[2]);
+	m->rotate(R);
+	m->translate(T);
 }
 
 void Camera::Ortho(const float left, const float right, const float bottom,
@@ -99,9 +106,6 @@ void Camera::draw(Renderer *renderer){
 
 void Camera::changePosition(vec3 v){
 	LookAt(v, cAt, cUp);
-	MeshModel* m = changeToMeshModel(cameraPyramid);
-	m->resetTransformations();
-	m->translate(v);
 }
 
 mat4 Camera::getCameraProjection()
@@ -226,6 +230,7 @@ void Scene::operate(OperationType type, int dx, int dy, Frames frame){
 	case WORLD: handleWorldFrame(type, dx, dy); break;
 	case CAMERA_POSITION: handleCameraPosFrame(type, dx, dy); break;
 	case CAMERA_VIEW: handleCameraViewFrame(type, dx, dy); break;
+	case ZOOM: handleZoom(type, dx, dy); break;
 	}
 	draw();
 }
@@ -239,6 +244,8 @@ void Scene::handleModelFrame(OperationType type, int dx, int dy){
 	case ROTATE: changeToMeshModel(activeModel)->rotate(vec3(dx, dy, 0));
 		break;
 	case SCALE: changeToMeshModel(activeModel)->scale(vec3(dx, dy, 1));
+		break;
+	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dx);
 		break;
 	}
 }
@@ -277,6 +284,10 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 		break;
 	}
 	activeCamera->setTransformation(A);
+}
+
+void Scene::handleZoom(OperationType type, int dx, int dy){
+	
 }
 
 void Scene::setProjection(ProjectionType type, float* a){

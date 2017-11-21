@@ -15,11 +15,11 @@ enum ActivationToggleElement{
 enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
 
 enum Frames{
-	MODEL, WORLD, CAMERA_POSITION, CAMERA_VIEW
+	MODEL, WORLD, CAMERA_POSITION, CAMERA_VIEW, ZOOM
 };
 
 enum OperationType{
-	TRANSLATE, ROTATE, SCALE
+	TRANSLATE, ROTATE, SCALE, UNIFORM_SCALE
 };
 
 enum ProjectionType{
@@ -103,6 +103,8 @@ private:
 	void handleWorldFrame(OperationType type, int dx, int dy);
 	void handleCameraPosFrame(OperationType type, int dx, int dy);
 	void handleCameraViewFrame(OperationType type, int dx, int dy);
+	void handleZoom(OperationType type, int dx, int dy);
+
 public:
 	Scene(){};
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera), activeModel(NULL) {
