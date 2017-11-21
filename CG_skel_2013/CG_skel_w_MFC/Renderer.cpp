@@ -7,13 +7,14 @@
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 #define TRIANGLE_VERTICES 3
 #define BOUNDING_BOX_VERTICES 8
+
 enum axis{x,y,z};
 enum{w=3};
 
-Renderer::Renderer() :m_width(512), m_height(512), projection()
+Renderer::Renderer() :m_width(DEFAULT_SCREEN_SIZE), m_height(DEFAULT_SCREEN_SIZE), projection()
 {
 	InitOpenGLRendering();
-	CreateBuffers(512,512);
+	CreateBuffers(DEFAULT_SCREEN_SIZE, DEFAULT_SCREEN_SIZE);
 }
 Renderer::Renderer(int width, int height){
 	InitOpenGLRendering();

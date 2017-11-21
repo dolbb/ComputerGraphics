@@ -5,6 +5,8 @@
 #include "mat.h"
 #include "GL/glew.h"
 
+#define DEFAULT_SCREEN_SIZE 1024
+
 using namespace std;
 class Renderer
 {

@@ -79,6 +79,7 @@ public:
 						const float zNear, const float zFar);
 	void draw(Renderer *renderer);
 	void changePosition(vec3);
+	void changeRelativePosition(vec3);
 	
 	//getters:
 	mat4 getCameraTransformation();

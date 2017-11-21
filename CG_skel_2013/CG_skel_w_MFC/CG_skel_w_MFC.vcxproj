@@ -98,6 +98,7 @@
   <ItemGroup>
     <ClCompile Include="CG_skel_w_MFC.cpp" />
     <ClCompile Include="InitShader.cpp" />
+    <ClCompile Include="InputDialog.cpp" />
     <ClCompile Include="MeshModel.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
@@ -109,6 +110,7 @@
   <ItemGroup>
     <ClInclude Include="CG_skel_w_MFC.h" />
     <ClInclude Include="InitShader.h" />
+    <ClInclude Include="InputDialog.h" />
     <ClInclude Include="mat.h" />
     <ClInclude Include="MeshModel.h" />
     <ClInclude Include="Renderer.h" />

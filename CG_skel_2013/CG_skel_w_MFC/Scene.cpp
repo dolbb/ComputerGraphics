@@ -39,12 +39,12 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	cTransform = C * Translate(-eye);
 
 	//TODO: remember to update the pyramid accordingly.
-	MeshModel* m = changeToMeshModel(cameraPyramid);
+	/*MeshModel* m = changeToMeshModel(cameraPyramid);
 	m->resetTransformations();
 	vec3 R(eye[0], eye[1], eye[2]);
 	vec3 T(eye[0], eye[1], eye[2]);
 	m->rotate(R);
-	m->translate(T);
+	m->translate(T);*/
 }
 
 void Camera::Ortho(const float left, const float right, const float bottom,
@@ -105,7 +105,11 @@ void Camera::draw(Renderer *renderer){
 }
 
 void Camera::changePosition(vec3 v){
-	LookAt(v, cAt, cUp);
+	LookAt(vec4(v), cAt, cUp);
+}
+
+void Camera::changeRelativePosition(vec3 v){
+	changePosition(v + vec3(cEye[0], cEye[1], cEye[2]));
 }
 
 mat4 Camera::getCameraProjection()
@@ -140,6 +144,7 @@ void Scene::loadOBJModel(string fileName)
 	string chosenName;
 	CCmdDialog name("Please enter your object's name");
 	CCmdDialog usedName("object's name is taken, enter a different name");
+	cout << "test2" << endl;
 	if (name.DoModal() == IDOK)
 	{
 		chosenName = name.GetCmd();
@@ -259,16 +264,20 @@ void Scene::handleWorldFrame(OperationType type, int dx, int dy){
 		break;
 	case SCALE: changeToMeshModel(activeModel)->scale(vec3(dx, dy, 1));
 		break;
+	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dx);
+		break;
 	}
 }
 void Scene::handleCameraPosFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
-	case TRANSLATE: 
+	case TRANSLATE: activeCamera->changeRelativePosition(vec3(-dx, -dy, 0));
 		break;
-	case ROTATE:
+	case ROTATE://dont think its relevant.
 		break;
 	case SCALE:
+		break;
+	case UNIFORM_SCALE:
 		break;
 	}
 }
@@ -281,6 +290,8 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 	case ROTATE: 
 		break;
 	case SCALE:
+		break;
+	case UNIFORM_SCALE:
 		break;
 	}
 	activeCamera->setTransformation(A);
