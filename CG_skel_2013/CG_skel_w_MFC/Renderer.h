@@ -5,7 +5,8 @@
 #include "mat.h"
 #include "GL/glew.h"
 
-#define DEFAULT_SCREEN_SIZE 1024
+#define DEFAULT_SCREEN_X 512
+#define DEFAULT_SCREEN_Y 512
 
 using namespace std;
 class Renderer
@@ -47,7 +48,7 @@ public:
 	void drawLine(vec2 v0, vec2 v1);
 	void updateTotalPipline();
 	void setLineInBuffer(int xMin, int xMax, int yMin, int yMax, int horizontalDirection, int verticalDirection, int swapped, float *m_outBuffer);
-	void plotPixel(int x, int y, float* m_outBuffer);
+	void plotPixel(int x, int y, float* m_outBuffer, vec3 RGB);
 	void SetCameraTransform(const mat4& chosenCameraTransform);
 	void SetProjection(const mat4& chosenProjection);
 	void SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& chosenNormalTransform);

@@ -235,7 +235,7 @@ void Scene::operate(OperationType type, int dx, int dy, Frames frame){
 	case WORLD: handleWorldFrame(type, dx, dy); break;
 	case CAMERA_POSITION: handleCameraPosFrame(type, dx, dy); break;
 	case CAMERA_VIEW: handleCameraViewFrame(type, dx, dy); break;
-	case ZOOM: handleZoom(type, dx, dy); break;
+	case ZOOM: handleZoom(dx); break;
 	}
 	draw();
 }
@@ -297,7 +297,7 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 	activeCamera->setTransformation(A);
 }
 
-void Scene::handleZoom(OperationType type, int dx, int dy){
+void Scene::handleZoom(int scaleSize){
 	
 }
 

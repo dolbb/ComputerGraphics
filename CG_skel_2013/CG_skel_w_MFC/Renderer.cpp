@@ -11,10 +11,10 @@
 enum axis{x,y,z};
 enum{w=3};
 
-Renderer::Renderer() :m_width(DEFAULT_SCREEN_SIZE), m_height(DEFAULT_SCREEN_SIZE), projection()
+Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), projection()
 {
 	InitOpenGLRendering();
-	CreateBuffers(DEFAULT_SCREEN_SIZE, DEFAULT_SCREEN_SIZE);
+	CreateBuffers(DEFAULT_SCREEN_X, DEFAULT_SCREEN_Y);
 }
 Renderer::Renderer(int width, int height){
 	InitOpenGLRendering();
@@ -56,7 +56,7 @@ void Renderer::CreateBuffers(int width, int height)
 }
 void Renderer::SetDemoBuffer()
 {	
-	//horizontal line
+/*	//horizontal line
 	for (int i = 0; i<m_width; i++){
 		m_outBuffer[INDEX(m_width, i, m_height / 2, 0)] = 1;
 		m_outBuffer[INDEX(m_width, i, m_height / 2, 1)] = 0;
@@ -68,7 +68,32 @@ void Renderer::SetDemoBuffer()
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 0)] = 1;
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 1)] = 0;
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 2)] = 0;
-	}
+	}*/
+	vec2 v(256, 256);
+	vec2 sX(100, 0);
+	vec2 bX(200, 0);
+	vec2 sY(0, 100);
+	vec2 bY(0, 200);
+	
+	drawLine(v, v + sX + sY);
+	drawLine(v, v + sX - sY);
+	drawLine(v, v - sX + sY);
+	drawLine(v, v - sX - sY);
+
+	drawLine(v, v + sX + bY);
+	drawLine(v, v + sX - bY);
+	drawLine(v, v - sX + bY);
+	drawLine(v, v - sX - bY);
+
+	drawLine(v, v + bX + sY);
+	drawLine(v, v + bX - sY);
+	drawLine(v, v - bX + sY);
+	drawLine(v, v - bX - sY);
+
+	drawLine(v, v + bX + bY);
+	drawLine(v, v + bX - bY);
+	drawLine(v, v - bX + bY);
+	drawLine(v, v - bX - bY);
 }
 /*
 	processVertex will get a 3d vector representing a vertex and will process it through the graphic pipeline,
@@ -157,12 +182,12 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 		drawLine(v1, v2);
 	}
 }
-void Renderer::plotPixel(int x, int y, float* m_outBuffer)
+void Renderer::plotPixel(int x, int y, float* m_outBuffer, vec3 RGB)
 {
 	if (m_outBuffer == NULL || x < 0 || x >= m_width || y < 0 || y >= m_height){ return; }
-	m_outBuffer[INDEX(m_width, x, y, 0)] = 255;
-	m_outBuffer[INDEX(m_width, x, y, 1)] = 255;
-	m_outBuffer[INDEX(m_width, x, y, 2)] = 255;
+	m_outBuffer[INDEX(m_width, x, y, 0)] = RGB[0];
+	m_outBuffer[INDEX(m_width, x, y, 1)] = RGB[1];
+	m_outBuffer[INDEX(m_width, x, y, 2)] = RGB[2];
 }
 /*
 	setLineInBuffer will update the output buffer with a line corresponding to the data in lineParameters array using
@@ -180,10 +205,10 @@ void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizont
 	int y = yMin;
 	int x = xMin;
 	if (swapped){
-		plotPixel(y, x, m_outBuffer);
+		plotPixel(y, x, m_outBuffer, vec3(0,255,0));
 	}
 	else{
-		plotPixel(x, y, m_outBuffer);
+		plotPixel(x, y, m_outBuffer, vec3(0, 255, 0));
 	}
 	x += horizontalDirection;
 	for (; x < xMax; x+=horizontalDirection){
@@ -195,10 +220,10 @@ void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizont
 			d += deltaNe;
 		}
 		if (swapped){
-			plotPixel(y, x, m_outBuffer);
+			plotPixel(y, x, m_outBuffer, vec3(0, 255, 0));
 		}
 		else{
-			plotPixel(x, y, m_outBuffer);
+			plotPixel(x, y, m_outBuffer, vec3(0, 255, 0));
 		}
 	}
 }

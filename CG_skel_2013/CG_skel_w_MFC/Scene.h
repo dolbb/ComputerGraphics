@@ -104,7 +104,7 @@ private:
 	void handleWorldFrame(OperationType type, int dx, int dy);
 	void handleCameraPosFrame(OperationType type, int dx, int dy);
 	void handleCameraViewFrame(OperationType type, int dx, int dy);
-	void handleZoom(OperationType type, int dx, int dy);
+	void handleZoom(int scaleSize);
 
 public:
 	Scene(){};
