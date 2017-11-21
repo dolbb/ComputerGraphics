@@ -1,46 +1,42 @@
-========================================================================
-    CONSOLE APPLICATION : CG_skel_w_MFC Project Overview
-========================================================================
 
-AppWizard has created this CG_skel_w_MFC application for you.
-
-This file contains a summary of what you will find in each of the files that
-make up your CG_skel_w_MFC application.
+To add input dialog boxes support to your project you need to:
 
 
-CG_skel_w_MFC.vcproj
-    This is the main project file for VC++ projects generated using an Application Wizard.
-    It contains information about the version of Visual C++ that generated the file, and
-    information about the platforms, configurations, and project features selected with the
-    Application Wizard.
+1. Copy the following files to the 'CG_skel_w_MFC' directory:
 
-CG_skel_w_MFC.cpp
-    This is the main application source file.
+	- InputDialog.cpp
 
-/////////////////////////////////////////////////////////////////////////////
-AppWizard has created the following resources:
+	- InputDialog.h
 
-CG_skel_w_MFC.rc
-    This is a listing of all of the Microsoft Windows resources that the
-    program uses.  It includes the icons, bitmaps, and cursors that are stored
-    in the RES subdirectory.  This file can be directly edited in Microsoft
-    Visual C++.
+	- Resource.h (replace the old one)
 
-Resource.h
-    This is the standard header file, which defines new resource IDs.
-    Microsoft Visual C++ reads and updates this file.
+	- CG_skel_w_MFC.rc (replace the old one)
 
-/////////////////////////////////////////////////////////////////////////////
-Other standard files:
 
-StdAfx.h, StdAfx.cpp
-    These files are used to build a precompiled header (PCH) file
-    named CG_skel_w_MFC.pch and a precompiled types file named StdAfx.obj.
+2. From within the solution, add to the CG_skel_w_MFC project - the header 'InputDialog.h' and
+   the source 'InputDialog.cpp' (as existing items).
 
-/////////////////////////////////////////////////////////////////////////////
-Other notes:
 
-AppWizard uses "TODO:" comments to indicate parts of the source code you
-should add to or customize.
+3. Clean and then build the project.
 
-/////////////////////////////////////////////////////////////////////////////
+4. How to use?
+   There are 3 dialog classes for you to choose frome:
+
+	- CCmdDialog (reads a string from the user)
+
+	- CXyzDialog (reads x, y, z from the user)
+
+	- CCmdXyzDialog (reads a string and x, y, z from the user)
+
+   When you wish to open a dialog with the user, you need to instansiate a dialog class, invoke the DoModal
+   method and when the user presses OK, retrieve the input with the 'Get' methods.
+
+   For example:
+
+   	CCmdXyzDialog dlg;
+	if (dlg.DoModal() == IDOK) {
+		string command = dlg.GetCmd();
+		vec3 v = dlg.GetXYZ();
+
+		...			
+	}

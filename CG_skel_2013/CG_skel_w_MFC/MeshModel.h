@@ -58,7 +58,6 @@ private:
 	void initFaceNormals(vector<FaceIdcs>& faces, vector<vec3>& vertices);
 	void initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices);
 protected :
-	enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
 	MeshModel() {}
 	/*
 		in this section we save data in divisions per face - meaning vertex_positions is all the vertexes
@@ -106,7 +105,8 @@ public:
 	~MeshModel(void);
 	void loadFile(string fileName, vector<FaceIdcs>& faces, vector<vec3>& vertices, vector<vec3>& normals);
 	void draw(Renderer *renderer);
-	void featuresStateSelection(ActivationElement e);
+	void featuresStateToggle(ActivationToggleElement e);
+	void frameActionSet(ActionType a);
 	/*
 		the following functions will check worldAction flag and will change the propper matrix accordingly
 	*/
@@ -117,6 +117,8 @@ public:
 	void vertexTransformation(mat4& mat);
 	void normalTransformation(mat4& m4);
 	const vec3& getCenterOfMass();
+	vec3* getBoundingBox();
+	void resetTransformations();
 };
 
 /*=======================================================

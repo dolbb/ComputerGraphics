@@ -219,12 +219,22 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 
 const vec3& MeshModel::getCenterOfMass()
 {
-	vec3 mass;
+/*	vec3 mass;
 	for (int i = 0; i < vertexPositionsSize; i++)
 	{
 		mass += vertexPositions[i];
 	}
-	return mass / vertexPositionsSize;
+	return mass / vertexPositionsSize;*/
+	GLfloat x = (boundingBoxVertices[4][0] + boundingBoxVertices[0][0]) / 2;
+	GLfloat y = (boundingBoxVertices[2][1] + boundingBoxVertices[0][1]) / 2;
+	GLfloat z = (boundingBoxVertices[1][2] + boundingBoxVertices[0][2]) / 2;
+
+	return vec3(x,y,z);
+}
+
+vec3* MeshModel::getBoundingBox()
+{
+	return boundingBoxVertices;
 }
 
 void MeshModel::draw(Renderer *renderer){
@@ -246,12 +256,16 @@ void MeshModel::draw(Renderer *renderer){
 		}
 }
 
-void MeshModel::featuresStateSelection(ActivationElement e){
+void MeshModel::featuresStateToggle(ActivationToggleElement e){
 	switch (e){
-	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = !vertexNormalsDisplayed;	break;
-	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed   = !faceNormalsDisplayed;		break;
-	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed   = !boundingBoxDisplayed;		break;
+	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = vertexNormals ? !vertexNormalsDisplayed : vertexNormalsDisplayed; break;
+	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = faceNormals ? !faceNormalsDisplayed : faceNormalsDisplayed ;	break;
+	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed = !boundingBoxDisplayed; break;
 	}
+}
+
+void MeshModel::frameActionSet(ActionType a){
+	actionType = a;
 }
 
 void MeshModel::rotate(vec3 vec){
@@ -312,4 +326,11 @@ void MeshModel::normalTransformation(mat4& m4){
 	else{
 		worldNormalTransform = mat * worldNormalTransform;
 	}
+}
+
+void MeshModel::resetTransformations(){
+	worldVertexTransform	=	mat4();
+	selfVertexTransform		=	mat4();
+	worldNormalTransform	=	mat3();
+	selfNormalTransform		=	mat3();
 }

@@ -5,11 +5,14 @@
 #include <string>
 #include <map>
 #include "Renderer.h"
+#include "InputDialog.h"
 using namespace std;
 
-enum ActivationElement{
+enum ActivationToggleElement{
 	TOGGLE_VERTEX_NORMALS, TOGGLE_FACE_NORMALS, TOGGLE_BOUNDING_BOX
 };
+
+enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
 
 enum Frames{
 	MODEL, WORLD, CAMERA_POSITION, CAMERA_VIEW
@@ -49,12 +52,15 @@ class Light {
 };
 
 class Camera : public Model {
-	vec3 position;
-	vec3 viewDirection;
-	vec3 upDirection;
 	mat4 cTransform;
 	mat4 projection;
+
 	Model* cameraPyramid;
+	
+	vec4 cEye;
+	vec4 cAt;
+	vec4 cUp;
+
 
 public:
 	Camera();
@@ -63,7 +69,6 @@ public:
 	}
 	void setTransformation(const mat4& transform);
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up );
-	void LookAtActiveModel();
 	void Ortho( const float left, const float right,
 				const float bottom, const float top,
 				const float zNear, const float zFar );
@@ -73,16 +78,22 @@ public:
 	void Perspective( const float fovy, const float aspect,
 						const float zNear, const float zFar);
 	void draw(Renderer *renderer);
+	void changePosition(vec3);
+	
+	//getters:
 	mat4 getCameraTransformation();
 	mat4 getCameraProjection();
-	const vec3& getPosition();
+	const vec3& getPosition();//TODO: CHECK IF NEEDED.
+	vec4 getEye();
+	vec4 getAt();
+	vec4 getUp();
 };
 
 class Scene {
 private:
 	map<string, Model*> models;
 	vector<Light*> lights;
-	map<string, Camera*> cameras;
+	vector<Camera*> cameras;
 	Renderer *m_renderer;
 
 	Model*  activeModel;
@@ -95,19 +106,19 @@ private:
 public:
 	Scene(){};
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera), activeModel(NULL) {
-		activeCamera->Ortho(DEFAULT_LEFT, DEFAULT_RIGHT, DEFAULT_BOTTOM, DEFAULT_TOP, DEFAULT_ZNEAR, DEFAULT_ZFAR);
-		pair<string, Camera*> insertedObject = make_pair("Default camera", activeCamera);
-		cameras.insert(insertedObject);
+		cameras.push_back(activeCamera);
 	};
 	void loadOBJModel(string fileName);
 	void createCamera();
 	void draw();
 	void drawDemo();
-	void selectActiveModel();
-	void selectActiveCamera();
-	void featuresStateSelection(ActivationElement e);
+	void selectActiveModel(string name);
+	void selectActiveCamera(int index);
+	void featuresStateSelection(ActivationToggleElement e);
 	void addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name);
 	void operate(OperationType type, int dx, int dy, Frames frame);
 	void setProjection(ProjectionType type, float* args);//agrs size is 6, and in coordination with type.
 	void refreshView();
+	void LookAtActiveModel();
+	vector <string> getModelNames();
 };

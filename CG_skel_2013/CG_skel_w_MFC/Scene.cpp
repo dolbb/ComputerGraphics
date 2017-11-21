@@ -9,22 +9,29 @@ using namespace std;
 #define ROTATE_FACTOR		  1.0
 #define ZERO_GLFLOAT		  0.0
 
+static MeshModel* changeToMeshModel(Model* m){
+	return static_cast<MeshModel*>(m);
+}
+
 /*========================================================
 				camera implementation
 ========================================================*/
 
 Camera::Camera() : cameraPyramid(new PrimMeshModel)
 {
-
+	Ortho(DEFAULT_LEFT, DEFAULT_RIGHT, DEFAULT_BOTTOM, DEFAULT_TOP, DEFAULT_ZNEAR, DEFAULT_ZFAR);
 }
 
 //TODO: check if needed or even ever called:
 void Camera::setTransformation(const mat4& transform){
-	cTransform = transform;
+	cTransform = transform * cTransform;
 }
 
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	//TODO: remember to update the pyramid accordingly.
+	cEye = eye;
+	cAt = at;
+	cUp = up;
 	vec4 n = normalize(eye - at);
 	vec4 u = normalize(cross(up, n));
 	vec4 v = normalize(cross(n,u));
@@ -38,7 +45,7 @@ void Camera::Ortho(const float left, const float right, const float bottom,
 	if (right == left || top == bottom || zFar == zNear)
 	{
 		//prevent divide by 0
-		cout << "different values are required for the bounding points,the frustrum was not created" << endl;
+		cout << "Ortho denied - non volume values" << endl;
 		return;
 	}
 	mat4 T = Translate(-(right+left)/2, -(bottom,top)/2 , zNear+zFar);
@@ -54,7 +61,7 @@ void Camera::Frustum(const float left, const float right, const float bottom,
 	if (right == left || top == bottom || zFar == zNear)
 	{
 		//prevent divide by 0
-		cout << "different values are required for the bounding points,the frustrum was not created" << endl;
+		cout << "Frustum denied - non volume values" << endl;
 		return;
 	}
 	//create H = a sheering mat to symmetrize the frustrum:
@@ -90,6 +97,13 @@ void Camera::draw(Renderer *renderer){
 	cameraPyramid->draw(renderer);
 }
 
+void Camera::changePosition(vec3 v){
+	LookAt(v, cAt, cUp);
+	MeshModel* m = changeToMeshModel(cameraPyramid);
+	m->resetTransformations();
+	m->translate(v);
+}
+
 mat4 Camera::getCameraProjection()
 {
 	return projection;
@@ -100,50 +114,53 @@ mat4 Camera::getCameraTransformation()
 	return cTransform;
 }
 
+vec4 Camera::getEye(){
+	return cEye;
+}
+
+vec4 Camera::getAt(){
+	return cAt;
+}
+
+vec4 Camera::getUp(){
+	return cUp;
+}
+
 /*========================================================
 					scene implementation
 ========================================================*/
+
 void Scene::loadOBJModel(string fileName)
 {
 	MeshModel *model = new MeshModel(fileName);
 	string chosenName;
-	cout << "Please enter your object's name: ";
-	cin >> chosenName;
-	cout << endl;
+	CCmdDialog name("Please enter your object's name");
+	CCmdDialog usedName("object's name is taken, enter a different name");
+	if (name.DoModal() == IDOK)
+	{
+		chosenName = name.GetCmd();
+		cout << chosenName;
+	}
 	while (models.find(chosenName) != models.end())
 	{
-		cout << "the chosen name already exists, please enter a new name: ";
-		cin >> chosenName;
+		if (usedName.DoModal() == IDOK)
+		{
+			chosenName = usedName.GetCmd();
+		}
 		model->setName(chosenName);
 	}
-	pair<string,Model*> insertedObject = make_pair(chosenName,model);
+	pair<string, Model*> insertedObject = make_pair(chosenName, model);
 	models.insert(insertedObject);
-	cout << "the object " << chosenName << " has been loaded succesfully." << endl;
-	if (models.size() == 1)
-	{
-		activeModel = model;
-	}
+	activeModel = model;
 	refreshView();
 	draw();
 }
 
 void Scene::createCamera()
 {
-	Camera* newCamera = new Camera();
-	string chosenName;
-	cout << "Please enter your camera's name: ";
-	cin >> chosenName;
-	cout << endl;
-	while (cameras.find(chosenName) != cameras.end())
-	{
-		cout << "the chosen name already exists, please enter a new name: ";
-		cin >> chosenName;
-		newCamera->setName(chosenName);
-		cout << endl;
-	}
-	pair<string, Camera*> insertedObject = make_pair(chosenName, newCamera);
-	cameras.insert(insertedObject);
+	cameras.push_back(new Camera);
 }
+
 
 void Scene::draw()
 {
@@ -172,60 +189,28 @@ void Scene::drawDemo()
 	m_renderer->SwapBuffers();
 }
 
-void Scene::selectActiveModel()
+void Scene::selectActiveModel(string name)
 {
-	cout << "The scene has the following models:" << endl;
-	int count = 1;
-	for (map<string, Model*>::iterator it = models.begin(); it != models.end(); ++it, count++)
-	{
-		cout << count << ": " << it->first << endl;
+	map<string, Model*>::iterator it = models.find(name);
+	if (it != models.end()){
+		activeModel = it->second;
 	}
-	string chosenObject;
-	bool scanned = false;
-	cout << endl;
-	do
-	{
-		cout << "please enter the name of the object you would like to select: ";
-		cout << endl;
-		cin >> chosenObject;
-		scanned = models.find(chosenObject) != models.end();
-		if (!scanned)
-		{
-			cout << "the object name you entered does not exist." << endl;
-		}
-	} while (!scanned);
-	activeModel = models[chosenObject];
-	cout << "the object " << chosenObject << " was selected succesfully" << endl;
 }
 
-void Scene::selectActiveCamera()
+void Scene::selectActiveCamera(int index)
 {
-	cout << "The scene has the following cameras:" << endl;
-	int count = 1;
-	for (map<string, Camera*>::iterator it = cameras.begin(); it != cameras.end(); ++it, count++)
-	{
-		cout << count << ": " << it->first << endl;
+	if (cameras.size() > index){
+		activeCamera = cameras[index];
+		cout << "the camera " << index << " was selected succesfully" << endl;
+		draw();
 	}
-	string chosenObject;
-	bool scanned = false;
-	cout << endl;
-	do
-	{
-		cout << "please enter the name of the camera you would like to select: ";
-		cin >> chosenObject;
-		scanned = cameras.find(chosenObject) != cameras.end();
-		if (!scanned)
-		{
-			cout << "the camera name you entered does not exist." << endl;
-		}
-	} while (!scanned);
-	activeCamera = cameras[chosenObject];
-	cout << "the camera " << chosenObject << " was selected succesfully" << endl;
+	else{
+		cout << "there is no camera with the index of " << index << endl;
+	}
 }
 
-
-void Scene::featuresStateSelection(ActivationElement e){
-	(static_cast<MeshModel*>(activeModel))->featuresStateSelection(e);
+void Scene::featuresStateSelection(ActivationToggleElement e){
+	(static_cast<MeshModel*>(activeModel))->featuresStateToggle(e);
 	refreshView();
 	draw();
 }
@@ -246,32 +231,33 @@ void Scene::operate(OperationType type, int dx, int dy, Frames frame){
 }
 
 void Scene::handleModelFrame(OperationType type, int dx, int dy){
-	MeshModel* model = static_cast<MeshModel*>(activeModel);
+	//TODO: check if (A)^-1 needed to move that way.
+	changeToMeshModel(activeModel)->frameActionSet(OBJECT_ACTION);
 	switch (type){
-		//TODO: FILL IN THE CASES:
-	case TRANSLATE:
+	case TRANSLATE: changeToMeshModel(activeModel)->translate(vec3(dx, dy, 0));
 		break;
-	case ROTATE: 
+	case ROTATE: changeToMeshModel(activeModel)->rotate(vec3(dx, dy, 0));
 		break;
-	case SCALE: 
+	case SCALE: changeToMeshModel(activeModel)->scale(vec3(dx, dy, 1));
 		break;
 	}
 }
 void Scene::handleWorldFrame(OperationType type, int dx, int dy){
+	//TODO: check if (A)^-1 needed to move that way.
+	changeToMeshModel(activeModel)->frameActionSet(WORLD_ACTION);
 	switch (type){
-		//TODO: FILL IN THE CASES:
-	case TRANSLATE:
+	case TRANSLATE: changeToMeshModel(activeModel)->translate(vec3(dx, dy, 0));
 		break;
-	case ROTATE:
+	case ROTATE: changeToMeshModel(activeModel)->rotate(vec3(dx, dy, 0));
 		break;
-	case SCALE:
+	case SCALE: changeToMeshModel(activeModel)->scale(vec3(dx, dy, 1));
 		break;
 	}
 }
 void Scene::handleCameraPosFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
-	case TRANSLATE:
+	case TRANSLATE: 
 		break;
 	case ROTATE:
 		break;
@@ -280,15 +266,17 @@ void Scene::handleCameraPosFrame(OperationType type, int dx, int dy){
 	}
 }
 void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
+	mat4 A;
 	switch (type){
 		//TODO: FILL IN THE CASES:
-	case TRANSLATE: 
-		break;
+	case TRANSLATE: A = Translate(dx, dy, 0);
+					break;
 	case ROTATE: 
 		break;
 	case SCALE:
 		break;
 	}
+	activeCamera->setTransformation(A);
 }
 
 void Scene::setProjection(ProjectionType type, float* a){
@@ -299,7 +287,46 @@ void Scene::setProjection(ProjectionType type, float* a){
 	case PERSPECTIVE: activeCamera->Perspective(a[0], a[1], a[2], a[3]); break;
 	}
 }
+
 void Scene::refreshView()
 {
 	m_renderer->refresh();
+}
+
+void Scene::LookAtActiveModel(){
+	if (activeModel == NULL || activeCamera == NULL){
+		return;
+	}
+	MeshModel* mModelP = static_cast <MeshModel*>(activeModel);
+	vec3 meshCenter = (mModelP)->getCenterOfMass();
+	vec3* bBox = mModelP->getBoundingBox();
+	
+	GLfloat dx = bBox[4][0] - bBox[0][0]; //access x value in vector saved in 000 = 0 so that x is 0, 100 = 4 so that x is 1
+	GLfloat dy = bBox[2][1] - bBox[0][1]; //access y value (000 = 0 so that y is 0, 010 = 2 so that y is 1)
+	GLfloat dz = bBox[1][2] - bBox[0][2]; //access z value (000 = 0 so that z is 0, 001 = 1 so that z is 1)
+
+	vec4 eye(meshCenter);
+	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
+	vec4 at(meshCenter);	//look at center of mesh
+	vec4 up(0,1,0,0);		//up is set to z axis
+
+	activeCamera->LookAt(eye, at, up);
+	
+	//set needed orto params:
+	float left = -dx * 2 / 3;
+	float right = dx * 2 / 3;
+	float bottom = -dy * 2 / 3;
+	float top = dy * 2 / 3;
+	float zNear = dz*2;
+	float zFar = dz*3;
+
+	activeCamera->Ortho(left, right, bottom, top, zNear, zFar);
+}
+
+vector <string> Scene::getModelNames(){
+	vector <string> v;
+	for (map<string, Model*>::iterator it = models.begin(); it != models.end(); ++it){
+		v.push_back(it->first);
+	}
+	return v;
 }
