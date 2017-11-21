@@ -194,9 +194,32 @@ void Renderer::plotPixel(int x, int y, float* m_outBuffer, vec3 RGB)
 	Bresenham's line drawing algorithm.
 	m_outBuffer will have the pixels matching the given line parameters on in the end of the function.
 */
+
 void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizontalDirection, int verticalDirection,int swapped, float *m_outBuffer)
 {
 	if (m_outBuffer == NULL) { return; }
+	/*TODO: NEW VERSION
+	int x = x1;
+	int y = y1;
+	int dx = x2 - x1;
+	int dy = y2 - y1;
+	int d = 2 * dy - dx;
+	int de = 2 * dy;
+	int dne = 2 * dy - 2 * dx;
+	plotPixel(x, y, m_outBuffer, vec3(0, 255, 0)); // light first pixel
+	for (int x = x1 ; x < x2 ; ++x){
+		if (d < 0){ 
+			d += de; 
+		}
+		else{
+			++y;
+			d += dne;
+		}
+		plotPixel();
+	}*/
+	
+	
+	
 	int verticalDelta = yMax - yMin;
 	int horizontalDelta = xMax - xMin;
 	int d = 2 * verticalDelta - horizontalDelta;
@@ -244,6 +267,20 @@ void setDirections(float slope, int& verticalDirection, int& horizontalDirection
 
 void Renderer::drawLine(vec2 v0, vec2 v1)
 {
+	/*TODO: NEW VERSION
+	if (v0[x] > v1[x]){ swap(v0, v1); } //make sure we go left to right.
+	if (v0[x] == v1[x]){ 
+		if (v0[y] == v1[y]){ return; }// check if we have no line.
+		if (v0[y] > v1[y]){ swap(v0, v1); }// check if we have a vertical line, make sure we draw up.
+	} 
+	int upwards = (v0[y] <= v1[y]) ? 1 : -1;
+	
+	int dx = v1[x] - v0[x];
+	int dy = v1[y] - v0[y];
+	int axisSwapped = (((upwards == 1) && (dx < dy)) || (upwards == -1) && (dx < -dy)) ? 1 : -1;
+	*/
+		
+	
 	//set the end points of progression for horizontal and vertical axis
 	int xMin = v0[x] <= v1[x] ? v0[x] : v1[x];
 	int xMax = v0[x] >= v1[x] ? v0[x] : v1[x];

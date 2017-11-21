@@ -144,11 +144,9 @@ void Scene::loadOBJModel(string fileName)
 	string chosenName;
 	CCmdDialog name("Please enter your object's name");
 	CCmdDialog usedName("object's name is taken, enter a different name");
-	cout << "test2" << endl;
 	if (name.DoModal() == IDOK)
 	{
 		chosenName = name.GetCmd();
-		cout << chosenName;
 	}
 	while (models.find(chosenName) != models.end())
 	{
@@ -161,7 +159,7 @@ void Scene::loadOBJModel(string fileName)
 	pair<string, Model*> insertedObject = make_pair(chosenName, model);
 	models.insert(insertedObject);
 	activeModel = model;
-	refreshView();
+	LookAtActiveModel();
 	draw();
 }
 
@@ -184,6 +182,7 @@ void Scene::draw()
 	}	
 
 	// 2. Tell all models to draw themselves:
+	refreshView();
 	for (map<string,Model*>::iterator it = models.begin(); it != models.end(); ++it){
 		it->second->draw(m_renderer);
 	}
@@ -220,7 +219,6 @@ void Scene::selectActiveCamera(int index)
 
 void Scene::featuresStateSelection(ActivationToggleElement e){
 	(static_cast<MeshModel*>(activeModel))->featuresStateToggle(e);
-	refreshView();
 	draw();
 }
 
@@ -294,7 +292,7 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 	case UNIFORM_SCALE:
 		break;
 	}
-	activeCamera->setTransformation(A);
+	//activeCamera->setTransformation(A);
 }
 
 void Scene::handleZoom(int scaleSize){
