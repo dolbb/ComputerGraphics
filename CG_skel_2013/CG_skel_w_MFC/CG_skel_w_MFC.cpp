@@ -96,11 +96,11 @@ void mouseWheel(int wheel, int direction, int x, int y)
 {
 	if (direction > 0)
 	{
-		scene->operate(ZOOM, DEFAULT_ZOOM, DEFAULT_ZOOM, CAMERA_POSITION);
+		scene->operate(UNIFORM_SCALE, DEFAULT_ZOOM, DEFAULT_ZOOM, ZOOM);
 	}
 	else
 	{
-		scene->operate(ZOOM, 1 / DEFAULT_ZOOM, 1 / DEFAULT_ZOOM, CAMERA_POSITION);
+		scene->operate(UNIFORM_SCALE, 1 / DEFAULT_ZOOM, 1 / DEFAULT_ZOOM, ZOOM);
 	}
 }
 
@@ -121,7 +121,6 @@ void mouse(int button, int state, int x, int y)
 			mb_down = (state==GLUT_UP)?0:1;	
 			break;
 	}
-	// add your code
 }
 
 void special(int key, int x, int y)
@@ -191,7 +190,7 @@ void motion(int x, int y)
 		break;
 
 		case GLUT_ACTIVE_CTRL:
-			scene->operate(UNIFORM_SCALE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame);
+			scene->operate(UNIFORM_SCALE, dy*transformationFactor, dy*transformationFactor, currentObjectFrame);
 		break;
 		
 		case GLUT_ACTIVE_ALT:
@@ -222,31 +221,28 @@ void newMenuCallback(int id)
 
 void selectMenuCallback(int id)
 {
-	/*
-		if (id == ACTIVE_MODEL)
+	if (id == ACTIVE_MODEL)
+	{
+		vector<string>& modelNames = scene->getModelNames();
+		string message = "The scene has the following models: \n";
+		for (int i = 0; i < modelNames.size(); i++)
 		{
-			vector<string>& modelNames = scene->getModelNames();
-			string message = "The scene has the following models: \n";
-			for (int i = 0; i < modelNames.size(); i++)
-			{
-				message += modelNames[i];
-				message += "\n";
-			}
-			string chosenName;
-			CCmdDialog name(message.c_str());
-			if (name.DoModal() == IDOK)
-			{
-				do
-				{
-					chosenName = name.GetCmd();
-					//keep asking the user for input as long as the chosen name does not exist
-				}	
-				while (find(modelNames.begin(), modelNames.end(), chosenName) == modelNames.end());
-			}
-			scene->selectActiveModel(chosenName);
+			message += modelNames[i];
+			message += "\n";
 		}
-	*/
-	
+		string chosenName;
+		CCmdDialog name(message.c_str());
+		if (name.DoModal() == IDOK)
+		{
+			do
+			{
+				chosenName = name.GetCmd();
+				//keep asking the user for input as long as the chosen name does not exist
+			}	
+			while (find(modelNames.begin(), modelNames.end(), chosenName) == modelNames.end());
+		}
+		scene->selectActiveModel(chosenName);
+	}
 }
 
 void setTransformationStep()
@@ -287,13 +283,10 @@ void setCameraPerspective()
 
 void toolsMenuCallback(int id)
 {
-	/*
-		if (id == LOOKAT_ACTIVE_MODEL)
-		{
-			scene->lookAtActiveModel();
-		}
-	*/
-	
+	if (id == LOOKAT_ACTIVE_MODEL)
+	{
+		scene->LookAtActiveModel();
+	}
 	
 	if (id == SET_TRANSFORMATION_STEP)
 	{
