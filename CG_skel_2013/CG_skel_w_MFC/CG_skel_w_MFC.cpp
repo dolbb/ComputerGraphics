@@ -247,10 +247,10 @@ void selectMenuCallback(int id)
 
 void setTransformationStep()
 {
-	CCmdDialog step("Please enter a positive number");
 	string num;
-	int scannedNum;
+	int scannedNum=1;
 	bool scanned;
+	CCmdDialog step("Please enter a positive number");
 	if (step.DoModal() == IDOK)
 	{
 		do
@@ -351,7 +351,7 @@ int my_main( int argc, char **argv )
 	// Initialize window
 	glutInit( &argc, argv );
 	glutInitDisplayMode( GLUT_RGBA| GLUT_DOUBLE);
-	glutInitWindowSize( 512, 512 );
+	glutInitWindowSize(DEFAULT_SCREEN_SIZE, DEFAULT_SCREEN_SIZE);
 	glutInitContextVersion( 3, 2 );
 	glutInitContextProfile( GLUT_CORE_PROFILE );
 	glutCreateWindow( "CG" );
