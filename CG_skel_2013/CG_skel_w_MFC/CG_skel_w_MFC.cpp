@@ -24,6 +24,7 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
+enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{NEW_MODEL, NEW_CAMERA};
 enum selectMenuIdentifier{ACTIVE_MODEL};
 enum toolsMenuIdentifier{LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP,SET_CAMERA_PRESPECTIVE};
@@ -224,22 +225,21 @@ void selectMenuCallback(int id)
 	if (id == ACTIVE_MODEL)
 	{
 		vector<string>& modelNames = scene->getModelNames();
-		string message = "The scene has the following models: \n";
+		string message = "Availible models: ";
 		for (int i = 0; i < modelNames.size(); i++)
 		{
 			message += modelNames[i];
-			message += "\n";
+			message += " , ";
 		}
 		string chosenName;
 		CCmdDialog name(message.c_str());
-		if (name.DoModal() == IDOK)
+		while (find(modelNames.begin(), modelNames.end(), chosenName) == modelNames.end())
 		{
-			do
+			if (name.DoModal() == IDOK)
 			{
 				chosenName = name.GetCmd();
 				//keep asking the user for input as long as the chosen name does not exist
-			}	
-			while (find(modelNames.begin(), modelNames.end(), chosenName) == modelNames.end());
+			}
 		}
 		scene->selectActiveModel(chosenName);
 	}
@@ -249,13 +249,12 @@ void setTransformationStep()
 {
 	string num;
 	int scannedNum=1;
-	bool scanned;
+	bool scanned=false;
 	CCmdDialog step("Please enter a positive number");
-	if (step.DoModal() == IDOK)
+	while (!scanned)
 	{
-		do
+		if (step.DoModal() == IDOK)
 		{
-			scanned = true;
 			try
 			{
 				num = step.GetCmd();
@@ -263,15 +262,16 @@ void setTransformationStep()
 				//stoi can throw invalid_argument and out_of_range exceptions
 			}
 			//in case of an exception the scan was unsucessful
-			catch (invalid_argument)
+			catch (...)
 			{
-				scanned = false;
+				continue; 
 			}
-			catch (out_of_range)
+			if (scannedNum <= 0)
 			{
-				scanned = false;
+				continue;
 			}
-		} while (!scanned);
+			scanned = true;
+		}
 	}
 	transformationFactor = scannedNum;
 }
@@ -279,6 +279,14 @@ void setTransformationStep()
 void setCameraPerspective()
 {
 
+}
+
+void mainMenu(int id)
+{
+	if (id == DEMO)
+	{
+		scene->drawDemo();
+	}
 }
 
 void toolsMenuCallback(int id)
@@ -335,10 +343,11 @@ void initMenu()
 	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
 	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
 	glutAddSubMenu("Toggle", toggleMenu);
-	glutCreateMenu(NULL);
+	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);
 	glutAddSubMenu("Select", selectMenu);
 	glutAddSubMenu("Tools", toolsMenu);
+	glutAddMenuEntry("Demo", DEMO);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 //----------------------------------------------------------------------------
@@ -351,7 +360,7 @@ int my_main( int argc, char **argv )
 	// Initialize window
 	glutInit( &argc, argv );
 	glutInitDisplayMode( GLUT_RGBA| GLUT_DOUBLE);
-	glutInitWindowSize(DEFAULT_SCREEN_SIZE, DEFAULT_SCREEN_SIZE);
+	glutInitWindowSize(DEFAULT_SCREEN_X, DEFAULT_SCREEN_Y);
 	glutInitContextVersion( 3, 2 );
 	glutInitContextProfile( GLUT_CORE_PROFILE );
 	glutCreateWindow( "CG" );
