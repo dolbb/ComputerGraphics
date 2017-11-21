@@ -69,25 +69,31 @@ void keyboard( unsigned char key, int x, int y )
 
 		//swap object transformation frame
 		case 'm':
+			cout << "current object transformation frame: ";
 			if (currentObjectFrame == MODEL)
 			{
 				currentObjectFrame = WORLD;
+				cout << "world" << endl;
 			}
 			else
 			{
 				currentObjectFrame = MODEL;
+				cout << "model" << endl;
 			}
 		break;
 
 		//swap model transformation frame
 		case 'c':
+			cout << "current camera transformation frame: ";
 			if (currentCameraFrame == CAMERA_POSITION)
 			{
 				currentCameraFrame = CAMERA_VIEW;
+				cout << "view" << endl;
 			}
 			else
 			{
 				currentCameraFrame = CAMERA_POSITION;
+				cout << "world" << endl;
 			}
 		break;
 	}
