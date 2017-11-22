@@ -263,7 +263,7 @@ void Scene::handleModelFrame(OperationType type, int dx, int dy, vec3 v){
 	//TODO: check if (A)^-1 needed to move that way.
 	changeToMeshModel(activeModel)->frameActionSet(OBJECT_ACTION);
 	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3(dx, dx, 0));
-	vec3 worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeSelf(worldCoordsDelta);
+	worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeSelf(worldCoordsDelta);
 	switch (type){
 	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
 		break;
@@ -279,7 +279,7 @@ void Scene::handleWorldFrame(OperationType type, int dx, int dy, vec3 v){
 	//TODO: check if (A)^-1 needed to move that way.
 	changeToMeshModel(activeModel)->frameActionSet(WORLD_ACTION);
 	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3(dx, dx, 0));
-	vec3 worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeWorld(worldCoordsDelta);
+	worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeWorld(worldCoordsDelta);
 	switch (type){
 	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
 		break;
