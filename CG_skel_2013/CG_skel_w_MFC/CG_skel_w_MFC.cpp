@@ -202,11 +202,12 @@ void motion(int x, int y)
 	last_y=y;
 	int modifier = glutGetModifiers();
 	vec3 defaultVector;
+	vec3 transformationParameters;
 	switch (modifier)
 	{
 		case GLUT_ACTIVE_SHIFT:
-			vec3 rotationParameters = getParameters();
-			scene->operate(ROTATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame, rotationParameters);
+			transformationParameters = getParameters();
+			scene->operate(ROTATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame, transformationParameters);
 		break;
 
 		case GLUT_ACTIVE_CTRL:
@@ -221,8 +222,8 @@ void motion(int x, int y)
 		break;
 		
 		case GLUT_ACTIVE_ALT:
-			vec3 rotationParameters = getParameters();
-			scene->operate(SCALE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame,rotationParameters);
+			transformationParameters = getParameters();
+			scene->operate(SCALE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame, transformationParameters);
 		break;
 		
 		default:

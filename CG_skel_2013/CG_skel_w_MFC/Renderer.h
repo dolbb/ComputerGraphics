@@ -11,6 +11,8 @@
 #define DEFAULT_G 255
 #define DEFAULT_B 255
 
+enum drawType{VERTEX, NORMAL};
+
 using namespace std;
 class Renderer
 {
@@ -28,6 +30,7 @@ private:
 	mat3 normalTransform;
 	
 	mat4 totalPipline;
+	mat4 normalPipeline;
 
 	//////////////////////////////
 	// openGL stuff. Don't touch.
@@ -43,7 +46,7 @@ public:
 	~Renderer(void);
 	void Init();
 	void resizeBuffers(int chosenWidth, int chosenHeight);
-	vec2 processVertex(vec3 vertex);
+	vec2 processVertex(vec3 vertex, drawType type);
 	void drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize);
 	void drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize);
 	void drawBoundingBox(vec3* boundingBoxVertices);
