@@ -8,7 +8,6 @@
 #define TRIANGLE_VERTICES 3
 #define BOUNDING_BOX_VERTICES 8
 
-enum axis{x,y,z};
 enum{w=3};
 
 Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), projection()
@@ -189,153 +188,43 @@ void Renderer::plotPixel(int x, int y, float* m_outBuffer, vec3 RGB)
 	m_outBuffer[INDEX(m_width, x, y, 1)] = RGB[1];
 	m_outBuffer[INDEX(m_width, x, y, 2)] = RGB[2];
 }
-/*
-	setLineInBuffer will update the output buffer with a line corresponding to the data in lineParameters array using
-	Bresenham's line drawing algorithm.
-	m_outBuffer will have the pixels matching the given line parameters on in the end of the function.
-*/
 
-void Renderer::setLineInBuffer(int xMin,int xMax,int yMin,int yMax, int horizontalDirection, int verticalDirection,int swapped, float *m_outBuffer)
+void Renderer::drawLine(const vec2& v0, const vec2& v1)
 {
-	if (m_outBuffer == NULL) { return; }
-	/*TODO: NEW VERSION
-	int x = x1;
-	int y = y1;
-	int dx = x2 - x1;
-	int dy = y2 - y1;
-	int d = 2 * dy - dx;
-	int de = 2 * dy;
-	int dne = 2 * dy - 2 * dx;
-	plotPixel(x, y, m_outBuffer, vec3(0, 255, 0)); // light first pixel
-	for (int x = x1 ; x < x2 ; ++x){
-		if (d < 0){ 
-			d += de; 
-		}
-		else{
-			++y;
-			d += dne;
-		}
-		plotPixel();
-	}*/
-	
-	
-	
-	int verticalDelta = yMax - yMin;
-	int horizontalDelta = xMax - xMin;
-	int d = 2 * verticalDelta - horizontalDelta;
-	int deltaE = 2 * verticalDelta;
-	int deltaNe = 2 * verticalDelta - 2 * horizontalDelta;
-	int y = yMin;
-	int x = xMin;
-	if (swapped){
-		plotPixel(y, x, m_outBuffer, vec3(0,255,0));
-	}
-	else{
-		plotPixel(x, y, m_outBuffer, vec3(0, 255, 0));
-	}
-	x += horizontalDirection;
-	for (; x < xMax; x+=horizontalDirection){
-		if (d < 0){
-			d += deltaE;
-		}
-		else{
-			y += verticalDirection;
-			d += deltaNe;
-		}
-		if (swapped){
-			plotPixel(y, x, m_outBuffer, vec3(0, 255, 0));
-		}
-		else{
-			plotPixel(x, y, m_outBuffer, vec3(0, 255, 0));
-		}
-	}
-}
+	int x0 = v0[x]; int y0 = v0[y]; int x1 = v1[x]; int y1 = v1[y];
+	bool swapped = false;
 
-void setDirections(float slope, int& verticalDirection, int& horizontalDirection)
-{
-	horizontalDirection = 1;
-	if (slope < -1)
+	if (abs(x0 - x1) < abs(y0 - y1))
 	{
-		horizontalDirection = -1;
+		swapped = true;
+		swap(x0, y0);
+		swap(x1, y1);
 	}
-	verticalDirection = 1;
-	if (slope < 0 && slope >= -1)
+	//make sure that x0 is always less than x1
+	if (x0 > x1)
 	{
-		verticalDirection = -1;
+		swap(x0, x1);
+		swap(y0, y1);
 	}
-}
-
-void Renderer::drawLine(vec2 v0, vec2 v1)
-{
-	/*TODO: NEW VERSION
-	if (v0[x] > v1[x]){ swap(v0, v1); } //make sure we go left to right.
-	if (v0[x] == v1[x]){ 
-		if (v0[y] == v1[y]){ return; }// check if we have no line.
-		if (v0[y] > v1[y]){ swap(v0, v1); }// check if we have a vertical line, make sure we draw up.
-	} 
-	int upwards = (v0[y] <= v1[y]) ? 1 : -1;
-	
-	int dx = v1[x] - v0[x];
-	int dy = v1[y] - v0[y];
-	int axisSwapped = (((upwards == 1) && (dx < dy)) || (upwards == -1) && (dx < -dy)) ? 1 : -1;
-	*/
-		
-	
-	//set the end points of progression for horizontal and vertical axis
-	int xMin = v0[x] <= v1[x] ? v0[x] : v1[x];
-	int xMax = v0[x] >= v1[x] ? v0[x] : v1[x];
-	int yMin = v0[y] <= v1[y] ? v0[y] : v1[y];
-	int yMax = v0[y] >= v1[y] ? v0[y] : v1[y];
-
-	float slope = 0;
-	int verticalDirection, horizontalDirection;
-	int swapped = 0;
-
-	//prevent devision by 0, if dx=0 then the progression is in the y axis only
-	if (v1[x] - v0[x] != 0)
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	int de = abs(dy) * 2;
+	int error = 0;
+	int y = y0;
+	for (int x = x0; x <= x1; x++)
 	{
-		slope = ((v1[y] - v0[y]) / (v1[x] - v0[x])); //(y1-y0)/(x1-x0)
-		setDirections(slope, verticalDirection, horizontalDirection);
-	}
-
-	//in this case we draw a line on the y axis.
-	else
-	{
-		swapped = 1;
-		horizontalDirection = 1;
-		verticalDirection = 1;
-		setLineInBuffer(yMin, yMax, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
-		return;
-	}
-	if (slope >= -1 && slope <= 1)
-	{
-		//horizontal direction is positive x, vertical direction is positive y
-		if (slope >= 0 && slope <= 1)
+		if (swapped)
 		{
-			setLineInBuffer(xMin, xMax, yMin, yMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
+			plotPixel(y, x, m_outBuffer, vec3(DEFAULT_R, DEFAULT_G, DEFAULT_B));
 		}
-
-		//horizontal direction is positive x, vertical direction is negative y
 		else
 		{
-			setLineInBuffer(xMin, xMax, yMax, yMin, horizontalDirection, verticalDirection, swapped, m_outBuffer);
+			plotPixel(x, y, m_outBuffer, vec3(DEFAULT_R, DEFAULT_G, DEFAULT_B));
 		}
-	}
-
-	//in this case we have slope>1 or slope<-1, x and y axis are swapped
-	else
-	{
-		swapped = 1;
-		//horizontal direction is positive y, vertical direction is positive x
-		if (slope > 1)
-		{
-			setLineInBuffer(yMin, yMax, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
-		}
-
-		//horizontal direction is negative y, vertical direction is positive x
-		else
-		{
-			setLineInBuffer(yMax, yMin, xMin, xMax, horizontalDirection, verticalDirection, swapped, m_outBuffer);
+		error += de;
+		if (error > dx) {
+			y += (y1>y0 ? 1 : -1);
+			error -= dx * 2;
 		}
 	}
 }

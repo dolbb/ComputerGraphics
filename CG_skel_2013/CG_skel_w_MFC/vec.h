@@ -13,6 +13,7 @@
 #include <cmath>
 #include "GL/glew.h"
 #define M_PI 3.14159265358979323846264338327
+enum { x, y, z };
 struct vec2 {
 
     GLfloat  x;

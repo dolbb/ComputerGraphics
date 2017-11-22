@@ -382,6 +382,8 @@ int my_main( int argc, char **argv )
 
 	renderer = new Renderer();
 	scene = new Scene(renderer);
+	currentCameraFrame = CAMERA_VIEW;
+	currentObjectFrame = WORLD;
 	//----------------------------------------------------------------------------
 	// Initialize Callbacks
 
