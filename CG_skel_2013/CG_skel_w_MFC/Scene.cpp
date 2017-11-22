@@ -262,8 +262,8 @@ void Scene::operate(OperationType type, int dx, int dy, Frames frame, vec3 v){
 void Scene::handleModelFrame(OperationType type, int dx, int dy, vec3 v){
 	//TODO: check if (A)^-1 needed to move that way.
 	changeToMeshModel(activeModel)->frameActionSet(OBJECT_ACTION);
-	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3(dx, dx, 0));
-	vec3 worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeSelf(worldCoordsDelta);
+	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3((GLfloat)dx, (GLfloat)dy, (GLfloat)0));
+	worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeSelf(worldCoordsDelta);
 	switch (type){
 	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
 		break;
@@ -278,8 +278,8 @@ void Scene::handleModelFrame(OperationType type, int dx, int dy, vec3 v){
 void Scene::handleWorldFrame(OperationType type, int dx, int dy, vec3 v){
 	//TODO: check if (A)^-1 needed to move that way.
 	changeToMeshModel(activeModel)->frameActionSet(WORLD_ACTION);
-	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3(dx, dx, 0));
-	vec3 worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeWorld(worldCoordsDelta);
+	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3((GLfloat)dx, (GLfloat)dy, (GLfloat)0));
+	worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeWorld(worldCoordsDelta);
 	switch (type){
 	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
 		break;
@@ -294,7 +294,7 @@ void Scene::handleWorldFrame(OperationType type, int dx, int dy, vec3 v){
 void Scene::handleCameraPosFrame(OperationType type, int dx, int dy, vec3 v){
 	switch (type){
 		//TODO: FILL IN THE CASES:
-	case TRANSLATE: activeCamera->changeRelativePosition(vec3(-dx, -dy, 0));
+	case TRANSLATE: activeCamera->changeRelativePosition(vec3((GLfloat)(-dx), (GLfloat)(-dy), (GLfloat)0));
 		break;
 	case ROTATE://dont think its relevant.
 		break;
