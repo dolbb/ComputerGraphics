@@ -98,11 +98,21 @@ void Renderer::SetDemoBuffer()
 	processVertex will get a 3d vector representing a vertex and will process it through the graphic pipeline,
 	the function will return a 2d vector in screen coordinates.
 */
-vec2 Renderer::processVertex(vec3 vertex)
+vec2 Renderer::processVertex(vec3 vertex, drawType type)
 {
-	vec4 homogenous(vertex);
-	vec4 presentedVec = totalPipline * homogenous;
-	
+	vec4 homogenous;
+	vec4 presentedVec;
+	if (type==NORMAL)
+	{
+		vertex = normalTransform*vertex;
+		homogenous=vertex;
+		presentedVec = normalPipeline * homogenous;
+	}
+	else
+	{
+		homogenous = vertex;
+		presentedVec = totalPipline*vertex;
+	}
 	//normalize display coordinates
 	presentedVec /= presentedVec[w];
 	
@@ -138,8 +148,11 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 	vec3 v0, v1, v2;
 	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
 	{
+		v0 = vertexPositions[i];
+		v1 = vertexPositions[i + 1];
+		v2 = vertexPositions[i + 2];
 		faceCenter = vec3((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3);
-		drawLine(processVertex(faceCenter), processVertex(normalize(faceCenter + faceNormals[currentFace])));
+		drawLine(processVertex(faceCenter, NORMAL), processVertex(faceCenter + faceNormals[currentFace], NORMAL));
 	}
 }
 
@@ -149,7 +162,7 @@ void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int 
 	for (int i = 0; i < vertexSize; i++)
 	{
 		//TODO: CHECK IF NORMALIZE IS NEEDED
-		drawLine(processVertex(vertexPositions[i]), processVertex(vertexPositions[i] + vertexNormals[i]));
+		drawLine(processVertex(vertexPositions[i], VERTEX), processVertex((vertexPositions[i] + vertexNormals[i]), VERTEX));
 	}
 }
 
@@ -161,7 +174,7 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 		{
 			if (isBoundingBoxEdge(i, j))
 			{
-				drawLine(processVertex(boundingBoxVertices[i]), processVertex(boundingBoxVertices[j]));
+				drawLine(processVertex(boundingBoxVertices[i], VERTEX), processVertex(boundingBoxVertices[j], VERTEX));
 			}
 		}
 	}
@@ -173,9 +186,9 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 	vec2 v0, v1, v2;
 	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
 	{
-		v0 = processVertex(vertexPositions[i]);
-		v1 = processVertex(vertexPositions[i+1]);
-		v2 = processVertex(vertexPositions[i+2]);
+		v0 = processVertex(vertexPositions[i],VERTEX);
+		v1 = processVertex(vertexPositions[i+1],VERTEX);
+		v2 = processVertex(vertexPositions[i+2],VERTEX);
 		drawLine(v0, v1);
 		drawLine(v0, v2);
 		drawLine(v1, v2);
@@ -231,6 +244,7 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 
 void Renderer::updateTotalPipline(){
 	totalPipline = projection*cameraTransform*objectTransform;
+	normalPipeline = projection*cameraTransform;
 }
 
 /////////////////////////////////////////////////////

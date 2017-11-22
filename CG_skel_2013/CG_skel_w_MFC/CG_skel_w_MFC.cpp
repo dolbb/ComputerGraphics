@@ -33,6 +33,7 @@ enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
 
 #define DEFAULT_ZOOM 1.5
+#define DEFAULT_SCALING_FACTOR 1.5
 
 Scene *scene;
 Renderer *renderer;
@@ -100,13 +101,14 @@ void keyboard( unsigned char key, int x, int y )
 
 void mouseWheel(int wheel, int direction, int x, int y)
 {
+	vec3 defaultVector;
 	if (direction > 0)
 	{
-		scene->operate(UNIFORM_SCALE, DEFAULT_ZOOM, DEFAULT_ZOOM, ZOOM);
+		scene->operate(UNIFORM_SCALE, DEFAULT_ZOOM, 1, ZOOM,defaultVector);
 	}
 	else
 	{
-		scene->operate(UNIFORM_SCALE, 1 / DEFAULT_ZOOM, 1 / DEFAULT_ZOOM, ZOOM);
+		scene->operate(UNIFORM_SCALE, 1, DEFAULT_ZOOM, ZOOM, defaultVector);
 	}
 }
 
@@ -131,52 +133,62 @@ void mouse(int button, int state, int x, int y)
 
 void special(int key, int x, int y)
 {
+	vec3 defaultVector;
 	switch (key)
 	{
 	case GLUT_KEY_UP:
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 		{
-			scene->operate(ROTATE, 0, DEFAULT_DY*transformationFactor, currentCameraFrame);
+			scene->operate(ROTATE, 0, DEFAULT_DY*transformationFactor, currentCameraFrame,defaultVector);
 		}
 		else
 		{
-			scene->operate(TRANSLATE, 0, DEFAULT_DY*transformationFactor, currentCameraFrame);
+			scene->operate(TRANSLATE, 0, DEFAULT_DY*transformationFactor, currentCameraFrame, defaultVector);
 		}
 	break;
 
 	case GLUT_KEY_DOWN:
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 		{
-			scene->operate(ROTATE, 0, -(DEFAULT_DY*transformationFactor), currentCameraFrame);
+			scene->operate(ROTATE, 0, -(DEFAULT_DY*transformationFactor), currentCameraFrame, defaultVector);
 		}
 		else
 		{
-			scene->operate(TRANSLATE, 0, -(DEFAULT_DY*transformationFactor), currentCameraFrame);
+			scene->operate(TRANSLATE, 0, -(DEFAULT_DY*transformationFactor), currentCameraFrame, defaultVector);
 		}
 	break;
 
 	case GLUT_KEY_RIGHT:
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 		{
-			scene->operate(ROTATE, DEFAULT_DX*transformationFactor, 0, currentCameraFrame);
+			scene->operate(ROTATE, DEFAULT_DX*transformationFactor, 0, currentCameraFrame, defaultVector);
 		}
 		else
 		{
-			scene->operate(TRANSLATE, DEFAULT_DX*transformationFactor, 0, currentCameraFrame);
+			scene->operate(TRANSLATE, DEFAULT_DX*transformationFactor, 0, currentCameraFrame, defaultVector);
 		}
 	break;
 
 	case GLUT_KEY_LEFT:
 		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 		{
-			scene->operate(ROTATE, -(DEFAULT_DX*transformationFactor), 0, currentCameraFrame);
+			scene->operate(ROTATE, -(DEFAULT_DX*transformationFactor), 0, currentCameraFrame, defaultVector);
 		}
 		else
 		{
-			scene->operate(TRANSLATE, -(DEFAULT_DX*transformationFactor), 0, currentCameraFrame);
+			scene->operate(TRANSLATE, -(DEFAULT_DX*transformationFactor), 0, currentCameraFrame, defaultVector);
 		}
 	break;
 
+	}
+}
+
+const vec3& getParameters()
+{
+	CXyzDialog dialogue;
+	if (dialogue.DoModal() == IDOK)
+	{
+		return dialogue.GetXYZ();
 	}
 }
 
@@ -189,22 +201,32 @@ void motion(int x, int y)
 	last_x=x;
 	last_y=y;
 	int modifier = glutGetModifiers();
+	vec3 defaultVector;
 	switch (modifier)
 	{
 		case GLUT_ACTIVE_SHIFT:
-			scene->operate(ROTATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame);
+			vec3 rotationParameters = getParameters();
+			scene->operate(ROTATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame, rotationParameters);
 		break;
 
 		case GLUT_ACTIVE_CTRL:
-			scene->operate(UNIFORM_SCALE, dy*transformationFactor, dy*transformationFactor, currentObjectFrame);
+			if (dy >= 0)
+			{
+				scene->operate(UNIFORM_SCALE, DEFAULT_SCALING_FACTOR*transformationFactor, 1, currentObjectFrame, defaultVector);
+			}
+			else
+			{
+				scene->operate(UNIFORM_SCALE, 1, DEFAULT_SCALING_FACTOR*transformationFactor, currentObjectFrame,defaultVector);
+			}
 		break;
 		
 		case GLUT_ACTIVE_ALT:
-			scene->operate(SCALE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame);
+			vec3 rotationParameters = getParameters();
+			scene->operate(SCALE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame,rotationParameters);
 		break;
 		
 		default:
-			scene->operate(TRANSLATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame);
+			scene->operate(TRANSLATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame,defaultVector);
 	}
 }
 
@@ -327,6 +349,10 @@ void toggleMenuCallback(int id)
 	case FACE_NORMALS:
 		scene->featuresStateSelection(TOGGLE_FACE_NORMALS);
 		break;
+
+	case CAMERA_RENDERING:
+		//scene->drawActiveCamera();
+		break;
 	}
 }
 
@@ -340,9 +366,9 @@ void initMenu()
 	glutAddMenuEntry("Active model", ACTIVE_MODEL);
 	int toggleMenu = glutCreateMenu(toggleMenuCallback);
 	glutAddMenuEntry("Face normals", FACE_NORMALS);
-	glutAddMenuEntry("Vertex normals", FACE_NORMALS);
-	glutAddMenuEntry("Bounding box", FACE_NORMALS);
-	glutAddMenuEntry("Camera rendering", FACE_NORMALS);
+	glutAddMenuEntry("Vertex normals", VERTEX_NORMALS);
+	glutAddMenuEntry("Bounding box", BOUNDING_BOX);
+	glutAddMenuEntry("Camera rendering", CAMERA_RENDERING);
 	int toolsMenu = glutCreateMenu(toolsMenuCallback);
 	glutAddMenuEntry("LookAt active model", LOOKAT_ACTIVE_MODEL);
 	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
