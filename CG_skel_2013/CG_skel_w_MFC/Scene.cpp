@@ -35,12 +35,6 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	vec4 u = normalize(cross(up, n));
 	vec4 v = normalize(cross(n,u));
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
-
-	//save the camera vectors:
-	cX = vec3(u[x], u[y], u[z]);
-	cY = vec3(v[x], v[y], v[z]);
-	cZ = vec3(n[x], n[y], n[z]);
-
 	mat4 C(u, v, n, t);
 	cTransform = C * Translate(-eye);
 
@@ -140,20 +134,6 @@ vec4 Camera::getUp(){
 	return cUp;
 }
 
-vec3 Camera::getWorldVector(vec3 in){
-	vec3 v;
-	if (in[x] != 0){
-		v += cX * in[x];
-	}
-	if (in[y] != 0){
-		v += cY * in[y];
-	}
-	if (in[z] != 0){
-		v += cZ * in[z];
-	}
-	return v;
-}
-
 /*========================================================
 					scene implementation
 ========================================================*/
@@ -247,51 +227,46 @@ void Scene::addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string nam
 	models.insert(pair<string, Model*>(name, pyramidMesh));
 }
 
-//when uniform scaling occures, use dy/dx as a rational number.
-void Scene::operate(OperationType type, int dx, int dy, Frames frame, vec3 v){
+void Scene::operate(OperationType type, int dx, int dy, Frames frame){
 	switch (frame){
-	case MODEL: handleModelFrame(type, dx, dy, v); break;
-	case WORLD: handleWorldFrame(type, dx, dy, v); break;
-	case CAMERA_POSITION: handleCameraPosFrame(type, dx, dy, v); break;
-	case CAMERA_VIEW: handleCameraViewFrame(type, dx, dy, v); break;
+	case MODEL: handleModelFrame(type, dx, dy); break;
+	case WORLD: handleWorldFrame(type, dx, dy); break;
+	case CAMERA_POSITION: handleCameraPosFrame(type, dx, dy); break;
+	case CAMERA_VIEW: handleCameraViewFrame(type, dx, dy); break;
 	case ZOOM: handleZoom(dx); break;
 	}
 	draw();
 }
 
-void Scene::handleModelFrame(OperationType type, int dx, int dy, vec3 v){
+void Scene::handleModelFrame(OperationType type, int dx, int dy){
 	//TODO: check if (A)^-1 needed to move that way.
 	changeToMeshModel(activeModel)->frameActionSet(OBJECT_ACTION);
-	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3(dx, dx, 0));
-	vec3 worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeSelf(worldCoordsDelta);
 	switch (type){
-	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
+	case TRANSLATE: changeToMeshModel(activeModel)->translate(vec3(dx, dy, 0));
 		break;
-	case ROTATE: changeToMeshModel(activeModel)->rotate(v);
+	case ROTATE: changeToMeshModel(activeModel)->rotate(vec3(dx, dy, 0));
 		break;
-	case SCALE: changeToMeshModel(activeModel)->scale(v);
+	case SCALE: changeToMeshModel(activeModel)->scale(vec3(dx, dy, 1));
 		break;
-	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dy / (GLfloat)dx);
+	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dx);
 		break;
 	}
 }
-void Scene::handleWorldFrame(OperationType type, int dx, int dy, vec3 v){
+void Scene::handleWorldFrame(OperationType type, int dx, int dy){
 	//TODO: check if (A)^-1 needed to move that way.
 	changeToMeshModel(activeModel)->frameActionSet(WORLD_ACTION);
-	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3(dx, dx, 0));
-	vec3 worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeWorld(worldCoordsDelta);
 	switch (type){
-	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
+	case TRANSLATE: changeToMeshModel(activeModel)->translate(vec3(dx, dy, 0));
 		break;
-	case ROTATE: changeToMeshModel(activeModel)->rotate(v);
+	case ROTATE: changeToMeshModel(activeModel)->rotate(vec3(dx, dy, 0));
 		break;
-	case SCALE: changeToMeshModel(activeModel)->scale(v);
+	case SCALE: changeToMeshModel(activeModel)->scale(vec3(dx, dy, 1));
 		break;
-	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dy / (GLfloat)dx);
+	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dx);
 		break;
 	}
 }
-void Scene::handleCameraPosFrame(OperationType type, int dx, int dy, vec3 v){
+void Scene::handleCameraPosFrame(OperationType type, int dx, int dy){
 	switch (type){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE: activeCamera->changeRelativePosition(vec3(-dx, -dy, 0));
@@ -304,7 +279,7 @@ void Scene::handleCameraPosFrame(OperationType type, int dx, int dy, vec3 v){
 		break;
 	}
 }
-void Scene::handleCameraViewFrame(OperationType type, int dx, int dy, vec3 v){
+void Scene::handleCameraViewFrame(OperationType type, int dx, int dy){
 	mat4 A;
 	switch (type){
 		//TODO: FILL IN THE CASES:
@@ -321,7 +296,7 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy, vec3 v){
 }
 
 void Scene::handleZoom(int scaleSize){
-	//TODO:implement..
+	
 }
 
 void Scene::setProjection(ProjectionType type, float* a){

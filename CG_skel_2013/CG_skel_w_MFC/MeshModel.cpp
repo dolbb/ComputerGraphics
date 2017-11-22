@@ -275,31 +275,22 @@ void MeshModel::rotate(vec3 vec){
 	mat4 rotateMatY = RotateY(vec[Y_AXIS]);
 	mat4 rotateMatZ = RotateZ(vec[Z_AXIS]);
 	mat4 totalRotation = rotateMatZ * rotateMatY * rotateMatX;
-
-	mat4 invRotateMatZ = RotateZ(-vec[Z_AXIS]);
-	mat4 invRotateMatY = RotateY(-vec[Y_AXIS]);
-	mat4 invRotateMatX = RotateX(-vec[X_AXIS]);
-	mat4 totalInvertRotation = rotateMatX * invRotateMatY * invRotateMatZ;
-
-	vertexTransformation(totalRotation, totalInvertRotation);
-	normalTransformation(totalRotation, totalInvertRotation);
+	vertexTransformation(totalRotation);
+	normalTransformation(totalRotation);
 }
 
 void MeshModel::scale(vec3 vec){
-	vec3 invV(1 / vec[X_AXIS], 1 / vec[Y_AXIS], 1 / vec[Z_AXIS]);
-
 	/*create the scaling matrix from the left:*/
 	mat4 vScalingMat = Scale(vec);
-	mat4 vInvertScalingMat = Scale(invV);
-
+	//init with the assumption that its a uniformic scaling:
+	mat4 nScalingMat = vScalingMat;
 	//update the vertex transformation mat:
-	vertexTransformation(vScalingMat, vInvertScalingMat);
+	vertexTransformation(vScalingMat);
 	//if we have a non-uniformic scaling, we need to change the scaling mat accordingly:
 	if (!(vec[X_AXIS] == vec[Y_AXIS] && vec[Z_AXIS] == vec[Y_AXIS])){
-		vScalingMat = Scale(invV);
-		vInvertScalingMat = Scale(vec);
+		nScalingMat = Scale(vec3(1 / vec[X_AXIS], 1 / vec[Y_AXIS], 1 / vec[Z_AXIS]));
 	}
-	normalTransformation(vScalingMat,vInvertScalingMat);
+	normalTransformation(nScalingMat);
 }
 
 void MeshModel::uniformicScale(GLfloat a){
@@ -309,35 +300,30 @@ void MeshModel::uniformicScale(GLfloat a){
 
 void MeshModel::translate(vec3 vec){
 	/*create the translation matrix from the left:*/
-	vertexTransformation(Translate(vec), Translate(-vec));
+	mat4 translationMat = Translate(vec);
+	vertexTransformation(translationMat);
 }
 
-void MeshModel::vertexTransformation(mat4& mat, mat4& invMat){
+void MeshModel::vertexTransformation(mat4& mat){
 	/*operate over the wanted transform:*/
 	if (actionType == OBJECT_ACTION){
-		selfInvertedVertexTransform = selfInvertedVertexTransform * invMat;
 		selfVertexTransform = mat * selfVertexTransform;
 	}
 	else{
-		worldInvertedVertexTransform = worldInvertedVertexTransform * invMat;
 		worldVertexTransform = mat * worldVertexTransform;
 	}
 }
 
-void MeshModel::normalTransformation(mat4& m4, mat4& a4){
+void MeshModel::normalTransformation(mat4& m4){
 	mat3 mat(	m4[0][0], m4[0][1], m4[0][2],
 				m4[1][0], m4[1][1], m4[1][2],
 				m4[2][0], m4[2][1], m4[2][2]);
-	mat3 invMat(a4[0][0], a4[0][1], a4[0][2],
-				a4[1][0], a4[1][1], a4[1][2],
-				a4[2][0], a4[2][1], a4[2][2]);
 	/*operate over the wanted transform:*/	
 	if (actionType == OBJECT_ACTION){
-		selfNormalInvertedTransform = selfNormalInvertedTransform * invMat;
+		
 		selfNormalTransform = mat * selfNormalTransform;
 	}
 	else{
-		worldNormalInvertedTransform = worldNormalInvertedTransform * invMat;
 		worldNormalTransform = mat * worldNormalTransform;
 	}
 }
@@ -347,24 +333,4 @@ void MeshModel::resetTransformations(){
 	selfVertexTransform		=	mat4();
 	worldNormalTransform	=	mat3();
 	selfNormalTransform		=	mat3();
-}
-
-vec3 MeshModel::getNormalBeforeWorld(vec3 v){
-	return worldNormalTransform * v;
-}
-
-vec3 MeshModel::getNormalBeforeSelf(vec3 v){
-	return worldNormalTransform * getNormalBeforeWorld(v);
-}
-
-vec3 MeshModel::getVertexBeforeWorld(vec3 v){
-	vec4 u = worldInvertedVertexTransform * vec4(v);
-	//TODO: check if sufficient or normalization needed "u/=u[3];".
-	return vec3(u[0], u[1], u[2]);
-}
-
-vec3 MeshModel::getVertexBeforeSelf(vec3 v){
-	vec4 u = selfInvertedVertexTransform * worldInvertedVertexTransform * vec4(v);
-	//TODO: check if sufficient or normalization needed "u/=u[3];".
-	return vec3(u[0], u[1], u[2]);
 }

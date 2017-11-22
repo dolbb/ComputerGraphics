@@ -61,9 +61,6 @@ class Camera : public Model {
 	vec4 cAt;
 	vec4 cUp;
 
-	vec3 cX;
-	vec3 cY;
-	vec3 cZ;
 
 public:
 	Camera();
@@ -91,7 +88,6 @@ public:
 	vec4 getEye();
 	vec4 getAt();
 	vec4 getUp();
-	vec3 getWorldVector(vec3 in);
 };
 
 class Scene {
@@ -104,10 +100,10 @@ private:
 	Model*  activeModel;
 	Camera* activeCamera;
 
-	void handleModelFrame(OperationType type, int dx, int dy, vec3 v);
-	void handleWorldFrame(OperationType type, int dx, int dy, vec3 v);
-	void handleCameraPosFrame(OperationType type, int dx, int dy, vec3 v);
-	void handleCameraViewFrame(OperationType type, int dx, int dy, vec3 v);
+	void handleModelFrame(OperationType type, int dx, int dy);
+	void handleWorldFrame(OperationType type, int dx, int dy);
+	void handleCameraPosFrame(OperationType type, int dx, int dy);
+	void handleCameraViewFrame(OperationType type, int dx, int dy);
 	void handleZoom(int scaleSize);
 
 public:
@@ -123,7 +119,7 @@ public:
 	void selectActiveCamera(int index);
 	void featuresStateSelection(ActivationToggleElement e);
 	void addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name);
-	void operate(OperationType type, int dx, int dy, Frames frame,vec3 v);
+	void operate(OperationType type, int dx, int dy, Frames frame);
 	void setProjection(ProjectionType type, float* args);//agrs size is 6, and in coordination with type.
 	void refreshView();
 	void LookAtActiveModel();

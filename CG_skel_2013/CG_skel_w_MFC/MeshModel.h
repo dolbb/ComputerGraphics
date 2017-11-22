@@ -91,15 +91,10 @@ protected :
 		the following matrixes operate as the transformation functions, over the data
 	*/
 	mat4 worldVertexTransform;
-	mat4 worldInvertedVertexTransform;
 	mat4 selfVertexTransform;
-	mat4 selfInvertedVertexTransform;
 	
 	mat3 worldNormalTransform;
-	mat3 worldNormalInvertedTransform;
-	
 	mat3 selfNormalTransform;
-	mat3 selfNormalInvertedTransform;
 	/*
 		actionType will determine if an operator should be in world frame or self frame.
 	*/
@@ -119,15 +114,11 @@ public:
 	void scale(vec3 vec);
 	void uniformicScale(GLfloat a);
 	void translate(vec3 vec);
-	void vertexTransformation(mat4& mat, mat4& invMat);
-	void normalTransformation(mat4& m4, mat4& a4);
+	void vertexTransformation(mat4& mat);
+	void normalTransformation(mat4& m4);
 	const vec3& getCenterOfMass();
 	vec3* getBoundingBox();
 	void resetTransformations();
-	vec3 getNormalBeforeWorld(vec3);
-	vec3 getNormalBeforeSelf(vec3);
-	vec3 getVertexBeforeWorld(vec3);
-	vec3 getVertexBeforeSelf(vec3);
 };
 
 /*=======================================================
