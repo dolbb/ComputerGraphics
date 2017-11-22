@@ -58,8 +58,18 @@ void reshape( int width, int height )
 	scene->draw();
 }
 
+const vec3& getParameters()
+{
+	CXyzDialog dialogue;
+	if (dialogue.DoModal() == IDOK)
+	{
+		return dialogue.GetXYZ();
+	}
+}
+
 void keyboard( unsigned char key, int x, int y )
 {
+	vec3 transformationParameters;
 	switch (key)
 	{
 		//ESC
@@ -96,6 +106,20 @@ void keyboard( unsigned char key, int x, int y )
 				cout << "world" << endl;
 			}
 		break;
+
+		case 'r':
+			transformationParameters = getParameters();
+			scene->operate(ROTATE, 1, 1, currentObjectFrame, transformationParameters*transformationFactor);
+		break;
+
+		case 's':
+			transformationParameters = getParameters();
+			scene->operate(SCALE, 1, 1, currentObjectFrame, transformationParameters*transformationFactor);
+		break;
+
+		case 't':
+			transformationParameters = getParameters();
+			scene->operate(TRANSLATE, 1, 1, currentObjectFrame, transformationParameters*transformationFactor);
 	}
 }
 
@@ -183,15 +207,6 @@ void special(int key, int x, int y)
 	}
 }
 
-const vec3& getParameters()
-{
-	CXyzDialog dialogue;
-	if (dialogue.DoModal() == IDOK)
-	{
-		return dialogue.GetXYZ();
-	}
-}
-
 void motion(int x, int y)
 {
 	// calc difference in mouse movement
@@ -205,11 +220,6 @@ void motion(int x, int y)
 	vec3 transformationParameters;
 	switch (modifier)
 	{
-		case GLUT_ACTIVE_SHIFT:
-			transformationParameters = getParameters();
-			scene->operate(ROTATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame, transformationParameters);
-		break;
-
 		case GLUT_ACTIVE_CTRL:
 			if (dy >= 0)
 			{
@@ -220,14 +230,6 @@ void motion(int x, int y)
 				scene->operate(UNIFORM_SCALE, 1, DEFAULT_SCALING_FACTOR*transformationFactor, currentObjectFrame,defaultVector);
 			}
 		break;
-		
-		case GLUT_ACTIVE_ALT:
-			transformationParameters = getParameters();
-			scene->operate(SCALE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame, transformationParameters);
-		break;
-		
-		default:
-			scene->operate(TRANSLATE, dx*transformationFactor, dy*transformationFactor, currentObjectFrame,defaultVector);
 	}
 }
 
