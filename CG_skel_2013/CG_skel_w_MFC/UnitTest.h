@@ -23,7 +23,10 @@ public:
 	TestException(const string &arg, const char *file, int line);
 	TestException(const char *file, int line);
 	const char *what() const throw(){
-		return msg.c_str();
+		if (isStringOIccupied){
+			return msg.c_str();
+		}
+		return "";
 	}
 };
 
