@@ -40,11 +40,18 @@ Scene *scene;
 Renderer *renderer;
 
 int last_x,last_y;
+int width = DEFAULT_SCREEN_X;
+int height = DEFAULT_SCREEN_Y;
 bool lb_down,rb_down,mb_down;
 Frames currentObjectFrame;
 Frames currentCameraFrame;
 OperationType currentOperation;
 int transformationFactor = 1;
+vec3 startingPoint;
+vec3 endingPoint;
+vec3 rotationAxis;
+GLfloat angle;
+const float EPSILON = FLT_MIN;
 //----------------------------------------------------------------------------
 // Callbacks
 
@@ -53,8 +60,10 @@ void display( void )
 	scene->draw();
 }
 
-void reshape( int width, int height )
+void reshape( int newWidth, int newHeight )
 {
+	width = newWidth;
+	height = newHeight;
 	renderer->resizeBuffers(width, height);
 	scene->draw();
 }
@@ -137,6 +146,30 @@ void mouseWheel(int wheel, int direction, int x, int y)
 	}
 }
 
+vec3 projectToSphere(int x, int y)
+{
+	/*
+		points in xy plane are projected back to the canonical view volume, a sphere with radius 1 is imagined behind
+		the xy plane.
+	*/
+	GLfloat projectedX = (2.0 * x - width) / width;
+	GLfloat projectedY = (2.0*y - height) / height;
+	vec2    projectedXY(projectedX, projectedY);
+	GLfloat d = length(projectedXY);
+	GLfloat projectedZ;
+	if (d <= 1)
+	{
+		projectedZ = sqrt(1 - d);
+	}
+	else
+	{
+		normalize(projectedXY);
+		d = length(projectedXY);
+		projectedZ = sqrt(1 - d);
+	}
+	return normalize(vec3(projectedXY, projectedZ));
+}
+
 void mouse(int button, int state, int x, int y)
 {
 	//button = {GLUT_LEFT_BUTTON, GLUT_MIDDLE_BUTTON, GLUT_RIGHT_BUTTON}
@@ -153,6 +186,20 @@ void mouse(int button, int state, int x, int y)
 		case GLUT_MIDDLE_BUTTON:
 			mb_down = (state==GLUT_UP)?0:1;	
 			break;
+	}
+	if (lb_down)
+	{
+		if (x >= width || y >= height || x < 0 || y < 0) return;
+		startingPoint = projectToSphere(x, y);
+	}
+	if (!lb_down)
+	{
+		if (x >= width || y >= height || x < 0 || y < 0) return;
+		endingPoint = projectToSphere(x, y);
+		rotationAxis = cross(startingPoint, endingPoint);
+		angle = asin(length(rotationAxis) / length(startingPoint)*length(endingPoint));
+		angle = (angle * 180) / M_PI;
+		scene->operate(ROTATE, angle, angle, currentObjectFrame, rotationAxis);
 	}
 }
 
@@ -436,25 +483,25 @@ using namespace std;
 
 int main( int argc, char **argv )
 {
-	//int nRetCode = 0;
-	//
-	//// initialize MFC and print and error on failure
-	//if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
-	//{
-	//	// TODO: change error code to suit your needs
-	//	_tprintf(_T("Fatal Error: MFC initialization failed\n"));
-	//	nRetCode = 1;
-	//}
-	//else
-	//{
-	//	my_main(argc, argv );
-	//}
-	//
-	//return nRetCode;
+	int nRetCode = 0;
+	
+	// initialize MFC and print and error on failure
+	if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
+	{
+		// TODO: change error code to suit your needs
+		_tprintf(_T("Fatal Error: MFC initialization failed\n"));
+		nRetCode = 1;
+	}
+	else
+	{
+		my_main(argc, argv );
+	}
+	
+	return nRetCode;
 
 	/*=======================================
 					TEST BELOW					
 	=======================================*/
-	mainOverallTest();
-	return 0;
+	//mainOverallTest();
+	//return 0;
 }
