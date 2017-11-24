@@ -298,8 +298,8 @@ void MeshModel::scale(vec3 vec){
 	if (!(vec[X_AXIS] == vec[Y_AXIS] && vec[Z_AXIS] == vec[Y_AXIS])){
 		vScalingMat = Scale(invV);
 		vInvertScalingMat = Scale(vec);
+		normalTransformation(vScalingMat, vInvertScalingMat);
 	}
-	normalTransformation(vScalingMat,vInvertScalingMat);
 }
 
 void MeshModel::uniformicScale(GLfloat a){

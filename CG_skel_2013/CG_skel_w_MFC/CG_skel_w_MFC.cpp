@@ -21,6 +21,7 @@
 #include "Renderer.h"
 #include <string>
 #include <algorithm>
+#include "UnitTest.h"
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
@@ -435,19 +436,25 @@ using namespace std;
 
 int main( int argc, char **argv )
 {
-	int nRetCode = 0;
-	
-	// initialize MFC and print and error on failure
-	if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
-	{
-		// TODO: change error code to suit your needs
-		_tprintf(_T("Fatal Error: MFC initialization failed\n"));
-		nRetCode = 1;
-	}
-	else
-	{
-		my_main(argc, argv );
-	}
-	
-	return nRetCode;
+	//int nRetCode = 0;
+	//
+	//// initialize MFC and print and error on failure
+	//if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
+	//{
+	//	// TODO: change error code to suit your needs
+	//	_tprintf(_T("Fatal Error: MFC initialization failed\n"));
+	//	nRetCode = 1;
+	//}
+	//else
+	//{
+	//	my_main(argc, argv );
+	//}
+	//
+	//return nRetCode;
+
+	/*=======================================
+					TEST BELOW					
+	=======================================*/
+	mainOverallTest();
+	return 0;
 }

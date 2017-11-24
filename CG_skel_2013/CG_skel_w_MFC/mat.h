@@ -560,7 +560,7 @@ mat4 RotateY(const GLfloat theta)
 
 	mat4 c;
 	c[2][2] = c[0][0] = cos(angle);
-	c[2][0] = sin(angle);
+	c[2][0] = -sin(angle);
 	c[0][2] = -c[2][0];
 	return c;
 }
