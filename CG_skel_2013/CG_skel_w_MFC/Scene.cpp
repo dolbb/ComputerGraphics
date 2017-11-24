@@ -310,14 +310,14 @@ void Scene::handleCameraViewFrame(OperationType type, int dx, int dy, vec3 v){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE: A = Translate(dx, dy, 0);
 					break;
-	case ROTATE: 
+	case ROTATE: A = RotateZ(v[z]) * RotateX(v[x]);
 		break;
 	case SCALE:
 		break;
 	case UNIFORM_SCALE:
 		break;
 	}
-	//activeCamera->setTransformation(A);
+	activeCamera->setTransformation(A);
 }
 
 void Scene::handleZoom(int scaleSize){
