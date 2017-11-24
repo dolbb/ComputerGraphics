@@ -25,6 +25,7 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
+enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{NEW_MODEL, NEW_CAMERA};
 enum selectMenuIdentifier{ACTIVE_MODEL};
@@ -39,25 +40,44 @@ enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
 Scene *scene;
 Renderer *renderer;
 
+//	mouse call back parameters
 int last_x,last_y;
+bool lb_down, rb_down, mb_down;
+
+//	window width and height
 int width = DEFAULT_SCREEN_X;
 int height = DEFAULT_SCREEN_Y;
-bool lb_down,rb_down,mb_down;
-Frames currentObjectFrame;
-Frames currentCameraFrame;
-OperationType currentOperation;
-int transformationFactor = 1;
+
+
+//	track ball functions parameters
+
 vec3 startingPoint;
 vec3 endingPoint;
 vec3 rotationAxis;
-GLfloat angle;
+
+//	transformation call back functions parameters
+
+int transformationFactor = 1;
 const float EPSILON = FLT_MIN;
+vec3 defaultVector;
+vec3 translationVector;
+GLfloat angle;
+Frames currentObjectFrame;
+Frames currentCameraFrame;
+OperationType currentOperation;
+
 //----------------------------------------------------------------------------
 // Callbacks
 
 void display( void )
 {
 	scene->draw();
+}
+
+void idle()
+{
+	
+	glutPostRedisplay();
 }
 
 void reshape( int newWidth, int newHeight )
@@ -135,7 +155,6 @@ void keyboard( unsigned char key, int x, int y )
 
 void mouseWheel(int wheel, int direction, int x, int y)
 {
-	vec3 defaultVector;
 	if (direction > 0)
 	{
 		scene->operate(UNIFORM_SCALE, DEFAULT_ZOOM, 1, ZOOM,defaultVector);
@@ -153,11 +172,11 @@ vec3 projectToSphere(int x, int y)
 		the xy plane.
 	*/
 	GLfloat projectedX = (2.0 * x - width) / width;
-	GLfloat projectedY = (2.0*y - height) / height;
+	GLfloat projectedY = (height - 2.0*y) / height;
 	vec2    projectedXY(projectedX, projectedY);
 	GLfloat d = length(projectedXY);
 	GLfloat projectedZ;
-	if (d <= 1)
+	if (d < 1)
 	{
 		projectedZ = sqrt(1 - d);
 	}
@@ -192,67 +211,11 @@ void mouse(int button, int state, int x, int y)
 		if (x >= width || y >= height || x < 0 || y < 0) return;
 		startingPoint = projectToSphere(x, y);
 	}
-	if (!lb_down)
-	{
-		if (x >= width || y >= height || x < 0 || y < 0) return;
-		endingPoint = projectToSphere(x, y);
-		rotationAxis = cross(startingPoint, endingPoint);
-		angle = asin(length(rotationAxis) / length(startingPoint)*length(endingPoint));
-		angle = (angle * 180) / M_PI;
-		scene->operate(ROTATE, angle, angle, currentObjectFrame, rotationAxis);
-	}
 }
 
 void special(int key, int x, int y)
 {
-	vec3 defaultVector;
-	switch (key)
-	{
-	case GLUT_KEY_UP:
-		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
-		{
-			scene->operate(ROTATE, 0, DEFAULT_DY*transformationFactor, currentCameraFrame,defaultVector);
-		}
-		else
-		{
-			scene->operate(TRANSLATE, 0, DEFAULT_DY*transformationFactor, currentCameraFrame, defaultVector);
-		}
-	break;
-
-	case GLUT_KEY_DOWN:
-		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
-		{
-			scene->operate(ROTATE, 0, -(DEFAULT_DY*transformationFactor), currentCameraFrame, defaultVector);
-		}
-		else
-		{
-			scene->operate(TRANSLATE, 0, -(DEFAULT_DY*transformationFactor), currentCameraFrame, defaultVector);
-		}
-	break;
-
-	case GLUT_KEY_RIGHT:
-		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
-		{
-			scene->operate(ROTATE, DEFAULT_DX*transformationFactor, 0, currentCameraFrame, defaultVector);
-		}
-		else
-		{
-			scene->operate(TRANSLATE, DEFAULT_DX*transformationFactor, 0, currentCameraFrame, defaultVector);
-		}
-	break;
-
-	case GLUT_KEY_LEFT:
-		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
-		{
-			scene->operate(ROTATE, -(DEFAULT_DX*transformationFactor), 0, currentCameraFrame, defaultVector);
-		}
-		else
-		{
-			scene->operate(TRANSLATE, -(DEFAULT_DX*transformationFactor), 0, currentCameraFrame, defaultVector);
-		}
-	break;
-
-	}
+	
 }
 
 void motion(int x, int y)
@@ -264,19 +227,38 @@ void motion(int x, int y)
 	last_x=x;
 	last_y=y;
 	int modifier = glutGetModifiers();
-	vec3 defaultVector;
-	vec3 transformationParameters;
+	vec3 scalingVector = vec3(1, 1, 1);
 	switch (modifier)
 	{
 		case GLUT_ACTIVE_CTRL:
+			//uniform scaling
 			if (dy >= 0)
 			{
-				scene->operate(UNIFORM_SCALE, DEFAULT_SCALING_FACTOR*transformationFactor, 1, currentObjectFrame, defaultVector);
+				scene->operate(SCALE, 1, 1, currentObjectFrame, transformationFactor*DEFAULT_SCALING_FACTOR*scalingVector);
 			}
 			else
 			{
-				scene->operate(UNIFORM_SCALE, 1, DEFAULT_SCALING_FACTOR*transformationFactor, currentObjectFrame,defaultVector);
+				scene->operate(SCALE, 1, 1, currentObjectFrame, scalingVector / (DEFAULT_SCALING_FACTOR*transformationFactor));
 			}
+		break;
+
+		case GLUT_ACTIVE_SHIFT:
+			//translation
+			if (x >= width || y >= height || x < 0 || y < 0) return;
+			endingPoint = projectToSphere(x, y);
+			translationVector = endingPoint - startingPoint;
+			scene->operate(TRANSLATE, 1, 1, currentObjectFrame, translationVector*transformationFactor);
+			break;
+
+		default:
+			//rotation
+			if (x >= width || y >= height || x < 0 || y < 0) return;
+			endingPoint = projectToSphere(x, y);
+			rotationAxis = cross(startingPoint, endingPoint);
+			angle = length(rotationAxis) / length(startingPoint)*length(endingPoint);
+			angle = (angle * 180) / M_PI;
+			if (isnan(angle)) return;
+			scene->operate(ROTATE, (int)angle*transformationFactor, (int)angle*transformationFactor, currentObjectFrame, normalize(rotationAxis));
 		break;
 	}
 }
@@ -470,7 +452,10 @@ int my_main( int argc, char **argv )
 	glutMotionFunc ( motion );
 	glutReshapeFunc( reshape );
 	glutMouseWheelFunc( mouseWheel );
+	glutIdleFunc(idle);
 	initMenu();
+	renderer->refresh();
+	renderer->SwapBuffers();
 	glutMainLoop();
 	delete scene;
 	delete renderer;
@@ -483,25 +468,33 @@ using namespace std;
 
 int main( int argc, char **argv )
 {
-	int nRetCode = 0;
-	
-	// initialize MFC and print and error on failure
-	if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
+	DebugMode d = OFF;
+	if (d == OFF)
 	{
-		// TODO: change error code to suit your needs
-		_tprintf(_T("Fatal Error: MFC initialization failed\n"));
-		nRetCode = 1;
+		int nRetCode = 0;
+
+		// initialize MFC and print and error on failure
+		if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
+		{
+			// TODO: change error code to suit your needs
+			_tprintf(_T("Fatal Error: MFC initialization failed\n"));
+			nRetCode = 1;
+		}
+		else
+		{
+			my_main(argc, argv);
+		}
+
+		return nRetCode;
+
 	}
 	else
 	{
-		my_main(argc, argv );
+		/*=======================================
+						TEST BELOW
+		=======================================*/
+		mainOverallTest();
+		return 0;
 	}
 	
-	return nRetCode;
-
-	/*=======================================
-					TEST BELOW					
-	=======================================*/
-	//mainOverallTest();
-	//return 0;
 }
