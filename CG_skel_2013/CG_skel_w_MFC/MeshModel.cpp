@@ -296,9 +296,7 @@ void MeshModel::scale(vec3 vec){
 	vertexTransformation(vScalingMat, vInvertScalingMat);
 	//if we have a non-uniformic scaling, we need to change the scaling mat accordingly:
 	if (!(vec[X_AXIS] == vec[Y_AXIS] && vec[Z_AXIS] == vec[Y_AXIS])){
-		vScalingMat = Scale(invV);
-		vInvertScalingMat = Scale(vec);
-		normalTransformation(vScalingMat, vInvertScalingMat);
+		normalTransformation(vInvertScalingMat, vScalingMat);
 	}
 }
 

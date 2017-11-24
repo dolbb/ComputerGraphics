@@ -25,6 +25,7 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
+
 enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{NEW_MODEL, NEW_CAMERA};
@@ -468,9 +469,9 @@ using namespace std;
 
 int main( int argc, char **argv )
 {
-	DebugMode d = OFF;
-	if (d == OFF)
-	{
+	DebugMode d = ON;
+	
+	if (d == OFF){
 		int nRetCode = 0;
 
 		// initialize MFC and print and error on failure
@@ -486,15 +487,12 @@ int main( int argc, char **argv )
 		}
 
 		return nRetCode;
-
 	}
-	else
-	{
-		/*=======================================
-						TEST BELOW
-		=======================================*/
+	/*=======================================
+			TEST BELOW					
+	=======================================*/
+	else{
 		mainOverallTest();
 		return 0;
 	}
-	
 }
