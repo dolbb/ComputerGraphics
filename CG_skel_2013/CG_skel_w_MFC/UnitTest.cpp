@@ -42,7 +42,7 @@ TestException::TestException(const char *file, int line) : runtime_error("tmp"),
 void UnitTest::test(){
 	try{
 		SetConsoleTextAttribute(hConsole, WHITE);
-		cout << "running test: " << name << setw(10) << "	[ ";
+		cout << "running test: " << name  << "	[ ";
 		
 		func();
 		
@@ -92,8 +92,17 @@ void vecTestFunc(){
 	
 }
 
-void matTestFunc(){
-	
+void matRotationTestFunc(){
+
+}
+void matTranslationTestFunc(){
+
+}
+void matScalingTestFunc(){
+
+}
+void matUniScalingTestFunc(){
+
 }
 
 void MeshTransformationsTestFunc(){
@@ -105,12 +114,26 @@ void MeshTransformationsTestFunc(){
 =============================================================================*/
 void mainOverallTest(){
 	/*tests creation:	*/
-	UnitTest vecTest				("vec", vecTestFunc);
-	UnitTest matTest				("mat", matTestFunc);
-	UnitTest MeshTransformationsTest("Mesh", MeshTransformationsTestFunc);
+	UnitTest vecTest				("vec test            ", vecTestFunc				);
+	
+	UnitTest matRotateTest			("mat rotation test   ", matRotationTestFunc		);
+	UnitTest matTranslateTest		("mat translation test", matTranslationTestFunc		);
+	UnitTest matScaleTest			("mat scaling test    ", matScalingTestFunc			);
+	UnitTest matUniScaleTest		("mat uni-scaling test", matUniScalingTestFunc		);
+
+	UnitTest MeshTransformationsTest("Mesh                ", MeshTransformationsTestFunc);
 
 	/*tests activation:	*/
 	vecTest.test();
-	matTest.test();
+
+	matRotateTest.test();
+	matTranslateTest.test();
+	matScaleTest.test();
+	matUniScaleTest.test();
+
 	MeshTransformationsTest.test();
+
+
+
+
 }
