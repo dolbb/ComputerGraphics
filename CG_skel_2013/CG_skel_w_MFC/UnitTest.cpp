@@ -89,18 +89,23 @@ void MeshTransformationsTestFunc();
 =============================================================================*/
 
 void vecTestFunc(){
-	
+	//vec2 v;
+	//CG_ASSERT(v[0] == 0);
+	//CG_ASSERT(v[0] != 0);
 }
 
 void matRotationTestFunc(){
 
 }
+
 void matTranslationTestFunc(){
 
 }
+
 void matScalingTestFunc(){
 
 }
+
 void matUniScalingTestFunc(){
 
 }

@@ -25,6 +25,7 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
+enum DebugMode{ON,OFF};
 enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{NEW_MODEL, NEW_CAMERA};
 enum selectMenuIdentifier{ACTIVE_MODEL};
@@ -483,25 +484,30 @@ using namespace std;
 
 int main( int argc, char **argv )
 {
-	int nRetCode = 0;
+	DebugMode d = ON;
 	
-	// initialize MFC and print and error on failure
-	if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
-	{
-		// TODO: change error code to suit your needs
-		_tprintf(_T("Fatal Error: MFC initialization failed\n"));
-		nRetCode = 1;
-	}
-	else
-	{
-		my_main(argc, argv );
-	}
-	
-	return nRetCode;
+	if (d == OFF){
+		int nRetCode = 0;
 
+		// initialize MFC and print and error on failure
+		if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
+		{
+			// TODO: change error code to suit your needs
+			_tprintf(_T("Fatal Error: MFC initialization failed\n"));
+			nRetCode = 1;
+		}
+		else
+		{
+			my_main(argc, argv);
+		}
+
+		return nRetCode;
+	}
 	/*=======================================
 					TEST BELOW					
 	=======================================*/
-	//mainOverallTest();
-	//return 0;
+	else{
+		mainOverallTest();
+		return 0;
+	}
 }
