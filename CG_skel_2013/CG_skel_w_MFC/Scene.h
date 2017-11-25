@@ -39,7 +39,7 @@ typedef struct OperateParams{
 	vec3 v;
 	GLfloat theta;
 	GLfloat uScale;
-	OperateParams(): frame(WORLD),	type(ROTATE), v(0,0,0), theta(0), uScale(1){}
+	OperateParams(): frame(WORLD),	type(ROTATE), v(0,0,1), theta(0), uScale(1){}
 };
 
 typedef struct ProjectionParams{

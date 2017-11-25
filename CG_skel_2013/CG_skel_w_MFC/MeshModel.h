@@ -125,7 +125,7 @@ public:
 	void vertexTransformation(mat4& mat, mat4& invMat);
 	void normalTransformation(mat4& m4, mat4& a4);
 	const vec3& getCenterOfMass();
-	vec3* getBoundingBox();
+	void getBoundingBox(vec3* outVec);
 	void resetTransformations();
 	vec3 getNormalBeforeWorld(vec3&);
 	vec3 getNormalBeforeSelf(vec3&);

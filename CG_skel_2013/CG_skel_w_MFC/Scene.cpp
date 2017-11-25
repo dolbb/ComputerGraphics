@@ -297,16 +297,16 @@ void Scene::operate(OperateParams &p){
 
 void Scene::handleMeshModelFrame(OperateParams &p){
 	if (activeModel == NULL){ return; }
-	MeshModel m = *(changeToMeshModel(activeModel));
-	m.frameActionSet((p.frame == MODEL) ? OBJECT_ACTION : WORLD_ACTION);
+	MeshModel* m = changeToMeshModel(activeModel);
+	m->frameActionSet((p.frame == MODEL) ? OBJECT_ACTION : WORLD_ACTION);
 	vec3 worldVec = activeCamera->getWorldVector(p.v);
-	worldVec = (p.frame == MODEL) ? m.getVertexBeforeWorld(worldVec) : worldVec;
+	worldVec = (p.frame == MODEL) ? m->getVertexBeforeWorld(worldVec) : worldVec;
 	switch (p.type){
-	case TRANSLATE: m.translate(worldVec);
+	case TRANSLATE: m->translate(worldVec);
 		break;
-	case ROTATE:m.rotateVec(vec3(0, 0, 0), worldVec, p.theta);
+	case ROTATE:m->rotateXYZ(p.v * p.theta);
 		break;
-	case SCALE: m.scale(worldVec);
+	case SCALE: m->scale(worldVec);
 		break;
 	}
 }
@@ -359,29 +359,35 @@ void Scene::LookAtActiveModel(){
 	}
 	MeshModel* mModelP = static_cast <MeshModel*>(activeModel);
 	vec3 meshCenter = (mModelP)->getCenterOfMass();
-	vec3* bBox = mModelP->getBoundingBox();
+	vec3 bBox[BOX_VERTICES_NUM];
+	mModelP->getBoundingBox(bBox);
 	
 	GLfloat dx = bBox[4][0] - bBox[0][0]; //access x value in vector saved in 000 = 0 so that x is 0, 100 = 4 so that x is 1
 	GLfloat dy = bBox[2][1] - bBox[0][1]; //access y value (000 = 0 so that y is 0, 010 = 2 so that y is 1)
 	GLfloat dz = bBox[1][2] - bBox[0][2]; //access z value (000 = 0 so that z is 0, 001 = 1 so that z is 1)
 
+	GLfloat posDx = dx > 0 ? dx : -dx;
+	GLfloat posDy = dy > 0 ? dy : -dy;
+	GLfloat posDz = dz > 0 ? dz : -dz;
+
 	vec4 eye(meshCenter);
-	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
+	eye[2] += 2 * posDz;	//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
 	vec4 up(0,1,0,0);		//up is set to z axis
 
 	activeCamera->LookAt(eye, at, up);
 	
-	//set needed orto params:
+	//set needed projection params:
 	ProjectionParams p;
-	p.left = -dx * 2 / 3;
-	p.right = dx * 2 / 3;
-	p.bottom = -dy * 2 / 3;
-	p.top = dy * 2 / 3;
-	p.zNear = dz*2;
-	p.zFar = dz*3;
+	p.left = -posDx * 2 / 3;
+	p.right = posDx * 2 / 3;
+	p.bottom = -posDy * 2 / 3;
+	p.top = posDy * 2 / 3;
+	p.zNear = posDz;
+	p.zFar = posDz * 3;
 
-	activeCamera->Ortho(p);
+	activeCamera->Frustum(p);
+	draw();
 }
 
 vector <string> Scene::getModelNames(){

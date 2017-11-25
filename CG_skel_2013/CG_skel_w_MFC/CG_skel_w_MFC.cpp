@@ -271,11 +271,11 @@ void motion(int x, int y)
 			parameters.type = ROTATE;
 			if (x >= width || y >= height || x < 0 || y < 0) return;
 			endingPoint = projectToSphere(x, y);
-			translationVector = cross(startingPoint, endingPoint);
+			rotationAxis = cross(startingPoint, endingPoint);
 			angle = length(rotationAxis) / length(startingPoint)*length(endingPoint);
 			angle = (angle * 180) / M_PI;
 			if (isnan(angle)) return;
-			parameters.v = translationVector;
+			parameters.v = rotationAxis;
 			parameters.theta = angle;
 			scene->operate(parameters);
 		break;

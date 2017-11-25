@@ -219,22 +219,36 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 
 const vec3& MeshModel::getCenterOfMass()
 {
-/*	vec3 mass;
-	for (int i = 0; i < vertexPositionsSize; i++)
-	{
-		mass += vertexPositions[i];
-	}
-	return mass / vertexPositionsSize;*/
 	GLfloat x = (boundingBoxVertices[4][0] + boundingBoxVertices[0][0]) / 2;
 	GLfloat y = (boundingBoxVertices[2][1] + boundingBoxVertices[0][1]) / 2;
 	GLfloat z = (boundingBoxVertices[1][2] + boundingBoxVertices[0][2]) / 2;
-
-	return vec3(x,y,z);
+	
+	vec4 selfVec(worldVertexTransform * selfVertexTransform * vec4(x, y, z, 1));
+	vec3 returned(x,y,z);
+	if (selfVec[3] != 0){
+		returned[0] = selfVec[0] / selfVec[3];
+		returned[1] = selfVec[1] / selfVec[3];
+		returned[2] = selfVec[2] / selfVec[3];
+	}
+	return returned;
 }
 
-vec3* MeshModel::getBoundingBox()
+void MeshModel::getBoundingBox(vec3* outVec)
 {
-	return boundingBoxVertices;
+	vec4 tmp;
+	for (int i = 0 ; i < BOX_VERTICES_NUM ; ++i){
+		tmp[0] = boundingBoxVertices[i][0];
+		tmp[1] = boundingBoxVertices[i][1];
+		tmp[2] = boundingBoxVertices[i][2];
+		tmp[3] = 1;
+
+		tmp = worldVertexTransform * selfVertexTransform * tmp;
+		tmp /= tmp[3];
+
+		outVec[i][0] = tmp[0];
+		outVec[i][1] = tmp[1];
+		outVec[i][2] = tmp[2];
+	}
 }
 
 void MeshModel::draw(Renderer *renderer){
@@ -258,8 +272,8 @@ void MeshModel::draw(Renderer *renderer){
 
 void MeshModel::featuresStateToggle(ActivationToggleElement e){
 	switch (e){
-	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = vertexNormals ? !vertexNormalsDisplayed : vertexNormalsDisplayed; break;
-	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = faceNormals ? !faceNormalsDisplayed : faceNormalsDisplayed ;	break;
+	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = vertexNormalsSize != INVALID_SIZE ? !vertexNormalsDisplayed : false; break;
+	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = faceNormalsSize != INVALID_SIZE ? !faceNormalsDisplayed : false;	break;
 	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed = !boundingBoxDisplayed; break;
 	}
 }
@@ -269,28 +283,31 @@ void MeshModel::frameActionSet(ActionType a){
 }
 
 void MeshModel::rotateVec(vec3 p1, vec3 p2, GLfloat theta){
-	mat4 totalRotation = RotateVec(p1, p2, theta);
-	mat4 totalInvertRotation = RotateVec(p1, p2, -theta);
+	if (p1[0] != p2[0] || p1[1] != p2[1] || p1[2] != p2[2]){
+		mat4 totalRotation = RotateVec(p1, p2, theta);
+		mat4 totalInvertRotation = RotateVec(p1, p2, -theta);
 
-	vertexTransformation(totalRotation, totalInvertRotation);
-	normalTransformation(totalRotation, totalInvertRotation);
+		vertexTransformation(totalRotation, totalInvertRotation);
+		normalTransformation(totalRotation, totalInvertRotation);
+	}
 }
 
 void MeshModel::rotateXYZ(vec3 vec){
 	/*create the rotating matrixs from the left:*/
-	//TODO: check if order is needed or all is cool:
-	mat4 rotateMatX = RotateX(vec[X_AXIS]);
-	mat4 rotateMatY = RotateY(vec[Y_AXIS]);
-	mat4 rotateMatZ = RotateZ(vec[Z_AXIS]);
-	mat4 totalRotation = rotateMatZ * rotateMatY * rotateMatX;
+	if (vec[0] != 0 || vec[1] != 0 || vec[2] != 0){
+		mat4 rotateMatX = RotateX(vec[X_AXIS]);
+		mat4 rotateMatY = RotateY(vec[Y_AXIS]);
+		mat4 rotateMatZ = RotateZ(vec[Z_AXIS]);
+		mat4 totalRotation = rotateMatZ * rotateMatY * rotateMatX;
 
-	mat4 invRotateMatZ = RotateZ(-vec[Z_AXIS]);
-	mat4 invRotateMatY = RotateY(-vec[Y_AXIS]);
-	mat4 invRotateMatX = RotateX(-vec[X_AXIS]);
-	mat4 totalInvertRotation = rotateMatX * invRotateMatY * invRotateMatZ;
+		mat4 invRotateMatZ = RotateZ(-vec[Z_AXIS]);
+		mat4 invRotateMatY = RotateY(-vec[Y_AXIS]);
+		mat4 invRotateMatX = RotateX(-vec[X_AXIS]);
+		mat4 totalInvertRotation = rotateMatX * invRotateMatY * invRotateMatZ;
 
-	vertexTransformation(totalRotation, totalInvertRotation);
-	normalTransformation(totalRotation, totalInvertRotation);
+		vertexTransformation(totalRotation, totalInvertRotation);
+		normalTransformation(totalRotation, totalInvertRotation);
+	}
 }
 
 void MeshModel::scale(vec3 vec){
