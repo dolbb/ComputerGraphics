@@ -297,16 +297,16 @@ void Scene::operate(OperateParams &p){
 
 void Scene::handleMeshModelFrame(OperateParams &p){
 	if (activeModel == NULL){ return; }
-	MeshModel m = *(changeToMeshModel(activeModel));
-	m.frameActionSet((p.frame == MODEL) ? OBJECT_ACTION : WORLD_ACTION);
+	MeshModel* m = changeToMeshModel(activeModel);
+	m->frameActionSet((p.frame == MODEL) ? OBJECT_ACTION : WORLD_ACTION);
 	vec3 worldVec = activeCamera->getWorldVector(p.v);
-	worldVec = (p.frame == MODEL) ? m.getVertexBeforeWorld(worldVec) : worldVec;
+	worldVec = (p.frame == MODEL) ? m->getVertexBeforeWorld(worldVec) : worldVec;
 	switch (p.type){
-	case TRANSLATE: m.translate(worldVec);
+	case TRANSLATE: m->translate(p.v);
 		break;
-	case ROTATE:m.rotateVec(vec3(0, 0, 0), worldVec, p.theta);
+	case ROTATE:m->rotateXYZ(p.v);
 		break;
-	case SCALE: m.scale(worldVec);
+	case SCALE: m->scale(p.v);
 		break;
 	}
 }

@@ -34,9 +34,10 @@ enum toolsMenuIdentifier{LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP,SET_CAMERA
 enum toggleMenuIdentifier{FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING};
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
+enum scalingAxis{xT,yT,zT,uniformT};
 
-#define DEFAULT_ZOOM 1.5
-#define DEFAULT_SCALING_FACTOR 1.5
+#define DEFAULT_ZOOM 1.2
+#define DEFAULT_SCALING_FACTOR 1.2
 
 Scene *scene;
 Renderer *renderer;
@@ -48,7 +49,6 @@ bool lb_down, rb_down, mb_down;
 //	window width and height
 int width = DEFAULT_SCREEN_X;
 int height = DEFAULT_SCREEN_Y;
-
 
 //	track ball functions parameters
 
@@ -67,6 +67,8 @@ Frames currentObjectFrame;
 Frames currentCameraFrame;
 OperationType currentOperation;
 OperateParams parameters;
+scalingAxis currentAxis=uniformT;
+
 //----------------------------------------------------------------------------
 // Callbacks
 
@@ -157,6 +159,27 @@ void keyboard( unsigned char key, int x, int y )
 			parameters.v = getParameters();
 			parameters.type = TRANSLATE;
 			scene->operate(parameters);
+		break;
+
+		case 'x':
+			currentAxis = xT;
+			cout << "current transformation axis: X" << endl;
+		break;
+
+		case 'y':
+			currentAxis = yT;
+			cout << "current transformation axis: Y" << endl;
+		break;
+
+		case 'z':
+			currentAxis = zT;
+			cout << "current transformation axis: Z" << endl;
+		break;
+
+		case 'u':
+			currentAxis = uniformT;
+			cout << "current transformation axis: uniform" << endl;
+		break;
 	}
 }
 
@@ -238,21 +261,30 @@ void motion(int x, int y)
 	last_x=x;
 	last_y=y;
 	int modifier = glutGetModifiers();
-	vec3 scalingVector = vec3(1, 1, 1);
 	parameters.frame = currentObjectFrame;
+
+	//scaling parameters
+	vec3 uniformScalingVector = vec3(1, 1, 1);
 	switch (modifier)
 	{
 		case GLUT_ACTIVE_CTRL:
-			//uniform scaling
+			//scaling
 			parameters.type = SCALE;
-			if (dy >= 0)
+			parameters.v = uniformScalingVector;
+			if (dy < 0)
 			{
-				parameters.v = scalingVector*DEFAULT_SCALING_FACTOR*transformationFactor;
+				if (currentAxis == xT) parameters.v[0] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == yT) parameters.v[1] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == zT) parameters.v[2] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == uniformT) parameters.v *= (DEFAULT_SCALING_FACTOR*transformationFactor);
 				scene->operate(parameters);
 			}
 			else
 			{
-				parameters.v = scalingVector/(DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == xT) parameters.v[0] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == yT) parameters.v[1] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == zT) parameters.v[2] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+				if (currentAxis == uniformT) parameters.v /= (DEFAULT_SCALING_FACTOR*transformationFactor);
 				scene->operate(parameters);
 			}
 		break;
@@ -264,18 +296,18 @@ void motion(int x, int y)
 			endingPoint = projectToSphere(x, y);
 			parameters.v = (endingPoint - startingPoint)*transformationFactor;
 			scene->operate(parameters);
-			break;
+		break;
 
 		default:
 			//rotation
 			parameters.type = ROTATE;
 			if (x >= width || y >= height || x < 0 || y < 0) return;
 			endingPoint = projectToSphere(x, y);
-			translationVector = cross(startingPoint, endingPoint);
+			rotationAxis = cross(startingPoint, endingPoint);
 			angle = length(rotationAxis) / length(startingPoint)*length(endingPoint);
 			angle = (angle * 180) / M_PI;
 			if (isnan(angle)) return;
-			parameters.v = translationVector;
+			parameters.v = rotationAxis;
 			parameters.theta = angle;
 			scene->operate(parameters);
 		break;
