@@ -152,14 +152,7 @@ void Camera::changeRelativePosition(vec3 &v){
 
 void Camera::zoom(GLfloat scale){
 	if (scale > 0){
-		if (pType == PERSPECTIVE){
-			//TODO: use perspective view.
-		}else{
-			p.bottom*= scale; 
-			p.top	*= scale;
-			p.left	*= scale;
-			p.right	*= scale;
-		}
+		projection = Scale(scale, scale, scale) * projection;
 	}
 }
 
@@ -346,7 +339,7 @@ void Scene::handleCameraViewFrame(OperateParams &p){
 	//TODO:implement..
 //}
 
-void Scene::setProjection(ProjectionType type, ProjectionParams &p){
+void Scene::setProjection(ProjectionType &type, ProjectionParams &p){
 	switch (type){
 	case ORTHO:	activeCamera->Ortho(p); break;
 	case FRUSTUM: activeCamera->Frustum(p); break;
