@@ -336,10 +336,6 @@ void Scene::handleCameraViewFrame(OperateParams &p){
 	activeCamera->setTransformation(A);
 }
 
-//void Scene::handleZoom(OperateParams &p){
-	//TODO:implement..
-//}
-
 void Scene::setProjection(ProjectionType &type, ProjectionParams &p){
 	switch (type){
 	case ORTHO:	activeCamera->Ortho(p); break;

@@ -101,16 +101,12 @@ void Renderer::SetDemoBuffer()
 vec2 Renderer::processVertex(vec3 vertex, drawType type)
 {
 	vec4 homogenous;
-	vec4 presentedVec;
-	if (type==NORMAL)
-	{
-		vertex = normalTransform*vertex;
-		homogenous=vertex;
-		presentedVec = normalPipeline * homogenous;
+	vec4 presentedVec(vertex);
+	homogenous = vertex;
+	if (type == NORMAL){
+		presentedVec = projection * cameraTransform * presentedVec;
 	}
-	else
-	{
-		homogenous = vertex;
+	else{
 		presentedVec = totalPipline*vertex;
 	}
 	//normalize display coordinates
@@ -152,7 +148,13 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 		v1 = vertexPositions[i + 1];
 		v2 = vertexPositions[i + 2];
 		faceCenter = vec3((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3);
-		drawLine(processVertex(faceCenter, NORMAL), processVertex(faceCenter + faceNormals[currentFace], NORMAL));
+		vec4 homo = faceCenter;
+		homo = objectTransform * homo;
+		if (homo[3] != 0){ homo /= homo[3];}	//normalize homogenous to vec3.
+		vec3 homo3D(homo[0], homo[1], homo[2]);
+		vec3 nHomo = normalTransform * faceNormals[currentFace];
+		nHomo += homo3D;	
+		drawLine(processVertex(faceCenter, VERTEX), processVertex(nHomo, NORMAL));
 	}
 }
 
@@ -161,8 +163,14 @@ void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int 
 	if (vertexNormals == NULL) { return; }
 	for (int i = 0; i < vertexSize; i++)
 	{
-		//TODO: CHECK IF NORMALIZE IS NEEDED
-		drawLine(processVertex(vertexPositions[i], VERTEX), processVertex((vertexPositions[i] + vertexNormals[i]), VERTEX));
+
+		vec4 homo = vertexPositions[i];
+		homo = objectTransform * homo;
+		if (homo[3] != 0){ homo /= homo[3]; }	//normalize homogenous to vec3.
+		vec3 homo3D(homo[0], homo[1], homo[2]);
+		vec3 nHomo = normalTransform * vertexNormals[i];
+		nHomo += homo3D;
+		drawLine(processVertex(vertexPositions[i], VERTEX), processVertex(nHomo, NORMAL));
 	}
 }
 
@@ -244,7 +252,7 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 
 void Renderer::updateTotalPipline(){
 	totalPipline = projection*cameraTransform*objectTransform;
-	normalPipeline = projection*cameraTransform;
+	normalPipeline = projection*cameraTransform*normalTransform;
 }
 
 /////////////////////////////////////////////////////
