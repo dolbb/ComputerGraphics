@@ -66,7 +66,7 @@ GLfloat angle;
 Frames currentObjectFrame;
 Frames currentCameraFrame;
 OperationType currentOperation;
-
+OperateParams parameters;
 //----------------------------------------------------------------------------
 // Callbacks
 
@@ -123,46 +123,56 @@ void keyboard( unsigned char key, int x, int y )
 			}
 		break;
 
-		//swap model transformation frame
-		case 'c':
-			cout << "current camera transformation frame: ";
-			if (currentCameraFrame == CAMERA_POSITION)
-			{
-				currentCameraFrame = CAMERA_VIEW;
-				cout << "view" << endl;
-			}
-			else
-			{
-				currentCameraFrame = CAMERA_POSITION;
-				cout << "world" << endl;
-			}
+		////swap model transformation frame
+		//case 'c':
+		//	cout << "current camera transformation frame: ";
+		//	if (currentCameraFrame == CAMERA_POSITION)
+		//	{
+		//		currentCameraFrame = CAMERA_VIEW;
+		//		cout << "view" << endl;
+		//	}
+		//	else
+		//	{
+		//		currentCameraFrame = CAMERA_POSITION;
+		//		cout << "world" << endl;
+		//	}
 		break;
 
 		case 'r':
-			transformationParameters = getParameters();
-			scene->operate(ROTATE, 1, 1, currentObjectFrame, transformationParameters*transformationFactor);
+			parameters.frame = currentObjectFrame;
+			parameters.v = getParameters();
+			parameters.type = ROTATE;
+			scene->operate(parameters);
 		break;
 
 		case 's':
-			transformationParameters = getParameters();
-			scene->operate(SCALE, 1, 1, currentObjectFrame, transformationParameters*transformationFactor);
+			parameters.frame = currentObjectFrame;
+			parameters.v = getParameters();
+			parameters.type = SCALE;
+			scene->operate(parameters);
 		break;
 
 		case 't':
-			transformationParameters = getParameters();
-			scene->operate(TRANSLATE, 1, 1, currentObjectFrame, transformationParameters*transformationFactor);
+			parameters.frame = currentObjectFrame;
+			parameters.v = getParameters();
+			parameters.type = TRANSLATE;
+			scene->operate(parameters);
 	}
 }
 
 void mouseWheel(int wheel, int direction, int x, int y)
 {
+	parameters.frame = currentCameraFrame;
+	parameters.type = SCALE;
 	if (direction > 0)
 	{
-		scene->operate(UNIFORM_SCALE, DEFAULT_ZOOM, 1, ZOOM,defaultVector);
+		parameters.uScale = DEFAULT_ZOOM*transformationFactor;
+		scene->operate(parameters);
 	}
 	else
 	{
-		scene->operate(UNIFORM_SCALE, 1, DEFAULT_ZOOM, ZOOM, defaultVector);
+		parameters.uScale = 1 / (DEFAULT_ZOOM*transformationFactor);
+		scene->operate(parameters);
 	}
 }
 
@@ -229,37 +239,44 @@ void motion(int x, int y)
 	last_y=y;
 	int modifier = glutGetModifiers();
 	vec3 scalingVector = vec3(1, 1, 1);
+	parameters.frame = currentObjectFrame;
 	switch (modifier)
 	{
 		case GLUT_ACTIVE_CTRL:
 			//uniform scaling
+			parameters.type = SCALE;
 			if (dy >= 0)
 			{
-				scene->operate(SCALE, 1, 1, currentObjectFrame, transformationFactor*DEFAULT_SCALING_FACTOR*scalingVector);
+				parameters.v = scalingVector*DEFAULT_SCALING_FACTOR*transformationFactor;
+				scene->operate(parameters);
 			}
 			else
 			{
-				scene->operate(SCALE, 1, 1, currentObjectFrame, scalingVector / (DEFAULT_SCALING_FACTOR*transformationFactor));
+				parameters.v = scalingVector/(DEFAULT_SCALING_FACTOR*transformationFactor);
+				scene->operate(parameters);
 			}
 		break;
 
 		case GLUT_ACTIVE_SHIFT:
 			//translation
+			parameters.type = TRANSLATE;
 			if (x >= width || y >= height || x < 0 || y < 0) return;
 			endingPoint = projectToSphere(x, y);
-			translationVector = endingPoint - startingPoint;
-			scene->operate(TRANSLATE, 1, 1, currentObjectFrame, translationVector*transformationFactor);
+			parameters.v = (endingPoint - startingPoint)*transformationFactor;
+			scene->operate(parameters);
 			break;
 
 		default:
 			//rotation
 			if (x >= width || y >= height || x < 0 || y < 0) return;
 			endingPoint = projectToSphere(x, y);
-			rotationAxis = cross(startingPoint, endingPoint);
+			translationVector = cross(startingPoint, endingPoint);
 			angle = length(rotationAxis) / length(startingPoint)*length(endingPoint);
 			angle = (angle * 180) / M_PI;
 			if (isnan(angle)) return;
-			scene->operate(ROTATE, (int)angle*transformationFactor, (int)angle*transformationFactor, currentObjectFrame, normalize(rotationAxis));
+			parameters.v = translationVector;
+			parameters.theta = angle;
+			scene->operate(parameters);
 		break;
 	}
 }
