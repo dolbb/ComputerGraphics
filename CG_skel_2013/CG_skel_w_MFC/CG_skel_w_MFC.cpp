@@ -35,6 +35,7 @@ enum toggleMenuIdentifier{FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_REN
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
 enum scalingAxis{xT,yT,zT,uniformT};
+enum cameraDirection{elevated, nonElevated};
 
 #define DEFAULT_ZOOM 1.2
 #define DEFAULT_SCALING_FACTOR 1.2
@@ -68,6 +69,7 @@ Frames currentCameraFrame;
 OperationType currentOperation;
 OperateParams parameters;
 scalingAxis currentAxis=uniformT;
+cameraDirection direction = nonElevated;
 
 //----------------------------------------------------------------------------
 // Callbacks
@@ -180,6 +182,19 @@ void keyboard( unsigned char key, int x, int y )
 			currentAxis = uniformT;
 			cout << "current transformation axis: uniform" << endl;
 		break;
+
+		case 'e':
+			if (direction == nonElevated)
+			{
+				direction = elevated;
+				cout << "the camera is now elevating in scene" << endl;
+			}
+			else
+			{
+				direction = nonElevated;
+				cout << "the camera is now not elevating in scene" << endl;
+			}
+			break;
 	}
 }
 
@@ -249,7 +264,43 @@ void mouse(int button, int state, int x, int y)
 
 void special(int key, int x, int y)
 {
-	
+	parameters.frame = currentCameraFrame;
+	parameters.type = TRANSLATE;
+	switch (key)
+	{
+	case GLUT_KEY_UP:
+		if (direction = elevated)
+		{
+			parameters.v = vec3(0, 1, 0)*transformationFactor;
+			scene->operate(parameters);
+		}
+		else
+		{
+			parameters.v = vec3(0, 0, -1)*transformationFactor;
+			scene->operate(parameters);
+		}
+		break;
+	case GLUT_KEY_DOWN:
+		if (direction = elevated)
+		{
+			parameters.v = vec3(0, -1, 0)*transformationFactor;
+			scene->operate(parameters);
+		}
+		else
+		{
+			parameters.v = vec3(0, 0, 1)*transformationFactor;
+			scene->operate(parameters);
+		}
+		break;
+	case GLUT_KEY_LEFT:
+		parameters.v = vec3(-1, 0, 0)*transformationFactor;
+		scene->operate(parameters);
+		break;
+	case GLUT_KEY_RIGHT:
+		parameters.v = vec3(1, 0, 0)*transformationFactor;
+		scene->operate(parameters);
+		break;
+	}
 }
 
 void motion(int x, int y)
