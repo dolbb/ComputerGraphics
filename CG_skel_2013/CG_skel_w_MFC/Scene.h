@@ -144,7 +144,7 @@ public:
 	void featuresStateSelection(ActivationToggleElement e);
 	void addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name);
 	void operate(OperateParams &p);
-	void setProjection(ProjectionType type, ProjectionParams &p);
+	void setProjection(ProjectionType &type, ProjectionParams &p);
 	void refreshView();
 	void LookAtActiveModel();
 	vector <string> getModelNames();
