@@ -268,6 +268,7 @@ void motion(int x, int y)
 
 		default:
 			//rotation
+			parameters.type = ROTATE;
 			if (x >= width || y >= height || x < 0 || y < 0) return;
 			endingPoint = projectToSphere(x, y);
 			translationVector = cross(startingPoint, endingPoint);
@@ -486,7 +487,7 @@ using namespace std;
 
 int main( int argc, char **argv )
 {
-	DebugMode d = ON;
+	DebugMode d = OFF;
 	
 	if (d == OFF){
 		int nRetCode = 0;
