@@ -271,18 +271,6 @@ void special(int key, int x, int y)
 	case GLUT_KEY_UP:
 		if (direction = elevated)
 		{
-			parameters.v = vec3(0, 1, 0)*transformationFactor;
-			scene->operate(parameters);
-		}
-		else
-		{
-			parameters.v = vec3(0, 0, -1)*transformationFactor;
-			scene->operate(parameters);
-		}
-		break;
-	case GLUT_KEY_DOWN:
-		if (direction = elevated)
-		{
 			parameters.v = vec3(0, -1, 0)*transformationFactor;
 			scene->operate(parameters);
 		}
@@ -292,12 +280,24 @@ void special(int key, int x, int y)
 			scene->operate(parameters);
 		}
 		break;
+	case GLUT_KEY_DOWN:
+		if (direction = elevated)
+		{
+			parameters.v = vec3(0, 1, 0)*transformationFactor;
+			scene->operate(parameters);
+		}
+		else
+		{
+			parameters.v = vec3(0, 0, -1)*transformationFactor;
+			scene->operate(parameters);
+		}
+		break;
 	case GLUT_KEY_LEFT:
-		parameters.v = vec3(-1, 0, 0)*transformationFactor;
+		parameters.v = vec3(1, 0, 0)*transformationFactor;
 		scene->operate(parameters);
 		break;
 	case GLUT_KEY_RIGHT:
-		parameters.v = vec3(1, 0, 0)*transformationFactor;
+		parameters.v = vec3(-1, 0, 0)*transformationFactor;
 		scene->operate(parameters);
 		break;
 	}
@@ -553,6 +553,7 @@ int my_main( int argc, char **argv )
 	glutMouseFunc( mouse );
 	glutMotionFunc ( motion );
 	glutReshapeFunc( reshape );
+	glutSpecialFunc(special);
 	glutMouseWheelFunc( mouseWheel );
 	glutIdleFunc(idle);
 	initMenu();
