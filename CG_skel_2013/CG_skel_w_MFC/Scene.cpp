@@ -19,7 +19,14 @@ static MeshModel* changeToMeshModel(Model* m){
 
 Camera::Camera() : cameraPyramid(new PrimMeshModel)
 {
-	Ortho(DEFAULT_LEFT, DEFAULT_RIGHT, DEFAULT_BOTTOM, DEFAULT_TOP, DEFAULT_ZNEAR, DEFAULT_ZFAR);
+	ProjectionParams p;
+	p.left = DEFAULT_LEFT;
+	p.right = DEFAULT_RIGHT;
+	p.bottom = DEFAULT_BOTTOM;
+	p.top = DEFAULT_TOP;
+	p.zNear = DEFAULT_ZNEAR;
+	p.zFar = DEFAULT_ZFAR;
+	Ortho(p);
 }
 
 //TODO: check if needed or even ever called:
@@ -53,8 +60,15 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	m->translate(T);*/
 }
 
-void Camera::Ortho(const float left, const float right, const float bottom,
-					const float top, const float zNear, const float zFar){
+void Camera::Ortho(ProjectionParams param){
+	pType = ORTHO;
+	p = param;
+	float left	= p.left;
+	float right = p.right;
+	float bottom= p.bottom;
+	float top	= p.top;
+	float zNear = p.zNear;
+	float zFar	= p.zFar;
 	if (right == left || top == bottom || zFar == zNear)
 	{
 		//prevent divide by 0
@@ -68,8 +82,15 @@ void Camera::Ortho(const float left, const float right, const float bottom,
 	projection = M * S * T;
 }
 
-void Camera::Frustum(const float left, const float right, const float bottom,
-						const float top, const float zNear, const float zFar){
+void Camera::Frustum(ProjectionParams param){
+	pType = FRUSTUM;
+	p = param;
+	float left	= p.left;
+	float right = p.right;
+	float bottom= p.bottom;
+	float top	= p.top;
+	float zNear = p.zNear;
+	float zFar	= p.zFar;
 	
 	if (right == left || top == bottom || zFar == zNear)
 	{
@@ -100,9 +121,20 @@ void Camera::Frustum(const float left, const float right, const float bottom,
 	projection = N * S * H;
 }
 
-void Camera::Perspective(const float fovy, const float aspect, const float zNear,
-	const float zFar){
-	//TODO: IMPLEMENT;
+void Camera::Perspective(ProjectionParams params){
+	pType = PERSPECTIVE;
+	p = params;
+	float zNear	= p.zNear;
+	float zFar	= p.zFar;
+	float fovy	= p.fovy;
+	float aspect= p.aspect;
+	float top	= zNear * tan(fovy);
+	float right	= top * aspect;
+	mat4 m(	zNear/right,0,			0,							0,
+			0,			zNear/top,	0,							0,
+			0,			0,			(zFar+zNear)/(zNear-zFar),	2*zFar*zNear/(zNear-zFar),
+			0,			0,			-1,							0);
+	projection = m;
 }
 
 void Camera::draw(Renderer *renderer){
@@ -110,12 +142,25 @@ void Camera::draw(Renderer *renderer){
 	cameraPyramid->draw(renderer);
 }
 
-void Camera::changePosition(vec3 v){
+void Camera::changePosition(vec3 &v){
 	LookAt(vec4(v), cAt, cUp);
 }
 
-void Camera::changeRelativePosition(vec3 v){
+void Camera::changeRelativePosition(vec3 &v){
 	changePosition(v + vec3(cEye[0], cEye[1], cEye[2]));
+}
+
+void Camera::zoom(GLfloat scale){
+	if (scale > 0){
+		if (pType == PERSPECTIVE){
+			//TODO: use perspective view.
+		}else{
+			p.bottom*= scale; 
+			p.top	*= scale;
+			p.left	*= scale;
+			p.right	*= scale;
+		}
+	}
 }
 
 mat4 Camera::getCameraProjection()
@@ -202,13 +247,13 @@ void Scene::draw()
 	}	
 
 	// 2. Tell all models to draw themselves:
-	refreshView();
 	for (map<string,Model*>::iterator it = models.begin(); it != models.end(); ++it){
 		it->second->draw(m_renderer);
 	}
 
 	// 3. activate the drawing:
 	m_renderer->SwapBuffers();
+	refreshView();
 }
 
 void Scene::drawDemo()
@@ -238,7 +283,7 @@ void Scene::selectActiveCamera(int index)
 }
 
 void Scene::featuresStateSelection(ActivationToggleElement e){
-	(static_cast<MeshModel*>(activeModel))->featuresStateToggle(e);
+	changeToMeshModel(activeModel)->featuresStateToggle(e);
 	draw();
 }
 
@@ -247,51 +292,32 @@ void Scene::addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string nam
 	models.insert(pair<string, Model*>(name, pyramidMesh));
 }
 
-//when uniform scaling occures, use dy/dx as a rational number.
-void Scene::operate(OperationType type, int dx, int dy, Frames frame, vec3 v){
-	switch (frame){
-	case MODEL: handleModelFrame(type, dx, dy, v); break;
-	case WORLD: handleWorldFrame(type, dx, dy, v); break;
-	case CAMERA_POSITION: handleCameraPosFrame(type, dx, dy, v); break;
-	case CAMERA_VIEW: handleCameraViewFrame(type, dx, dy, v); break;
-	case ZOOM: handleZoom(dx); break;
+void Scene::operate(OperateParams &p){
+	switch (p.frame){
+	case MODEL: handleMeshModelFrame(p); break;
+	case WORLD: handleMeshModelFrame(p); break;
+	//case CAMERA_POSITION: handleCameraPosFrame(p); break;
+	case CAMERA_VIEW: handleCameraViewFrame(p); break;
+	//case ZOOM: handleZoom(p); break;
 	}
-	draw();
 }
 
-void Scene::handleModelFrame(OperationType type, int dx, int dy, vec3 v){
-	//TODO: check if (A)^-1 needed to move that way.
-	changeToMeshModel(activeModel)->frameActionSet(OBJECT_ACTION);
-	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3((GLfloat)dx, (GLfloat)dy, (GLfloat)0));
-	worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeSelf(worldCoordsDelta);
-	switch (type){
-	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
+void Scene::handleMeshModelFrame(OperateParams &p){
+	MeshModel m = *(changeToMeshModel(activeModel));
+	m.frameActionSet((p.frame == MODEL) ? OBJECT_ACTION : WORLD_ACTION);
+	vec3 worldVec = activeCamera->getWorldVector(p.v);
+	worldVec = m.getVertexBeforeWorld(worldVec);
+	switch (p.type){
+	case TRANSLATE: m.translate(worldVec);
 		break;
-	case ROTATE: changeToMeshModel(activeModel)->rotate(v);
+	case ROTATE: m.rotateVec(vec3(), p.v, p.theta);
 		break;
-	case SCALE: changeToMeshModel(activeModel)->scale(v);
-		break;
-	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dy / (GLfloat)dx);
+	case SCALE: m.scale(p.v);
 		break;
 	}
 }
-void Scene::handleWorldFrame(OperationType type, int dx, int dy, vec3 v){
-	//TODO: check if (A)^-1 needed to move that way.
-	changeToMeshModel(activeModel)->frameActionSet(WORLD_ACTION);
-	vec3 worldCoordsDelta = activeCamera->getWorldVector(vec3((GLfloat)dx, (GLfloat)dy, (GLfloat)0));
-	worldCoordsDelta = (changeToMeshModel(activeModel))->getVertexBeforeWorld(worldCoordsDelta);
-	switch (type){
-	case TRANSLATE: changeToMeshModel(activeModel)->translate(worldCoordsDelta);
-		break;
-	case ROTATE: changeToMeshModel(activeModel)->rotate(v);
-		break;
-	case SCALE: changeToMeshModel(activeModel)->scale(v);
-		break;
-	case UNIFORM_SCALE: changeToMeshModel(activeModel)->uniformicScale((GLfloat)dy / (GLfloat)dx);
-		break;
-	}
-}
-void Scene::handleCameraPosFrame(OperationType type, int dx, int dy, vec3 v){
+
+/*void Scene::handleCameraPosFrame(OperateParams &p){
 	switch (type){
 		//TODO: FILL IN THE CASES:
 	case TRANSLATE: activeCamera->changeRelativePosition(vec3((GLfloat)(-dx), (GLfloat)(-dy), (GLfloat)0));
@@ -300,36 +326,31 @@ void Scene::handleCameraPosFrame(OperationType type, int dx, int dy, vec3 v){
 		break;
 	case SCALE:
 		break;
-	case UNIFORM_SCALE:
-		break;
 	}
-}
-void Scene::handleCameraViewFrame(OperationType type, int dx, int dy, vec3 v){
+}*/
+void Scene::handleCameraViewFrame(OperateParams &p){
 	mat4 A;
-	switch (type){
-		//TODO: FILL IN THE CASES:
-	case TRANSLATE: A = Translate(dx, dy, 0);
-					break;
-	case ROTATE: A = RotateZ(v[z]) * RotateX(v[x]);
+	switch (p.type){
+	//TODO: CHECK IF -p.v or p.v:
+	case TRANSLATE: A = Translate(-p.v);
 		break;
-	case SCALE:
+	case ROTATE: A = RotateZ(p.v[z]) * RotateY(p.v[y]) * RotateX(p.v[x]);
 		break;
-	case UNIFORM_SCALE:
+	case SCALE: activeCamera->zoom(p.uScale);
 		break;
 	}
 	activeCamera->setTransformation(A);
 }
 
-void Scene::handleZoom(int scaleSize){
+//void Scene::handleZoom(OperateParams &p){
 	//TODO:implement..
-}
+//}
 
-void Scene::setProjection(ProjectionType type, float* a){
-	if (a == NULL) { return; }
+void Scene::setProjection(ProjectionType type, ProjectionParams &p){
 	switch (type){
-	case ORTHO:	activeCamera->Ortho(a[0], a[1], a[2], a[3], a[4], a[5]); break;
-	case FRUSTUM: activeCamera->Frustum(a[0], a[1], a[2], a[3], a[4], a[5]); break;
-	case PERSPECTIVE: activeCamera->Perspective(a[0], a[1], a[2], a[3]); break;
+	case ORTHO:	activeCamera->Ortho(p); break;
+	case FRUSTUM: activeCamera->Frustum(p); break;
+	case PERSPECTIVE: activeCamera->Perspective(p); break;
 	}
 }
 
@@ -358,14 +379,15 @@ void Scene::LookAtActiveModel(){
 	activeCamera->LookAt(eye, at, up);
 	
 	//set needed orto params:
-	float left = -dx * 2 / 3;
-	float right = dx * 2 / 3;
-	float bottom = -dy * 2 / 3;
-	float top = dy * 2 / 3;
-	float zNear = dz*2;
-	float zFar = dz*3;
+	ProjectionParams p;
+	p.left = -dx * 2 / 3;
+	p.right = dx * 2 / 3;
+	p.bottom = -dy * 2 / 3;
+	p.top = dy * 2 / 3;
+	p.zNear = dz*2;
+	p.zFar = dz*3;
 
-	activeCamera->Ortho(left, right, bottom, top, zNear, zFar);
+	activeCamera->Ortho(p);
 }
 
 vector <string> Scene::getModelNames(){

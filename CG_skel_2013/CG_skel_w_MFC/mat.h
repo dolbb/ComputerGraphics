@@ -577,6 +577,23 @@ mat4 RotateZ(const GLfloat theta)
 	return c;
 }
 
+inline
+mat4 RotateVec(vec3 p1, vec3 p2, GLfloat theta)
+{
+	vec3 v(p2[x] - p1[x], p2[y] - p1[y], p2[z] - p1[z]);
+	vec3 u = normalize(v); // u = (a,b,c)
+	GLfloat a = u[x], b = u[y], c = u[z];
+	GLfloat radAngle = (M_PI / 180.0) * theta;
+	GLfloat mCos = cos(radAngle);
+	GLfloat mSin = sin(radAngle);
+
+	//create rotaion mat over the given vector from p1 to p2.
+	mat4 r(	mCos+a*a*(1-mCos),		a*b*(1-mCos)-c*mSin,	a*c*(1-mCos)+b*mSin,  0,
+			a*b*(1-mCos)+c*mSin,	mCos + b*b*(1 - mCos),	b*c*(1-mCos)-a*mSin,  0,
+			a*c*(1-mCos)+b*mSin,	b*c*(1-mCos)+a*mSin,	mCos + c*c*(1 - mCos),0,
+			0,						0,						0,					  1);
+	return r;
+}
 
 //----------------------------------------------------------------------------
 //

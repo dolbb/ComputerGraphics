@@ -268,7 +268,15 @@ void MeshModel::frameActionSet(ActionType a){
 	actionType = a;
 }
 
-void MeshModel::rotate(vec3 vec){
+void MeshModel::rotateVec(vec3 p1, vec3 p2, GLfloat theta){
+	mat4 totalRotation = RotateVec(p1, p2, theta);
+	mat4 totalInvertRotation = RotateVec(p1, p2, -theta);
+
+	vertexTransformation(totalRotation, totalInvertRotation);
+	normalTransformation(totalRotation, totalInvertRotation);
+}
+
+void MeshModel::rotateXYZ(vec3 vec){
 	/*create the rotating matrixs from the left:*/
 	//TODO: check if order is needed or all is cool:
 	mat4 rotateMatX = RotateX(vec[X_AXIS]);
@@ -347,21 +355,21 @@ void MeshModel::resetTransformations(){
 	selfNormalTransform		=	mat3();
 }
 
-vec3 MeshModel::getNormalBeforeWorld(vec3 v){
+vec3 MeshModel::getNormalBeforeWorld(vec3 &v){
 	return worldNormalTransform * v;
 }
 
-vec3 MeshModel::getNormalBeforeSelf(vec3 v){
+vec3 MeshModel::getNormalBeforeSelf(vec3 &v){
 	return worldNormalTransform * getNormalBeforeWorld(v);
 }
 
-vec3 MeshModel::getVertexBeforeWorld(vec3 v){
+vec3 MeshModel::getVertexBeforeWorld(vec3 &v){
 	vec4 u = worldInvertedVertexTransform * vec4(v);
 	//TODO: check if sufficient or normalization needed "u/=u[3];".
 	return vec3(u[0], u[1], u[2]);
 }
 
-vec3 MeshModel::getVertexBeforeSelf(vec3 v){
+vec3 MeshModel::getVertexBeforeSelf(vec3 &v){
 	vec4 u = selfInvertedVertexTransform * worldInvertedVertexTransform * vec4(v);
 	//TODO: check if sufficient or normalization needed "u/=u[3];".
 	return vec3(u[0], u[1], u[2]);

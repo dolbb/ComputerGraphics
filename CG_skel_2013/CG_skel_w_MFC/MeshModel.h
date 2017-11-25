@@ -115,7 +115,10 @@ public:
 	/*
 		the following functions will check worldAction flag and will change the propper matrix accordingly
 	*/
-	void rotate(vec3 vec);
+	// rotateVec input is rotation vector (right hand direction law)
+	void rotateVec(vec3 p1, vec3 p2, GLfloat teta);
+	// rotateXYZ will rotate in x then y then z in vec's saved tetas.
+	void rotateXYZ(vec3 vec);
 	void scale(vec3 vec);
 	void uniformicScale(GLfloat a);
 	void translate(vec3 vec);
@@ -124,10 +127,10 @@ public:
 	const vec3& getCenterOfMass();
 	vec3* getBoundingBox();
 	void resetTransformations();
-	vec3 getNormalBeforeWorld(vec3);
-	vec3 getNormalBeforeSelf(vec3);
-	vec3 getVertexBeforeWorld(vec3);
-	vec3 getVertexBeforeSelf(vec3);
+	vec3 getNormalBeforeWorld(vec3&);
+	vec3 getNormalBeforeSelf(vec3&);
+	vec3 getVertexBeforeWorld(vec3&);
+	vec3 getVertexBeforeSelf(vec3&);
 };
 
 /*=======================================================

@@ -332,5 +332,4 @@ void Renderer::refresh()
 			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
 		}
 	}
-	SwapBuffers();
 }
