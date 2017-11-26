@@ -32,8 +32,7 @@ vec2 vec2fFromStream(std::istream & aStream)
 MeshModel::MeshModel(string fileName) :
 vertexPositions(NULL), vertexPositionsSize(INVALID_SIZE),
 vertexNormals(NULL), vertexNormalsSize(INVALID_SIZE),
-faceNormals(NULL), faceNormalsSize(INVALID_SIZE),
-boundingBoxDisplayed(false), actionType(OBJECT_ACTION)
+faceNormals(NULL), faceNormalsSize(INVALID_SIZE)
 {
 	vector<FaceIdcs> faces;
 	vector<vec3>	 vertices;
@@ -258,8 +257,8 @@ void MeshModel::draw(Renderer *renderer){
 
 void MeshModel::featuresStateToggle(ActivationToggleElement e){
 	switch (e){
-	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = vertexNormals ? !vertexNormalsDisplayed : vertexNormalsDisplayed; break;
-	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = faceNormals ? !faceNormalsDisplayed : faceNormalsDisplayed ;	break;
+	case	TOGGLE_VERTEX_NORMALS:	vertexNormalsDisplayed = !vertexNormalsDisplayed; break;
+	case	TOGGLE_FACE_NORMALS:	faceNormalsDisplayed = !faceNormalsDisplayed; break;
 	case	TOGGLE_BOUNDING_BOX:	boundingBoxDisplayed = !boundingBoxDisplayed; break;
 	}
 }

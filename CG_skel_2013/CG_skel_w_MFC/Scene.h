@@ -105,11 +105,29 @@ class Camera : public Model {
 
 	ProjectionParams projectionParameters;
 	ProjectionType pType;
+	bool cameraRendered;
 
 public:
-	Camera();
+	Camera(int ID);
 	~Camera(){
 		delete cameraPyramid;
+	}
+	Camera& operator =(const Camera& c) {
+		if (this != &c)
+		{
+			cTransform = c.cTransform;
+			cameraToWorld = c.cameraToWorld;
+			projection = c.projection;
+			cEye = c.cEye;
+			cAt = c.cAt;
+			cUp = c.cUp;
+			cX = c.cX;
+			cY = c.cY;
+			cZ = c.cZ;
+			projectionParameters = c.projectionParameters;
+			pType = c.pType;
+		}
+		return *this;
 	}
 	void setTransformation(const mat4& transform);
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up );
@@ -120,6 +138,7 @@ public:
 	void changePosition(vec3 &v);
 	void changeRelativePosition(vec3& v);
 	void zoom(GLfloat scale);
+	void toggleRenderMe();
 	
 	//getters:
 	mat4 getCameraTransformation();
@@ -129,6 +148,8 @@ public:
 	vec4 getAt();
 	vec4 getUp();
 	vec3 getWorldVector(vec3 in);
+
+	int id;
 };
 
 class Scene {
@@ -141,18 +162,16 @@ private:
 	Model*  activeModel;
 	Camera* activeCamera;
 
-	bool camerasRendered;
-
 	void handleMeshModelFrame(OperateParams &p);
 	//void handleCameraPosFrame(OperateParams &p);
 	void handleCameraViewFrame(OperateParams &p);
 	//void handleZoom(OperateParams &p);
 
 public:
-	Scene() :camerasRendered(false){}
-	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera), activeModel(NULL) {
+	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), activeModel(NULL) {
 		cameras.push_back(activeCamera);
 	}
+	~Scene();
 	void loadOBJModel(string fileName);
 	void createCamera();
 	void draw();
@@ -167,4 +186,5 @@ public:
 	void refreshView();
 	void LookAtActiveModel();
 	vector <string> getModelNames();
+	void drawPyramid(vec3 pos, vec3 viewVec, Model* pyramid);
 };

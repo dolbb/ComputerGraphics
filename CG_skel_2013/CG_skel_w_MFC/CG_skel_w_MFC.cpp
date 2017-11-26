@@ -70,6 +70,7 @@ OperationType currentOperation;
 OperateParams parameters;
 scalingAxis currentAxis=uniformT;
 cameraDirection direction = nonElevated;
+ProjectionParams projection;
 
 //----------------------------------------------------------------------------
 // Callbacks
@@ -104,6 +105,11 @@ const vec3& getParameters()
 void keyboard( unsigned char key, int x, int y )
 {
 	vec3 transformationParameters;
+	if (key >= '0' && key <= '9')
+	{
+		int index = key - '0';
+		scene->selectActiveCamera(index);
+	}
 	switch (key)
 	{
 		//ESC
@@ -439,7 +445,65 @@ void setTransformationStep()
 
 void setCameraPerspective()
 {
+	ProjectionType projType;
+	vec3 parameters;
+	CCmdDialog type("pleaes choose projection type: frustrum, ortho or perspective");
+	CXyzDialog parameters1("please enter left right and bottom, in that order");
+	CXyzDialog parameters2("please enter top near and far in that order");
+	CXyzDialog parameters3("please enter z-near and z-far in that order");
+	CXyzDialog parameters4("please enter fovy and aspect in that order");
+	string projectionType;
+	if (type.DoModal() == IDOK)
+	{
+		projectionType = type.GetCmd();
+	}
+	if (projectionType == "frustrum" || projectionType == "ortho")
+	{
+		if (parameters1.DoModal() == IDOK)
+		{
+			parameters = parameters1.GetXYZ();
+		}
+		projection.left = parameters[0];
+		projection.right = parameters[1];
+		projection.bottom = parameters[2];
+		if (parameters2.DoModal() == IDOK)
+		{
+			parameters = parameters2.GetXYZ();
+		}
+		projection.top = parameters[0];
+		projection.zNear = parameters[1];
+		projection.zFar = parameters[2];
 
+		if (projectionType == "frustrum")
+		{
+			projType = FRUSTUM;
+		}
+		else
+		{
+			projType = ORTHO;
+		}
+	}
+	else if (projectionType == "perspective")
+	{
+		if (parameters3.DoModal() == IDOK)
+		{
+			parameters = parameters3.GetXYZ();
+		}
+		projection.zNear = parameters[0];
+		projection.zFar = parameters[1];
+		if (parameters4.DoModal() == IDOK)
+		{
+			parameters = parameters4.GetXYZ();
+		}
+		projection.fovy = parameters[0];
+		projection.aspect = parameters[1];
+		projType = PERSPECTIVE;
+	}
+	else
+	{
+		return;
+	}
+	scene->setProjection(projType, projection);
 }
 
 void mainMenu(int id)
@@ -489,7 +553,6 @@ void toggleMenuCallback(int id)
 		break;
 	}
 }
-
 
 void initMenu()
 {

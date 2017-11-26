@@ -19,8 +19,9 @@ ProjectionParams perspectiveParameters;
 				camera implementation
 ========================================================*/
 
-Camera::Camera() : cameraPyramid(new PrimMeshModel)
+Camera::Camera(int ID) : cameraPyramid(new PrimMeshModel), id(ID)
 {
+	cameraRendered = false;
 	projectionParameters.left = DEFAULT_LEFT;
 	projectionParameters.right = DEFAULT_RIGHT;
 	projectionParameters.bottom = DEFAULT_BOTTOM;
@@ -31,6 +32,11 @@ Camera::Camera() : cameraPyramid(new PrimMeshModel)
 }
 
 //TODO: check if needed or even ever called:
+void Camera::toggleRenderMe()
+{
+	cameraRendered = !cameraRendered;
+}
+
 void Camera::setTransformation(const mat4& transform){
 	cTransform = cTransform*transform;
 }
@@ -74,13 +80,12 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	cTransform[3][y] *= -1;
 	cTransform[3][z] *= -1;
 
-	//TODO: remember to update the pyramid accordingly.
-	/*MeshModel* m = changeToMeshModel(cameraPyramid);
+	PrimMeshModel* m = static_cast<PrimMeshModel*>(cameraPyramid);
 	m->resetTransformations();
-	vec3 R(eye[0], eye[1], eye[2]);
+	//vec3 R(eye[0], eye[1], eye[2]);
 	vec3 T(eye[0], eye[1], eye[2]);
-	m->rotate(R);
-	m->translate(T);*/
+	//m->rotate(R);
+	m->translate(T);
 }
 
 void Camera::Ortho(const ProjectionParams& param){
@@ -156,8 +161,9 @@ void Camera::Perspective(const ProjectionParams& params){
 }
 
 void Camera::draw(Renderer *renderer){
-	if (renderer == NULL) { return; }
-	cameraPyramid->draw(renderer);
+	if (renderer != NULL && cameraRendered) { 
+		cameraPyramid->draw(renderer);
+	}	
 }
 
 void Camera::changePosition(vec3 &v){
@@ -213,6 +219,21 @@ vec3 Camera::getWorldVector(vec3 in){
 					scene implementation
 ========================================================*/
 
+Scene::~Scene(){
+	for (map<string, Model*>::iterator it = models.begin(); it != models.end(); ++it){
+		delete(it->second);
+		it->second = NULL;
+	}
+	for (int i = 0; i < cameras.size(); i++){
+		delete(cameras[i]);
+		cameras[i] = NULL;
+	}
+	for (int i = 0; i < lights.size(); i++){
+		delete(lights[i]);
+		lights[i] = NULL;
+	}
+}
+
 void Scene::loadOBJModel(string fileName)
 {
 	MeshModel *model = new MeshModel(fileName);
@@ -242,7 +263,9 @@ void Scene::loadOBJModel(string fileName)
 
 void Scene::createCamera()
 {
-	cameras.push_back(new Camera);
+	cameras.push_back(new Camera(cameras.size()));
+	Camera *newCam = cameras[cameras.size() - 1];
+	*newCam = *activeCamera;
 }
 
 
@@ -263,9 +286,9 @@ void Scene::draw()
 		it->second->draw(m_renderer);
 	}
 
-	if (camerasRendered)
+	for (int i = 0; i < cameras.size(); i++)
 	{
-		for (int i = 0; i < cameras.size(); i++)
+		if (cameras[i]->id != activeCamera->id)
 		{
 			cameras[i]->draw(m_renderer);
 		}
@@ -304,11 +327,14 @@ void Scene::selectActiveCamera(int index)
 void Scene::featuresStateSelection(ActivationToggleElement e){
 	if (e == TOGGLE_CAMERA_RENDERING)
 	{
-		camerasRendered = !camerasRendered;
+		activeCamera->toggleRenderMe();
 	}
 	else
 	{
-		changeToMeshModel(activeModel)->featuresStateToggle(e);
+		if (activeModel !=NULL)
+		{
+			changeToMeshModel(activeModel)->featuresStateToggle(e);
+		}
 	}
 }
 
@@ -416,4 +442,10 @@ vector <string> Scene::getModelNames(){
 		v.push_back(it->first);
 	}
 	return v;
+}
+
+void Scene::drawPyramid(vec3 pos, vec3 viewVec, Model* pyramid)
+{
+	PrimMeshModel* prim = static_cast<PrimMeshModel*>(pyramid);
+	prim->translate(pos);
 }

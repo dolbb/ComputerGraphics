@@ -132,7 +132,7 @@ bool isBoundingBoxEdge(int i, int j)
 	case 4:
 		if (j == 5 || j == 6) showFlag = true; break;
 	case 7:
-		if (j == 3 || j == 5 || j == 6) showFlag = true;
+		if (j == 3 || j == 5 || j == 6) showFlag = true; break;
 	}
 	return showFlag;
 }
@@ -178,7 +178,7 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 {
 	for (int i = 0; i < BOUNDING_BOX_VERTICES; i++)
 	{
-		for (int j = i + 1; j < BOUNDING_BOX_VERTICES; j++)
+		for (int j = 0; j < BOUNDING_BOX_VERTICES; j++)
 		{
 			if (isBoundingBoxEdge(i, j))
 			{
