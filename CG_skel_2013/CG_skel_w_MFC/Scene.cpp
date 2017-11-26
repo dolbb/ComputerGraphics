@@ -13,33 +13,37 @@ static MeshModel* changeToMeshModel(Model* m){
 	return static_cast<MeshModel*>(m);
 }
 
+ProjectionParams perspectiveParameters;
+
 /*========================================================
 				camera implementation
 ========================================================*/
 
 Camera::Camera() : cameraPyramid(new PrimMeshModel)
 {
-	ProjectionParams p;
-	p.left = DEFAULT_LEFT;
-	p.right = DEFAULT_RIGHT;
-	p.bottom = DEFAULT_BOTTOM;
-	p.top = DEFAULT_TOP;
-	p.zNear = DEFAULT_ZNEAR;
-	p.zFar = DEFAULT_ZFAR;
-	Ortho(p);
+	projectionParameters.left = DEFAULT_LEFT;
+	projectionParameters.right = DEFAULT_RIGHT;
+	projectionParameters.bottom = DEFAULT_BOTTOM;
+	projectionParameters.top = DEFAULT_TOP;
+	projectionParameters.zNear = DEFAULT_ZNEAR;
+	projectionParameters.zFar = DEFAULT_ZFAR;
+	Frustum(projectionParameters);
 }
 
 //TODO: check if needed or even ever called:
 void Camera::setTransformation(const mat4& transform){
-	cTransform = transform * cTransform;
+	cTransform = cTransform * transform;
 }
 
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	cEye = eye;
 	cAt = at;
 	cUp = up;
+	//forward
 	vec4 n = normalize(eye - at);
+	//right
 	vec4 u = normalize(cross(up, n));
+	//up
 	vec4 v = normalize(cross(n,u));
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
 
@@ -48,8 +52,27 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	cY = vec3(v[x], v[y], v[z]);
 	cZ = vec3(n[x], n[y], n[z]);
 
-	mat4 C(u, v, n, t);
-	cTransform = C * Translate(-eye);
+	cameraToWorld[0][x] = u[x];
+	cameraToWorld[0][y] = u[y];
+	cameraToWorld[0][z] = u[z];
+
+	cameraToWorld[1][x] = v[x];
+	cameraToWorld[1][y] = v[y];
+	cameraToWorld[1][z] = v[z];
+
+	cameraToWorld[2][x] = n[x];
+	cameraToWorld[2][y] = n[y];
+	cameraToWorld[2][z] = n[z];
+
+	cTransform = cameraToWorld;
+
+	cameraToWorld[3][x] = eye[x];
+	cameraToWorld[3][y] = eye[y];
+	cameraToWorld[3][z] = eye[z];
+
+	cTransform[3][x] *= -1;
+	cTransform[3][y] *= -1;
+	cTransform[3][z] *= -1;
 
 	//TODO: remember to update the pyramid accordingly.
 	/*MeshModel* m = changeToMeshModel(cameraPyramid);
@@ -60,37 +83,42 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	m->translate(T);*/
 }
 
-void Camera::Ortho(ProjectionParams param){
+void Camera::Ortho(const ProjectionParams& param){
 	pType = ORTHO;
-	p = param;
-	float left	= p.left;
-	float right = p.right;
-	float bottom= p.bottom;
-	float top	= p.top;
-	float zNear = p.zNear;
-	float zFar	= p.zFar;
+	projectionParameters = param;
+	float left = projectionParameters.left;
+	float right = projectionParameters.right;
+	float bottom = projectionParameters.bottom;
+	float top = projectionParameters.top;
+	float zNear = projectionParameters.zNear;
+	float zFar = projectionParameters.zFar;
 	if (right == left || top == bottom || zFar == zNear)
 	{
 		//prevent divide by 0
 		cout << "Ortho denied - non volume values" << endl;
 		return;
 	}
-	mat4 T = Translate(-(right+left)/2, -(bottom,top)/2 , zNear+zFar);
-	mat4 S = Scale(2 / (right - left), 2 / (top - bottom), 2 / (zNear - zFar));
-	mat4 M;
-	M[2][2] = 0.0;
-	projection = M * S * T;
+	//reset to identity
+	projection = mat4();
+
+	//build projection matrix
+	projection[0][0] = 2 / (right - left);
+	projection[1][1] = 2 / (top - bottom);
+	projection[2][2] = -2 / (zFar - zNear);
+	projection[0][3] = -((left + right) / (right - left));
+	projection[1][3] = -((top + bottom) / (top - bottom));
+	projection[2][3] = -((zFar + zNear) / (zFar - zNear));
 }
 
-void Camera::Frustum(ProjectionParams param){
+void Camera::Frustum(const ProjectionParams& param){
 	pType = FRUSTUM;
-	p = param;
-	float left	= p.left;
-	float right = p.right;
-	float bottom= p.bottom;
-	float top	= p.top;
-	float zNear = p.zNear;
-	float zFar	= p.zFar;
+	projectionParameters = param;
+	float left = projectionParameters.left;
+	float right = projectionParameters.right;
+	float bottom = projectionParameters.bottom;
+	float top = projectionParameters.top;
+	float zNear = projectionParameters.zNear;
+	float zFar = projectionParameters.zFar;
 	
 	if (right == left || top == bottom || zFar == zNear)
 	{
@@ -100,8 +128,8 @@ void Camera::Frustum(ProjectionParams param){
 	}
 	//create H = a sheering mat to symmetrize the frustrum:
 	mat4 H;
-	H[0][2] = -(left + right) / (2 * zNear);
-	H[1][2] = -(top + bottom) / (2 * zNear);
+	H[0][2] = (left + right) / (-2 * zNear);
+	H[1][2] = (top + bottom) / (-2 * zNear);
 	
 	//create S = a scaling mat to set the angle of view to 45 deg:
 	mat4 S;
@@ -110,8 +138,8 @@ void Camera::Frustum(ProjectionParams param){
 	
 	//create N = a normalizing mat to transform z into [-1,1] range:
 	mat4 N;
-	GLfloat alpha = (zFar + zNear) / (zFar - zNear);
-	GLfloat beta = (2 * zFar * zNear) / (zFar - zNear);;
+	GLfloat alpha = -(zFar + zNear) / (zFar - zNear);
+	GLfloat beta = -(2 * zFar * zNear) / (zFar - zNear);;
 	N[2][2] = alpha;
 	N[2][3] = beta;
 	N[3][2] = -1;
@@ -121,20 +149,10 @@ void Camera::Frustum(ProjectionParams param){
 	projection = N * S * H;
 }
 
-void Camera::Perspective(ProjectionParams params){
+void Camera::Perspective(const ProjectionParams& params){
 	pType = PERSPECTIVE;
-	p = params;
-	float zNear	= p.zNear;
-	float zFar	= p.zFar;
-	float fovy	= p.fovy;
-	float aspect= p.aspect;
-	float top	= zNear * tan(fovy);
-	float right	= top * aspect;
-	mat4 m(	zNear/right,0,			0,							0,
-			0,			zNear/top,	0,							0,
-			0,			0,			(zFar+zNear)/(zNear-zFar),	2*zFar*zNear/(zNear-zFar),
-			0,			0,			-1,							0);
-	projection = m;
+	//set parameters for frustrum
+	projection = mat4();
 }
 
 void Camera::draw(Renderer *renderer){
@@ -179,17 +197,16 @@ vec4 Camera::getUp(){
 }
 
 vec3 Camera::getWorldVector(vec3 in){
-	vec3 v;
-	if (in[x] != 0){
-		v += cX * in[x];
+	vec4 homogenous = in;
+	homogenous = cameraToWorld*homogenous;
+	if (homogenous[3] != 0)
+	{
+		return vec3(homogenous[x] / homogenous[3], homogenous[y] / homogenous[3], homogenous[z] / homogenous[3]);
 	}
-	if (in[y] != 0){
-		v += cY * in[y];
+	else
+	{
+		return vec3(homogenous[x], homogenous[y], homogenous[z]);
 	}
-	if (in[z] != 0){
-		v += cZ * in[z];
-	}
-	return v;
 }
 
 /*========================================================
@@ -216,9 +233,11 @@ void Scene::loadOBJModel(string fileName)
 	}
 	pair<string, Model*> insertedObject = make_pair(chosenName, model);
 	models.insert(insertedObject);
-	activeModel = model;
-	LookAtActiveModel();
-	draw();
+	if (models.size() == 1)
+	{
+		activeModel = model;
+		LookAtActiveModel();
+	}
 }
 
 void Scene::createCamera()
@@ -242,6 +261,14 @@ void Scene::draw()
 	// 2. Tell all models to draw themselves:
 	for (map<string,Model*>::iterator it = models.begin(); it != models.end(); ++it){
 		it->second->draw(m_renderer);
+	}
+
+	if (camerasRendered)
+	{
+		for (int i = 0; i < cameras.size(); i++)
+		{
+			cameras[i]->draw(m_renderer);
+		}
 	}
 
 	// 3. activate the drawing:
@@ -268,7 +295,6 @@ void Scene::selectActiveCamera(int index)
 	if (cameras.size() > index){
 		activeCamera = cameras[index];
 		cout << "the camera " << index << " was selected succesfully" << endl;
-		draw();
 	}
 	else{
 		cout << "there is no camera with the index of " << index << endl;
@@ -276,8 +302,14 @@ void Scene::selectActiveCamera(int index)
 }
 
 void Scene::featuresStateSelection(ActivationToggleElement e){
-	changeToMeshModel(activeModel)->featuresStateToggle(e);
-	draw();
+	if (e == TOGGLE_CAMERA_RENDERING)
+	{
+		camerasRendered = !camerasRendered;
+	}
+	else
+	{
+		changeToMeshModel(activeModel)->featuresStateToggle(e);
+	}
 }
 
 void Scene::addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name){
@@ -291,7 +323,6 @@ void Scene::operate(OperateParams &p){
 	case WORLD: handleMeshModelFrame(p); break;
 	//case CAMERA_POSITION: handleCameraPosFrame(p); break;
 	case CAMERA_VIEW: handleCameraViewFrame(p); break;
-	//case ZOOM: handleZoom(p); break;
 	}
 }
 
@@ -299,8 +330,6 @@ void Scene::handleMeshModelFrame(OperateParams &p){
 	if (activeModel == NULL){ return; }
 	MeshModel* m = changeToMeshModel(activeModel);
 	m->frameActionSet((p.frame == MODEL) ? OBJECT_ACTION : WORLD_ACTION);
-	vec3 worldVec = activeCamera->getWorldVector(p.v);
-	worldVec = (p.frame == MODEL) ? m->getVertexBeforeWorld(worldVec) : worldVec;
 	switch (p.type){
 	case TRANSLATE: m->translate(p.v);
 		break;
@@ -322,6 +351,7 @@ void Scene::handleMeshModelFrame(OperateParams &p){
 		break;
 	}
 }*/
+
 void Scene::handleCameraViewFrame(OperateParams &p){
 	mat4 A;
 	switch (p.type){

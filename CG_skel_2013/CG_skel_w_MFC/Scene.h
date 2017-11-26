@@ -9,7 +9,7 @@
 using namespace std;
 
 enum ActivationToggleElement{
-	TOGGLE_VERTEX_NORMALS, TOGGLE_FACE_NORMALS, TOGGLE_BOUNDING_BOX
+	TOGGLE_VERTEX_NORMALS, TOGGLE_FACE_NORMALS, TOGGLE_BOUNDING_BOX, TOGGLE_CAMERA_RENDERING
 };
 
 enum ActionType{ OBJECT_ACTION, WORLD_ACTION };
@@ -30,8 +30,8 @@ enum ProjectionType{
 #define DEFAULT_RIGHT   1
 #define DEFAULT_BOTTOM -1
 #define DEFAULT_TOP     1
-#define DEFAULT_ZNEAR  -1
-#define DEFAULT_ZFAR    1
+#define DEFAULT_ZNEAR   1
+#define DEFAULT_ZFAR    100
 
 typedef struct OperateParams{
 	Frames frame;
@@ -43,17 +43,31 @@ typedef struct OperateParams{
 };
 
 typedef struct ProjectionParams{
-	/*frustum and orthogonal view data:*/
+	
 	float left;
 	float right;
 	float bottom;
 	float top;
-	/*shared data:*/
 	float zNear;
 	float zFar;
-	/*perspective view data:*/
 	float fovy;
 	float aspect;
+
+	ProjectionParams()
+	{
+		/*frustum and orthogonal view data:*/
+		left = DEFAULT_LEFT;
+		right = DEFAULT_RIGHT;
+		bottom = DEFAULT_BOTTOM;
+		top = DEFAULT_TOP;
+		/*shared data:*/
+		zNear = DEFAULT_ZNEAR;
+		zFar = DEFAULT_ZFAR;
+		/*perspective view data:*/
+		fovy = 45.0;
+		aspect = 1;
+	}
+	
 };
 
 class Model {
@@ -76,6 +90,7 @@ class Light {
 
 class Camera : public Model {
 	mat4 cTransform;
+	mat4 cameraToWorld;
 	mat4 projection;
 
 	Model* cameraPyramid;
@@ -88,7 +103,7 @@ class Camera : public Model {
 	vec3 cY;
 	vec3 cZ;
 
-	ProjectionParams p;
+	ProjectionParams projectionParameters;
 	ProjectionType pType;
 
 public:
@@ -98,9 +113,9 @@ public:
 	}
 	void setTransformation(const mat4& transform);
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up );
-	void Ortho(ProjectionParams params);
-	void Frustum(ProjectionParams params);
-	void Perspective(ProjectionParams params);
+	void Ortho(const ProjectionParams& params);
+	void Frustum(const ProjectionParams& params);
+	void Perspective(const ProjectionParams& params);
 	void draw(Renderer *renderer);
 	void changePosition(vec3 &v);
 	void changeRelativePosition(vec3& v);
@@ -126,16 +141,18 @@ private:
 	Model*  activeModel;
 	Camera* activeCamera;
 
+	bool camerasRendered;
+
 	void handleMeshModelFrame(OperateParams &p);
 	//void handleCameraPosFrame(OperateParams &p);
 	void handleCameraViewFrame(OperateParams &p);
 	//void handleZoom(OperateParams &p);
 
 public:
-	Scene(){};
+	Scene() :camerasRendered(false){}
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera), activeModel(NULL) {
 		cameras.push_back(activeCamera);
-	};
+	}
 	void loadOBJModel(string fileName);
 	void createCamera();
 	void draw();
@@ -145,6 +162,7 @@ public:
 	void featuresStateSelection(ActivationToggleElement e);
 	void addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name);
 	void operate(OperateParams &p);
+	void updateProjection(float aspect);
 	void setProjection(ProjectionType &type, ProjectionParams &p);
 	void refreshView();
 	void LookAtActiveModel();
