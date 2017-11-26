@@ -32,7 +32,7 @@ Camera::Camera() : cameraPyramid(new PrimMeshModel)
 
 //TODO: check if needed or even ever called:
 void Camera::setTransformation(const mat4& transform){
-	cTransform = cTransform * transform;
+	cTransform = cTransform*transform;
 }
 
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){

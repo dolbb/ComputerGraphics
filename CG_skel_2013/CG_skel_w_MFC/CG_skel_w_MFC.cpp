@@ -81,7 +81,6 @@ void display( void )
 
 void idle()
 {
-	
 	glutPostRedisplay();
 }
 
