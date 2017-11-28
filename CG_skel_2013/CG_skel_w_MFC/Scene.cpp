@@ -28,7 +28,7 @@ Camera::Camera(int ID) : cameraPyramid(new PrimMeshModel), id(ID)
 	projectionParameters.top = DEFAULT_TOP;
 	projectionParameters.zNear = DEFAULT_ZNEAR;
 	projectionParameters.zFar = DEFAULT_ZFAR;
-	Frustum(projectionParameters);
+	Ortho(projectionParameters);
 }
 
 //TODO: check if needed or even ever called:
@@ -154,10 +154,15 @@ void Camera::Frustum(const ProjectionParams& param){
 	projection = N * S * H;
 }
 
-void Camera::Perspective(const ProjectionParams& params){
+void Camera::Perspective(ProjectionParams& p){
 	pType = PERSPECTIVE;
 	//set parameters for frustrum
-	projection = mat4();
+	GLfloat rads = (M_PI / 180.0f) * p.fovy;
+	p.top = p.zNear * tanf(rads / 2.0f);
+	p.bottom = -p.top;
+	p.right = p.top * p.aspect;
+	p.left = -p.right;
+	Frustum(p);
 }
 
 void Camera::draw(Renderer *renderer){

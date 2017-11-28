@@ -133,7 +133,7 @@ public:
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up );
 	void Ortho(const ProjectionParams& params);
 	void Frustum(const ProjectionParams& params);
-	void Perspective(const ProjectionParams& params);
+	void Perspective(ProjectionParams& p);
 	void draw(Renderer *renderer);
 	void changePosition(vec3 &v);
 	void changeRelativePosition(vec3& v);
