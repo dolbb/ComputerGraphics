@@ -26,6 +26,10 @@ enum ProjectionType{
 	ORTHO, FRUSTUM, PERSPECTIVE
 };
 
+enum RotationType{
+	ROLL, PITCH, SIDES
+};
+
 #define DEFAULT_LEFT   -1
 #define DEFAULT_RIGHT   1
 #define DEFAULT_BOTTOM -1
@@ -39,7 +43,8 @@ typedef struct OperateParams{
 	vec3 v;
 	GLfloat theta;
 	GLfloat uScale;
-	OperateParams(): frame(WORLD),	type(ROTATE), v(0,0,0), theta(0), uScale(1){}
+	RotationType t;
+	OperateParams() : frame(WORLD), type(ROTATE), v(0, 0, 0), theta(0), uScale(1){}
 };
 
 typedef struct ProjectionParams{
