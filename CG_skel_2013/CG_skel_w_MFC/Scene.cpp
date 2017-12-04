@@ -117,13 +117,12 @@ void Camera::Ortho(const ProjectionParams& param){
 
 void Camera::Frustum(const ProjectionParams& param){
 	pType = FRUSTUM;
-	projectionParameters = param;
-	float left = projectionParameters.left;
-	float right = projectionParameters.right;
-	float bottom = projectionParameters.bottom;
-	float top = projectionParameters.top;
-	float zNear = projectionParameters.zNear;
-	float zFar = projectionParameters.zFar;
+	float left = param.left;
+	float right = param.right;
+	float bottom = param.bottom;
+	float top = param.top;
+	float zNear = param.zNear;
+	float zFar = param.zFar;
 	
 	if (right == left || top == bottom || zFar == zNear)
 	{
@@ -131,27 +130,37 @@ void Camera::Frustum(const ProjectionParams& param){
 		cout << "Frustum denied - non volume values" << endl;
 		return;
 	}
+	mat4 p;
+	p[0][0] = 2 * zNear / (right - left);
+	p[0][2] = (right + left) / (right - left);
+	p[1][1] = 2 * zNear / (top - bottom);
+	p[1][2] = (top + bottom) / (top - bottom);
+	p[2][2] = -(zFar + zNear) / (zFar - zNear);
+	p[2][3] = -2 * zFar * zNear / (zFar - zNear);
+	p[3][2] = -1;
+	projection = p;
+	
 	//create H = a sheering mat to symmetrize the frustrum:
-	mat4 H;
-	H[0][2] = (left + right) / (-2 * zNear);
-	H[1][2] = (top + bottom) / (-2 * zNear);
-	
-	//create S = a scaling mat to set the angle of view to 45 deg:
-	mat4 S;
-	S[0][0] = -2 * zNear / (right - left);
-	S[1][1] = -2 * zNear / (top - bottom);
-	
-	//create N = a normalizing mat to transform z into [-1,1] range:
-	mat4 N;
-	GLfloat alpha = -(zFar + zNear) / (zFar - zNear);
-	GLfloat beta = -(2 * zFar * zNear) / (zFar - zNear);;
-	N[2][2] = alpha;
-	N[2][3] = beta;
-	N[3][2] = -1;
-	N[3][3] = 0;
-
-	//eventually save all to projection mat.
-	projection = N * S * H;
+//	mat4 H;
+//	H[0][2] = (left + right) / (-2 * zNear);
+//	H[1][2] = (top + bottom) / (-2 * zNear);
+//	
+//	//create S = a scaling mat to set the angle of view to 45 deg:
+//	mat4 S;
+//	S[0][0] = -2 * zNear / (right - left);
+//	S[1][1] = -2 * zNear / (top - bottom);
+//	
+//	//create N = a normalizing mat to transform z into [-1,1] range:
+//	mat4 N;
+//	GLfloat alpha = -(zFar + zNear) / (zFar - zNear);
+//	GLfloat beta = -(2 * zFar * zNear) / (zFar - zNear);;
+//	N[2][2] = alpha;
+//	N[2][3] = beta;
+//	N[3][2] = -1;
+//	N[3][3] = 0;
+//
+//	//eventually save all to projection mat.
+//	projection = N * S * H;
 }
 
 void Camera::Perspective(ProjectionParams& p){
@@ -438,7 +447,7 @@ void Scene::LookAtActiveModel(){
 	p.zNear = dz*2;
 	p.zFar = dz*3;
 
-	activeCamera->Ortho(p);
+	activeCamera->Frustum(p);
 }
 
 vector <string> Scene::getModelNames(){
