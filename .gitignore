@@ -39,3 +39,14 @@ CG_skel_2013/CG_skel_w_MFC/CG_skel_w_MFC.vcxproj
 CG_skel_2017/.vs/CG_skel/v15/.suo
 *.exe
 *.aps
+*.sln
+CG_skel/CG_skel_w_MFC/CG_skel_w_MFC.rc
+*.vcproj
+CG_skel/CG_skel_w_MFC/CG_skel_w_MFC.vcxproj.user
+*.user
+*.htm
+*.ilk
+CG_skel/UpgradeLog.XML
+*.log
+*.log
+*.log

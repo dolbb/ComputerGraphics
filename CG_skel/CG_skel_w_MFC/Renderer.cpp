@@ -7,44 +7,50 @@
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 #define TRIANGLE_VERTICES 3
 #define BOUNDING_BOX_VERTICES 8
+#define CLIPPING_PLANES 6
 
 enum{w=3};
+enum clipResTable{CLIPPING_PLANE,START_RES, END_RES};
 
 Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), projection()
 {
 	InitOpenGLRendering();
 	CreateBuffers(DEFAULT_SCREEN_X, DEFAULT_SCREEN_Y);
 }
+
 Renderer::Renderer(int width, int height){
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
 }
+
 Renderer::~Renderer(void)
 {
 	delete[] m_outBuffer;
 }
+
 void Renderer::resizeBuffers(int chosenWidth, int chosenHeight)
 {
 	delete[] m_outBuffer;
 	m_outBuffer = NULL;
 	CreateBuffers(chosenWidth, chosenHeight);
 }
+
 void Renderer::SetCameraTransform(const mat4& chosenCameraTransform)
 {
 	cameraTransform = chosenCameraTransform;
-	updateTotalPipline();
 }
+
 void Renderer::SetProjection(const mat4& chosenProjection)
 {
 	projection = chosenProjection;
-	updateTotalPipline();
 }
+
 void Renderer::SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& chosenNormalTransform)
 {
 	objectTransform = chosenObjectTransform;
 	normalTransform = chosenNormalTransform;
-	updateTotalPipline();
 }
+
 void Renderer::CreateBuffers(int width, int height)
 {
 	m_width=width;
@@ -53,6 +59,7 @@ void Renderer::CreateBuffers(int width, int height)
 	m_outBuffer = new float[3*m_width*m_height];
 	refresh();
 }
+
 void Renderer::SetDemoBuffer()
 {	
 /*	//horizontal line
@@ -94,27 +101,12 @@ void Renderer::SetDemoBuffer()
 	drawLine(v, v - bX + bY);
 	drawLine(v, v - bX - bY);
 }
-/*
-	processVertex will get a 3d vector representing a vertex and will process it through the graphic pipeline,
-	the function will return a 2d vector in screen coordinates.
-*/
-vec2 Renderer::processVertex(vec3 vertex, drawType type)
+
+vec2 Renderer::transformToScreen(vec4 vertex)
 {
-	vec4 homogenous;
-	vec4 presentedVec(vertex);
-	homogenous = vertex;
-	if (type == NORMAL){
-		presentedVec = projection * cameraTransform * presentedVec;
-	}
-	else{
-		presentedVec = totalPipline*vertex;
-	}
-	//normalize display coordinates
-	presentedVec /= presentedVec[w];
-	
 	//convert to screen coordinates
-	int xScreen = (presentedVec[x] + 1)*(m_width / 2);
-	int yScreen = (presentedVec[y] + 1)*(m_height / 2);
+	int xScreen = (vertex[x] + 1)*(m_width / 2);
+	int yScreen = (vertex[y] + 1)*(m_height / 2);
 	return vec2(xScreen, yScreen);
 }
 
@@ -139,69 +131,231 @@ bool isBoundingBoxEdge(int i, int j)
 
 void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize)
 {
+	mat4 worldToNDC = projection*cameraTransform;
 	if (faceNormals == NULL) {return;}
-	vec3 faceCenter;
+	vec4 faceCenter;
+	vec4 normal;
 	vec3 v0, v1, v2;
 	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
 	{
 		v0 = vertexPositions[i];
 		v1 = vertexPositions[i + 1];
 		v2 = vertexPositions[i + 2];
-		faceCenter = vec3((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3);
-		vec4 homo = faceCenter;
-		homo = objectTransform * homo;
-		if (homo[3] != 0){ homo /= homo[3];}	//normalize homogenous to vec3.
-		vec3 homo3D(homo[0], homo[1], homo[2]);
-		vec3 nHomo = normalTransform * faceNormals[currentFace];
-		nHomo += homo3D;	
-		drawLine(processVertex(faceCenter, VERTEX), processVertex(nHomo, NORMAL));
+		//calculate the exit point of the face normal to be the center of mass.
+		faceCenter = vec4((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3, 1);
+		//transform the faceCenter point to its final world loctaion
+		faceCenter = objectTransform * faceCenter;
+		normal = faceNormals[currentFace];
+		//transform the normal to its final world loctaion
+		normal = normalTransform * normal;
+		normal += faceCenter;
+		normalize(normal);
+		//project the exit point and the normal
+		faceCenter = worldToNDC*faceCenter;
+		normal = worldToNDC*normal;
+		drawLine(transformToScreen(faceCenter), transformToScreen(normal));
 	}
 }
 
 void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize)
 {
+	mat4 worldToNdc = projection*cameraTransform;
+	vec4 vertex;
+	vec4 normal;
 	if (vertexNormals == NULL) { return; }
 	for (int i = 0; i < vertexSize; i++)
 	{
-
-		vec4 homo = vertexPositions[i];
-		homo = objectTransform * homo;
-		if (homo[3] != 0){ homo /= homo[3]; }	//normalize homogenous to vec3.
-		vec3 homo3D(homo[0], homo[1], homo[2]);
-		vec3 nHomo = normalTransform * vertexNormals[i];
-		nHomo += homo3D;
-		drawLine(processVertex(vertexPositions[i], VERTEX), processVertex(nHomo, NORMAL));
+		vertex = vertexPositions[i];
+		//transform the vertex to its final world position
+		vertex = objectTransform*vertex;
+		normal = vertexNormals[i];
+		//transform the normal to its final world position
+		normal = normalTransform*normal;
+		normal += vertex;
+		normalize(normal);
+		//project points
+		vertex = worldToNdc*vertex;
+		normal = worldToNdc*normal;
+		drawLine(transformToScreen(vertex), transformToScreen(normal));
 	}
 }
 
 void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 {
+	vec4 v0, v1;
+	mat4 pipeline = projection*cameraTransform*objectTransform;
 	for (int i = 0; i < BOUNDING_BOX_VERTICES; i++)
 	{
 		for (int j = 0; j < BOUNDING_BOX_VERTICES; j++)
 		{
 			if (isBoundingBoxEdge(i, j))
 			{
-				drawLine(processVertex(boundingBoxVertices[i], VERTEX), processVertex(boundingBoxVertices[j], VERTEX));
+				v0 = boundingBoxVertices[i];
+				v1 = boundingBoxVertices[j];
+				v0 = pipeline*v0;
+				v1 = pipeline*v1;
+				drawLine(transformToScreen(v0), transformToScreen(v1));
 			}
 		}
 	}
 }
 
-void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
+/*
+	clipToBoundries function gets 2 points(endpoints of a line) which are not completly in or out the CVV and modifies the endpoints of the line to fit
+	the CVV (clips the outer parts).
+*/
+
+void clipToBoundries(vec4& startingPoint, float* startBoundryRes, vec4& endingPoint, float* endBoundryRes, int startClipRes, int endClipRes)
 {
-	if (vertexPositions == NULL) { return; }
-	vec2 v0, v1, v2;
-	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
+	/*
+		set t interval to [0,1] to start with, t interval will detarmine which portion of the line is in the box.
+		after calculation of tIn and tOut its promised that the portion of the line in the CVV is within the t interval [tIn, tOut]
+	*/
+	float tIn = 0.0;
+	float tOut = 1.0;
+	float tIntersect;
+	/*
+		build the time interval [tIn, tOut] iteratively looking at each plane, if a point is outside the plane calculate its intersection
+		time and define it as tIn/tOut in case of need.
+	*/
+	for (int i = 0; i < CLIPPING_PLANES; i++)
 	{
-		v0 = processVertex(vertexPositions[i],VERTEX);
-		v1 = processVertex(vertexPositions[i+1],VERTEX);
-		v2 = processVertex(vertexPositions[i+2],VERTEX);
-		drawLine(v0, v1);
-		drawLine(v0, v2);
-		drawLine(v1, v2);
+		//in this case the ending point is outside the plane i, we exit the box so we calculate tOut.
+		if (endBoundryRes[i] < 0)
+		{
+			tIntersect = startBoundryRes[i] / (startBoundryRes[i] - endBoundryRes[i]);
+			tOut = tIntersect <= tOut ? tIntersect : tOut;
+		}
+		//in this case the starting point is outside the plane i, we enter the box from outisde so we calculate tIn.
+		else if (startBoundryRes[i] < 0)
+		{
+			tIntersect = startBoundryRes[i] / (startBoundryRes[i] - endBoundryRes[i]);
+			tIn = tIntersect >= tIn ? tIntersect : tIn;
+		}
+		//the interval is invalid, early return.
+		if (tIn > tOut) return;
+	}
+	//modify the end points of the line according to tIn and tOut.
+	vec4 temp=startingPoint;
+	//the start point is outside, we calculate where to clip it
+	if (startClipRes != 0)
+	{
+		temp = startingPoint + tIn*(endingPoint - startingPoint);
+	}
+	//the end point is outside, we calculate where to clip it
+	if (endClipRes != 0)
+	{
+		endingPoint = endingPoint + tOut*(endingPoint - startingPoint);
+	}
+	startingPoint = temp;
+}
+
+void computeClipRes(int clipRes[3][CLIPPING_PLANES], float boundryRes[CLIPPING_PLANES], vec4 point, clipResTable curPointRes)
+{
+	float res;
+	int boundryIndex = 0;
+	int planeIndex = 0;
+	int sign = 1;
+	for (int i = x; i < z; i++)
+	{
+		//calculate -axis and +axis
+		for (int j = 0; j < 2; j++)
+		{
+			res = point[w] + (sign*point[i]);
+			boundryRes[boundryIndex] = res;
+			boundryIndex++;
+			if (res < 0)
+			{
+				clipRes[curPointRes][planeIndex] = OUT_OF_BOUNDS;
+			}
+			else
+			{
+				clipRes[curPointRes][planeIndex] = IN_BOUNDS;
+			}
+			planeIndex++;
+			sign *= -1;
+		}
 	}
 }
+
+/*
+	clipLine gets 2 points representing line endpoints in homogenous clip coordinates and will clip them against the canonical view
+	volume (box bounded by [-1,1] in all axis), returs IN_BOUNDS if the line is completly contained in the box, OUT_OF_BOUNDS if
+	the line is completly out of the the box and CLIPPED in case the line was partially in and was clipped to the box planes as needed.
+*/
+
+clipResult Renderer::clipLine(vec4 startingPoint, vec4 endingPoint)
+{
+	/*
+		a point is inside the CVV(canonical view volume) if w-x>0 w+x>0 w-y>0 w+y>0 w-z>0 w+z>0, following from the inequalities
+		x<w x>-w and same goes for the other axis. 
+		startBoundryRes and endBoundryRes will hold the results for w-x w+x and so on for the other axis for further use.
+	*/
+	float startBoundryRes[CLIPPING_PLANES];
+	float endBoundryRes[CLIPPING_PLANES];
+	/*
+		clipRes will hold the result of the clipping against each plane, the first row will represent the clipping planes availible,
+		the next rows will represent starting point and ending point clip result against the clipping planes.
+		for example: clipRes[2][1] will hold the ending point clipping result against the second plane.
+		the result will be 1 if the point is outside the current plane, and 0 otherwise.
+	*/
+	int clipRes[3][CLIPPING_PLANES];
+	computeClipRes(clipRes, startBoundryRes, startingPoint, START_RES);
+	computeClipRes(clipRes, endBoundryRes, endingPoint, END_RES);
+
+	int counter = 0;
+	int startRes = 0;
+	int endRes = 0;
+	int startClipRes = 0;
+	int endClipRes = 0;
+
+	for (int i = 0; i < CLIPPING_PLANES; i++)
+	{
+		startRes = clipRes[START_RES][i];
+		endRes = clipRes[END_RES][i];
+		startClipRes += startRes;
+		endClipRes += endRes;
+		//in this case both endpoints of the line are outside some plane therefore out of bounds, return OUT_OF_BOUNDS.
+		if (startRes == OUT_OF_BOUNDS && endRes == OUT_OF_BOUNDS)
+		{
+			return OUT_OF_BOUNDS;
+		}
+		counter += startRes;
+		counter += endRes;
+	}
+	//in this case both the endpoints are completely in bounds and no clipping is needed, return IN_BOUNDS.
+	if (counter == IN_BOUNDS)
+	{
+		return IN_BOUNDS;
+	}
+
+	//after we checked for trivial out of bounds and in bounds we clip.
+	clipToBoundries(startingPoint, startBoundryRes, endingPoint, endBoundryRes, startClipRes, endClipRes);
+	//starting point and ending point are now clipped to the CVV, return clipped.
+	return CLIPPED;
+}
+
+void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
+{
+	mat4 pipeline = projection*cameraTransform*objectTransform;
+	if (vertexPositions == NULL) { return; }
+	vec4 v0, v1, v2;
+	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
+	{
+		v0 = vertexPositions[i];
+		v1 = vertexPositions[i+1];
+		v2 = vertexPositions[i+2];
+
+		v0 = pipeline*v0;
+		v1 = pipeline*v1;
+		v2 = pipeline*v2;
+
+		drawLine(transformToScreen(v0), transformToScreen(v1));
+		drawLine(transformToScreen(v0), transformToScreen(v2));
+		drawLine(transformToScreen(v1), transformToScreen(v2));
+	}
+}
+
 void Renderer::plotPixel(int x, int y, float* m_outBuffer, vec3 RGB)
 {
 	if (m_outBuffer == NULL || x < 0 || x >= m_width || y < 0 || y >= m_height){ return; }
@@ -248,11 +402,6 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 			error -= dx * 2;
 		}
 	}
-}
-
-void Renderer::updateTotalPipline(){
-	totalPipline = projection*cameraTransform*objectTransform;
-	normalPipeline = projection*cameraTransform*normalTransform;
 }
 
 /////////////////////////////////////////////////////
@@ -303,6 +452,7 @@ void Renderer::InitOpenGLRendering()
 	glProgramUniform1i( program, glGetUniformLocation(program, "texture"), 0 );
 	a = glGetError();
 }
+
 void Renderer::CreateOpenGLBuffer()
 {
 	glActiveTexture(GL_TEXTURE0);
@@ -310,6 +460,7 @@ void Renderer::CreateOpenGLBuffer()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, m_width, m_height, 0, GL_RGB, GL_FLOAT, NULL);
 	glViewport(0, 0, m_width, m_height);
 }
+
 void Renderer::SwapBuffers()
 {
 
@@ -329,6 +480,7 @@ void Renderer::SwapBuffers()
 	glutSwapBuffers();
 	a = glGetError();
 }
+
 void Renderer::refresh()
 {
 	for (int i = 0; i < m_width; i++)

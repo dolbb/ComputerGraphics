@@ -12,6 +12,7 @@
 #define DEFAULT_B 255
 
 enum drawType{VERTEX, NORMAL};
+enum clipResult{IN_BOUNDS, OUT_OF_BOUNDS, CLIPPED};
 
 using namespace std;
 class Renderer
@@ -27,7 +28,7 @@ private:
 	mat4 cameraTransform;
 	mat4 projection;
 	mat4 objectTransform;
-	mat3 normalTransform;
+	mat4 normalTransform;
 	
 	mat4 totalPipline;
 	mat4 normalPipeline;
@@ -46,13 +47,13 @@ public:
 	~Renderer(void);
 	void Init();
 	void resizeBuffers(int chosenWidth, int chosenHeight);
-	vec2 processVertex(vec3 vertex, drawType type);
+	clipResult clipLine(vec4 endPointA, vec4 endPointB);
+	vec2 transformToScreen(vec4 vertex);
 	void drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize);
 	void drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize);
 	void drawBoundingBox(vec3* boundingBoxVertices);
 	void drawTriangles(vec3* vertexPositions, int vertexPositionsSize);
 	void drawLine(const vec2& v0, const vec2& v1);
-	void updateTotalPipline();
 	void setLineInBuffer(int xMin, int xMax, int yMin, int yMax, int horizontalDirection, int verticalDirection, int swapped, float *m_outBuffer);
 	void plotPixel(int x, int y, float* m_outBuffer, vec3 RGB);
 	void SetCameraTransform(const mat4& chosenCameraTransform);
