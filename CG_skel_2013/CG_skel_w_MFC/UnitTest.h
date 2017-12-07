@@ -12,7 +12,7 @@ using std::ostringstream;
 using std::ostream;
 
 
-#define THROW_LINE(arg) throw TestException((arg), __FILE__, __LINE__)
+#define THROW_NAME_AND_LINE(arg) throw TestException((arg), __FILE__, __LINE__)
 #define THROW_LINE throw TestException(__FILE__, __LINE__)
 
 /*=================       error handling exception class      =============*/

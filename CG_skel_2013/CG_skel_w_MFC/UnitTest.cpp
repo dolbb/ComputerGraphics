@@ -1,5 +1,9 @@
+//NEEDED INCLUDES:
 #include "stdafx.h"
 #include "UnitTest.h"
+#include <iomanip>
+
+//PROJECT INCLUDES:
 #include "mat.h"
 #include "vec.h"
 #include "Renderer.h"
@@ -7,7 +11,6 @@
 #include "Scene.h"
 #include "CG_skel_w_MFC.h"
 #include "MeshModel.h"
-#include <iomanip>
 
 using std::cout;
 using std::cin;
@@ -63,9 +66,8 @@ void UnitTest::test(){
 	}
 	catch (...){
 		SetConsoleTextAttribute(hConsole, RED);
-		cout << endl << "unknown system error occured ";
+		cout << endl << "unknown system error occured" << endl;
 		SetConsoleTextAttribute(hConsole, WHITE);
-		cout <<	"in the project :S" << endl;
 	}
 }
 /*=============================================================================*/
@@ -76,13 +78,6 @@ void UnitTest::test(){
 /*  3. call the test() function inside the named instance from phase 2		   */
 /*  4. may your code succeed indefinitely									   */
 /*=============================================================================*/
-
-/*=============================================================================
-						STATIC FUNCTIONS DECLERATIONS
-=============================================================================*/
-void vecTestFunc();
-void matTestFunc();
-void MeshTransformationsTestFunc();
 
 /*=============================================================================
 						STATIC FUNCTIONS IMPLEMENTATION
@@ -118,27 +113,23 @@ void MeshTransformationsTestFunc(){
 								MAIN TEST
 =============================================================================*/
 void mainOverallTest(){
-	/*tests creation:	*/
+	/*tests element creation:	*/
+	SetConsoleTextAttribute(hConsole, WHITE);
 	UnitTest vecTest				("vec test            ", vecTestFunc				);
-	
 	UnitTest matRotateTest			("mat rotation test   ", matRotationTestFunc		);
 	UnitTest matTranslateTest		("mat translation test", matTranslationTestFunc		);
 	UnitTest matScaleTest			("mat scaling test    ", matScalingTestFunc			);
 	UnitTest matUniScaleTest		("mat uni-scaling test", matUniScalingTestFunc		);
-
 	UnitTest MeshTransformationsTest("Mesh                ", MeshTransformationsTestFunc);
 
 	/*tests activation:	*/
+	cout << "vector tests:" << endl;
 	vecTest.test();
-
+	cout << "matrices tests:" << endl;
 	matRotateTest.test();
 	matTranslateTest.test();
 	matScaleTest.test();
 	matUniScaleTest.test();
-
+	cout << "MeshModel tests:" << endl;
 	MeshTransformationsTest.test();
-
-
-
-
 }

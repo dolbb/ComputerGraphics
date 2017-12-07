@@ -12,7 +12,6 @@
 using namespace std;
 
 enum axis{ X_AXIS, Y_AXIS, Z_AXIS };
-enum PrimMeshModelShape{ PYRAMID, BOX};
 
 class MeshModel : public Model{
 private:
@@ -69,14 +68,14 @@ protected :
 	*/
 	vec3* vertexPositions;
 	int	  vertexPositionsSize;
-	bool vertexNormalsDisplayed;
+	bool  vertexNormalsDisplayed;
 	vec3* vertexNormals;
 	int   vertexNormalsSize;
 	/*
 		face_normals and bounding box are calculated in the constructor, and are saved for further use.
 		indexing in face_normals match the normals indexes as given in the obj file.
 	*/
-	bool faceNormalsDisplayed;
+	bool  faceNormalsDisplayed;
 	vec3* faceNormals;
 	int   faceNormalsSize;
 	/*
@@ -124,7 +123,7 @@ public:
 	void translate(vec3 vec);
 	void vertexTransformation(mat4& mat, mat4& invMat);
 	void normalTransformation(mat4& m4, mat4& a4);
-	const vec3& getCenterOfMass();
+	vec3 getCenterOfMass();
 	vec3* getBoundingBox();
 	void resetTransformations();
 	vec3 getNormalBeforeWorld(vec3&);
@@ -143,9 +142,12 @@ public:
 	PrimMeshModel(){
 		/*init the fields needed to make a pyramid:*/
 		vertexPositionsSize = FACES_NUM_IN_PYRAMID * VERTEX_NUM_IN_FACE;
+		modelType = PYRAMID;
 		vertexNormalsSize = 0;
 		vertexPositions = new vec3[vertexPositionsSize];
 		vertexNormals = NULL;
+		boundingBoxDisplayed = false;
+
 		/*define the needed vertices:*/
 		vec3 vHead( 0,  0,  0);
 		vec3 vLeg1( 1,  1, -1);
@@ -179,9 +181,29 @@ public:
 		vertexPositions[15] = vLeg3;
 		vertexPositions[16] = vLeg1;
 		vertexPositions[17] = vLeg2;
+
+		/*
+		set bounding box vertices:
+		axisExtremum holds x,y,z extremum values starting from x axis up to z axis.
+		even indexes hold x,y,z min values, odd indexes hold x,y,z max values.
+		for example: axisExtremum[0]=X_MIN value, axisExtremum[1]=X_MAX value
+		*/
+		GLfloat axisExtremum[6] = {-1, 1, -1, 1, -1, 0};
+		int currentVertex = 0;
+		for (int i = 0; i <= 1; i++)
+		{
+			for (int j = 0; j <= 1; j++)
+			{
+				for (int k = 0; k <= 1; k++, currentVertex++)
+				{
+					boundingBoxVertices[currentVertex] = vec3(axisExtremum[i], axisExtremum[j], axisExtremum[k]);
+				}
+			}
+		}
 	};
 	PrimMeshModel(string fileName){ };
 	~PrimMeshModel(void){
 		delete vertexPositions;
 	};
+	void setWorldTransform(mat4 trans);
 };

@@ -52,40 +52,20 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	//up
 	vec4 v = normalize(cross(n,u));
 	vec4 t = vec4(0.0, 0.0, 0.0, 1.0);
+	//lose extra data:
+	n.w = 0;
+	u.w = 0;
+	v.w = 0;
+	//set rotation matrix to rotate axis:
+	mat4 c(u, v, n, t);
+	//set camera mat as rotation and then translate to its place:
+	cTransform = c * Translate(-eye);
+	//remember the opposite matrix to be used to draw the camera in space and to
+	cameraToWorld = Translate(eye) * transpose(c);
 
-	//save the camera vectors:
-	cX = vec3(u[x], u[y], u[z]);
-	cY = vec3(v[x], v[y], v[z]);
-	cZ = vec3(n[x], n[y], n[z]);
-
-	cameraToWorld[0][x] = u[x];
-	cameraToWorld[0][y] = u[y];
-	cameraToWorld[0][z] = u[z];
-
-	cameraToWorld[1][x] = v[x];
-	cameraToWorld[1][y] = v[y];
-	cameraToWorld[1][z] = v[z];
-
-	cameraToWorld[2][x] = n[x];
-	cameraToWorld[2][y] = n[y];
-	cameraToWorld[2][z] = n[z];
-
-	cTransform = cameraToWorld;
-
-	cameraToWorld[3][x] = eye[x];
-	cameraToWorld[3][y] = eye[y];
-	cameraToWorld[3][z] = eye[z];
-
-	cTransform[3][x] *= -1;
-	cTransform[3][y] *= -1;
-	cTransform[3][z] *= -1;
-
+	//set the camera's pyramid in the world:
 	PrimMeshModel* m = static_cast<PrimMeshModel*>(cameraPyramid);
-	m->resetTransformations();
-	//vec3 R(eye[0], eye[1], eye[2]);
-	vec3 T(eye[0], eye[1], eye[2]);
-	//m->rotate(R);
-	m->translate(T);
+	m->setWorldTransform(cameraToWorld);
 }
 
 void Camera::Ortho(const ProjectionParams& param){
@@ -97,9 +77,9 @@ void Camera::Ortho(const ProjectionParams& param){
 	float top = projectionParameters.top;
 	float zNear = projectionParameters.zNear;
 	float zFar = projectionParameters.zFar;
+	//prevent divide by 0:
 	if (right == left || top == bottom || zFar == zNear)
 	{
-		//prevent divide by 0
 		cout << "Ortho denied - non volume values" << endl;
 		return;
 	}
@@ -124,9 +104,9 @@ void Camera::Frustum(const ProjectionParams& param){
 	float zNear = param.zNear;
 	float zFar = param.zFar;
 	
+	//prevent divide by 0:
 	if (right == left || top == bottom || zFar == zNear)
 	{
-		//prevent divide by 0
 		cout << "Frustum denied - non volume values" << endl;
 		return;
 	}
@@ -232,6 +212,46 @@ vec3 Camera::getWorldVector(vec3 in){
 /*========================================================
 					scene implementation
 ========================================================*/
+bool Scene::insertNewModel(Model* m)
+{
+	string chosenName;
+	CCmdDialog EnterNameMsg("Please enter your object's name");
+	CCmdDialog nextNameMsg("object's name is taken, enter a different name");
+	int buttonClicked = EnterNameMsg.DoModal();
+	if (buttonClicked == IDOK){
+		chosenName = EnterNameMsg.GetCmd();
+	}
+	else{
+		return false;
+	}
+	while (models.find(chosenName) != models.end())
+	{
+		buttonClicked = nextNameMsg.DoModal();
+		if (buttonClicked == IDOK)
+		{
+			chosenName = nextNameMsg.GetCmd();
+		}
+		else{
+			return false;
+		}
+	}
+	m->setName(chosenName);
+	pair<string, Model*> insertedObject = make_pair(chosenName, m);
+	models.insert(insertedObject);
+	activeModel = m;
+	if (models.size() == 1){
+		LookAtActiveModel(ORTHO);
+	}
+	return true;
+}
+
+vec3 Scene::getCameraCoordsBoundaries(vec3 *bBox){
+	vec3 res;
+	res[0] = bBox[4][0] - bBox[0][0]; //access x value in vector saved in 000 = 0 so that x is 0, 100 = 4 so that x is 1
+	res[1] = bBox[2][1] - bBox[0][1]; //access y value (000 = 0 so that y is 0, 010 = 2 so that y is 1)
+	res[2] = bBox[1][2] - bBox[0][2]; //access z value (000 = 0 so that z is 0, 001 = 1 so that z is 1)
+	return res;
+}
 
 Scene::~Scene(){
 	for (map<string, Model*>::iterator it = models.begin(); it != models.end(); ++it){
@@ -251,27 +271,8 @@ Scene::~Scene(){
 void Scene::loadOBJModel(string fileName)
 {
 	MeshModel *model = new MeshModel(fileName);
-	string chosenName;
-	CCmdDialog name("Please enter your object's name");
-	CCmdDialog usedName("object's name is taken, enter a different name");
-	if (name.DoModal() == IDOK)
-	{
-		chosenName = name.GetCmd();
-	}
-	while (models.find(chosenName) != models.end())
-	{
-		if (usedName.DoModal() == IDOK)
-		{
-			chosenName = usedName.GetCmd();
-		}
-		model->setName(chosenName);
-	}
-	pair<string, Model*> insertedObject = make_pair(chosenName, model);
-	models.insert(insertedObject);
-	if (models.size() == 1)
-	{
-		activeModel = model;
-		LookAtActiveModel();
+	if (insertNewModel(static_cast<Model*>(model)) != true){
+		delete model;
 	}
 }
 
@@ -281,7 +282,6 @@ void Scene::createCamera()
 	Camera *newCam = cameras[cameras.size() - 1];
 	*newCam = *activeCamera;
 }
-
 
 void Scene::draw()
 {
@@ -352,9 +352,11 @@ void Scene::featuresStateSelection(ActivationToggleElement e){
 	}
 }
 
-void Scene::addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name){
+void Scene::addPyramidMesh(){
 	PrimMeshModel* pyramidMesh = new PrimMeshModel();
-	models.insert(pair<string, Model*>(name, pyramidMesh));
+	if (insertNewModel(static_cast<Model*>(pyramidMesh)) != true){
+		delete pyramidMesh;
+	}
 }
 
 void Scene::operate(OperateParams &p){
@@ -395,7 +397,6 @@ void Scene::handleMeshModelFrame(OperateParams &p){
 void Scene::handleCameraViewFrame(OperateParams &p){
 	mat4 A;
 	switch (p.type){
-	//TODO: CHECK IF -p.v or p.v:
 	case TRANSLATE: A = Translate(-p.v);
 		break;
 	case ROTATE: A = RotateZ(p.v[z]) * RotateY(p.v[y]) * RotateX(p.v[x]);
@@ -420,34 +421,51 @@ void Scene::refreshView()
 }
 
 void Scene::LookAtActiveModel(){
-	if (activeModel == NULL || activeCamera == NULL){
-		return;
-	}
-	MeshModel* mModelP = static_cast <MeshModel*>(activeModel);
-	vec3 meshCenter = (mModelP)->getCenterOfMass();
-	vec3* bBox = mModelP->getBoundingBox();
-	
-	GLfloat dx = bBox[4][0] - bBox[0][0]; //access x value in vector saved in 000 = 0 so that x is 0, 100 = 4 so that x is 1
-	GLfloat dy = bBox[2][1] - bBox[0][1]; //access y value (000 = 0 so that y is 0, 010 = 2 so that y is 1)
-	GLfloat dz = bBox[1][2] - bBox[0][2]; //access z value (000 = 0 so that z is 0, 001 = 1 so that z is 1)
+	LookAtActiveModel(FRUSTUM);
+}
+
+void Scene::LookAtActiveModel(ProjectionType pType){
+	if (activeModel == NULL || activeCamera == NULL){return;}
+	MeshModel* m = static_cast <MeshModel*>(activeModel);
+	vec3 meshCenter = m->getCenterOfMass();
+	vec3 coords = getCameraCoordsBoundaries(m->getBoundingBox());
+	GLfloat dx = coords[0];
+	GLfloat dy = coords[1];
+	GLfloat dz = coords[2];
 
 	vec4 eye(meshCenter);
 	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
-	vec4 up(0,1,0,0);		//up is set to z axis
+	vec4 up(0, 1, 0, 0);	//up is set to z axis
 
 	activeCamera->LookAt(eye, at, up);
-	
-	//set needed orto params:
-	ProjectionParams p;
-	p.left = -dx * 2 / 3;
-	p.right = dx * 2 / 3;
-	p.bottom = -dy * 2 / 3;
-	p.top = dy * 2 / 3;
-	p.zNear = dz*2;
-	p.zFar = dz*3;
 
-	activeCamera->Frustum(p);
+	//set needed projection params:
+	ProjectionParams p;
+	if (pType != PERSPECTIVE){
+		p.left = -dx * 2 / 3;
+		p.right = dx * 2 / 3;
+		p.bottom = -dy * 2 / 3;
+		p.top = dy * 2 / 3;
+		p.zNear = dz * 2;
+		p.zFar = dz * 3;
+	}
+	else{
+		p.zNear = dz * 2;
+		p.zFar = dz * 3;
+		p.fovy = 40;
+		p.aspect = 1;
+	}
+
+	switch (pType){
+	case ORTHO:			activeCamera->Ortho(p);
+						break;
+	case FRUSTUM:		activeCamera->Frustum(p);
+						break;
+	case PERSPECTIVE:	activeCamera->Perspective(p);
+						break;
+	}
+
 }
 
 vector <string> Scene::getModelNames(){
@@ -456,10 +474,4 @@ vector <string> Scene::getModelNames(){
 		v.push_back(it->first);
 	}
 	return v;
-}
-
-void Scene::drawPyramid(vec3 pos, vec3 viewVec, Model* pyramid)
-{
-	PrimMeshModel* prim = static_cast<PrimMeshModel*>(pyramid);
-	prim->translate(pos);
 }
