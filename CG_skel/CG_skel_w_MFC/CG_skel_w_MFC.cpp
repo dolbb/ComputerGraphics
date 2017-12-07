@@ -25,10 +25,9 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
-
 enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
-enum newMenuIdentifier{NEW_MODEL, NEW_CAMERA};
+enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID };
 enum selectMenuIdentifier{ACTIVE_MODEL};
 enum toolsMenuIdentifier{LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP,SET_CAMERA_PRESPECTIVE};
 enum toggleMenuIdentifier{FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING};
@@ -427,6 +426,10 @@ void newMenuCallback(int id)
 	{
 		scene->createCamera();
 	}
+	if (id == NEW_PYRAMID)
+	{
+		//scene->createPrimitive();
+	}
 }
 
 void selectMenuCallback(int id)
@@ -600,6 +603,7 @@ void initMenu()
 {
 	int newMenu = glutCreateMenu(newMenuCallback);
 	glutAddMenuEntry("Model", NEW_MODEL);
+	glutAddMenuEntry("Pyramid", NEW_PYRAMID);
 	glutAddMenuEntry("Camera", NEW_CAMERA);
 	int selectMenu = glutCreateMenu(selectMenuCallback);
 	glutAddMenuEntry("Active model", ACTIVE_MODEL);
