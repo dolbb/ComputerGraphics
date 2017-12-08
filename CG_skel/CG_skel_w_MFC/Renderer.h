@@ -47,7 +47,7 @@ public:
 	~Renderer(void);
 	void Init();
 	void resizeBuffers(int chosenWidth, int chosenHeight);
-	clipResult clipLine(vec4 endPointA, vec4 endPointB);
+	clipResult clipLine(vec4& endPointA, vec4& endPointB);
 	vec2 transformToScreen(vec4 vertex);
 	void drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize);
 	void drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize);

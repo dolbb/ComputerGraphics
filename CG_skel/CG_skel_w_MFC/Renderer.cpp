@@ -8,6 +8,7 @@
 #define TRIANGLE_VERTICES 3
 #define BOUNDING_BOX_VERTICES 8
 #define CLIPPING_PLANES 6
+#define EDGE_VERTICES 2
 
 enum{w=3};
 enum clipResTable{CLIPPING_PLANE,START_RES, END_RES};
@@ -131,17 +132,19 @@ bool isBoundingBoxEdge(int i, int j)
 
 void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize)
 {
-	mat4 worldToNDC = projection*cameraTransform;
+	mat4 worldToClipCoords = projection*cameraTransform;
 	if (faceNormals == NULL) {return;}
 	vec4 faceCenter;
 	vec4 normal;
 	vec3 v0, v1, v2;
+	//for each face
 	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
 	{
+		//set the face vertices
 		v0 = vertexPositions[i];
 		v1 = vertexPositions[i + 1];
 		v2 = vertexPositions[i + 2];
-		//calculate the exit point of the face normal to be the center of mass.
+		//calculate the exit point of the face normal - center of mass.
 		faceCenter = vec4((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3, 1);
 		//transform the faceCenter point to its final world loctaion
 		faceCenter = objectTransform * faceCenter;
@@ -151,15 +154,20 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 		normal += faceCenter;
 		normalize(normal);
 		//project the exit point and the normal
-		faceCenter = worldToNDC*faceCenter;
-		normal = worldToNDC*normal;
+		faceCenter = worldToClipCoords*faceCenter;
+		normal = worldToClipCoords*normal;
+		if (clipLine(faceCenter, normal) == OUT_OF_BOUNDS)
+		{
+			continue;
+		}
+		faceCenter /= faceCenter[w];
 		drawLine(transformToScreen(faceCenter), transformToScreen(normal));
 	}
 }
 
 void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize)
 {
-	mat4 worldToNdc = projection*cameraTransform;
+	mat4 worldToClipCoords = projection*cameraTransform;
 	vec4 vertex;
 	vec4 normal;
 	if (vertexNormals == NULL) { return; }
@@ -174,8 +182,13 @@ void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int 
 		normal += vertex;
 		normalize(normal);
 		//project points
-		vertex = worldToNdc*vertex;
-		normal = worldToNdc*normal;
+		vertex = worldToClipCoords*vertex;
+		normal = worldToClipCoords*normal;
+		if (clipLine(vertex, normal) == OUT_OF_BOUNDS)
+		{
+			continue;
+		}
+		vertex /= vertex[w];
 		drawLine(transformToScreen(vertex), transformToScreen(normal));
 	}
 }
@@ -183,7 +196,8 @@ void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int 
 void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 {
 	vec4 v0, v1;
-	mat4 pipeline = projection*cameraTransform*objectTransform;
+	mat4 objectToClipCoordinates = projection*cameraTransform*objectTransform;
+	//for each pair i,j check if i,j is a posible combination for Bounding box edge, if it is, process the vertex and draw the dege
 	for (int i = 0; i < BOUNDING_BOX_VERTICES; i++)
 	{
 		for (int j = 0; j < BOUNDING_BOX_VERTICES; j++)
@@ -192,8 +206,15 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 			{
 				v0 = boundingBoxVertices[i];
 				v1 = boundingBoxVertices[j];
-				v0 = pipeline*v0;
-				v1 = pipeline*v1;
+				//process the vertex and draw line unless its clipped fully.
+				v0 = objectToClipCoordinates*v0;
+				v1 = objectToClipCoordinates*v1;
+				if (clipLine(v0, v1) == OUT_OF_BOUNDS)
+				{
+					continue;
+				}
+				v0 /= v0[w];
+				v1 /= v1[w];
 				drawLine(transformToScreen(v0), transformToScreen(v1));
 			}
 		}
@@ -261,10 +282,11 @@ void computeClipRes(int clipRes[3][CLIPPING_PLANES], float boundryRes[CLIPPING_P
 		//calculate -axis and +axis
 		for (int j = 0; j < 2; j++)
 		{
+			//calculate the result of W+axis[i], if res is greater than zero the point is in axis=-1 boundry
 			res = point[w] + (sign*point[i]);
 			boundryRes[boundryIndex] = res;
 			boundryIndex++;
-			if (res < 0)
+			if (res <= 0)
 			{
 				clipRes[curPointRes][planeIndex] = OUT_OF_BOUNDS;
 			}
@@ -284,7 +306,7 @@ void computeClipRes(int clipRes[3][CLIPPING_PLANES], float boundryRes[CLIPPING_P
 	the line is completly out of the the box and CLIPPED in case the line was partially in and was clipped to the box planes as needed.
 */
 
-clipResult Renderer::clipLine(vec4 startingPoint, vec4 endingPoint)
+clipResult Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 {
 	/*
 		a point is inside the CVV(canonical view volume) if w-x>0 w+x>0 w-y>0 w+y>0 w-z>0 w+z>0, following from the inequalities
@@ -298,14 +320,24 @@ clipResult Renderer::clipLine(vec4 startingPoint, vec4 endingPoint)
 		the next rows will represent starting point and ending point clip result against the clipping planes.
 		for example: clipRes[2][1] will hold the ending point clipping result against the second plane.
 		the result will be 1 if the point is outside the current plane, and 0 otherwise.
+
+		clipRes sketch:
+		clipping plane				0	1	2	3	4	5
+		starting point clipped		1	0	0	0	1	0
+		ending point cliiped		0	0	1	0	1	0
 	*/
 	int clipRes[3][CLIPPING_PLANES];
+	/*
+		compute the inequalities to know which point is in or out each plane.
+	*/
 	computeClipRes(clipRes, startBoundryRes, startingPoint, START_RES);
 	computeClipRes(clipRes, endBoundryRes, endingPoint, END_RES);
 
+	//holds the number of planes which we need to clip against,
 	int counter = 0;
 	int startRes = 0;
 	int endRes = 0;
+	//holds the number of planes to clip against for starting and ending point
 	int startClipRes = 0;
 	int endClipRes = 0;
 
@@ -337,22 +369,40 @@ clipResult Renderer::clipLine(vec4 startingPoint, vec4 endingPoint)
 
 void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 {
-	mat4 pipeline = projection*cameraTransform*objectTransform;
 	if (vertexPositions == NULL) { return; }
-	vec4 v0, v1, v2;
+	mat4 objectToClipCoordinates = projection*cameraTransform*objectTransform;
+	vec4 triangleVertices[TRIANGLE_VERTICES];
+	//for each triangle
 	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
 	{
-		v0 = vertexPositions[i];
-		v1 = vertexPositions[i+1];
-		v2 = vertexPositions[i+2];
+		//set the current triangle vertices and process them through the objectToClipCoordinates
+		for (int j = 0; j < TRIANGLE_VERTICES; j++)
+		{
+			triangleVertices[j] = vertexPositions[i + j];
+			triangleVertices[j] = objectToClipCoordinates*triangleVertices[j];
+		}
+		/*	
+		 *	the vertices are now in homogenous clip coordinates, clip and draw lines that are partially or fully in the view volume.
+		 *	try to draw lines between the vertices: v0->v1, v0->v1, v1->v2
+		 */
 
-		v0 = pipeline*v0;
-		v1 = pipeline*v1;
-		v2 = pipeline*v2;
-
-		drawLine(transformToScreen(v0), transformToScreen(v1));
-		drawLine(transformToScreen(v0), transformToScreen(v2));
-		drawLine(transformToScreen(v1), transformToScreen(v2));
+		//for vertices v0, v1
+		for (int start = 0; start < TRIANGLE_VERTICES - 1; start++)
+		{
+			//for vertices v1,v2
+			for (int end = start + 1; end < TRIANGLE_VERTICES; end++)
+			{
+				//the edge is completly out of the view volume and we ignore it else the edge is atleaast partialy in the view volume, draw it.
+				if (clipLine(triangleVertices[start], triangleVertices[end]) == OUT_OF_BOUNDS)
+				{
+					continue;
+				}
+				//devide by w to achive NDC coordinates
+				triangleVertices[start] /= (triangleVertices[start])[w];
+				triangleVertices[end] /= (triangleVertices[end])[w];
+				drawLine(transformToScreen(triangleVertices[start]), transformToScreen(triangleVertices[end]));
+			}
+		}
 	}
 }
 

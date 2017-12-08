@@ -88,6 +88,9 @@ void idle()
 
 void reshape( int newWidth, int newHeight )
 {
+	float heightRatioChage = newHeight / height;
+	float widthRatioChange = newWidth / width;
+	//scene->changeProjection(widthRatioChange, heightRatioChage);
 	width = newWidth;
 	height = newHeight;
 	renderer->resizeBuffers(width, height);
@@ -133,29 +136,6 @@ void keyboard( unsigned char key, int x, int y )
 			}
 		break;
 
-		break;
-
-		case 'r':
-			parameters.frame = currentObjectFrame;
-			parameters.v = getParameters();
-			parameters.type = ROTATE;
-			scene->operate(parameters);
-		break;
-
-		case 's':
-			parameters.frame = currentObjectFrame;
-			parameters.v = getParameters();
-			parameters.type = SCALE;
-			scene->operate(parameters);
-		break;
-
-		case 't':
-			parameters.frame = currentObjectFrame;
-			parameters.v = getParameters();
-			parameters.type = TRANSLATE;
-			scene->operate(parameters);
-		break;
-
 		case 'x':
 			currentAxis = xT;
 			cout << "current transformation axis: X" << endl;
@@ -187,7 +167,7 @@ void keyboard( unsigned char key, int x, int y )
 				direction = nonElevated;
 				cout << "the camera is now not elevating in scene" << endl;
 			}
-			break;
+		break;
 	}
 }
 
@@ -256,46 +236,82 @@ void mouse(int button, int state, int x, int y)
 
 void special(int key, int x, int y)
 {
-	parameters.frame = currentCameraFrame;
+	int modifier = glutGetModifiers();
 	parameters.type = TRANSLATE;
+	if (modifier == GLUT_ACTIVE_SHIFT)
+	{
+		parameters.type = ROTATE;
+	}
+	parameters.frame = currentCameraFrame;
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-		if (direction = elevated)
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
 		{
-			parameters.v = vec3(0, 1, 0)*transformationFactor;
-			scene->operate(parameters);
+			if (direction == elevated)
+			{
+				parameters.v = vec3(0, 1, 0)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+			else
+			{
+				parameters.v = vec3(0, 0, -1)*DEFAULT_TRANSLATION*transformationFactor;
+			}
 		}
+		//set rotation parameters
 		else
 		{
-			parameters.v = vec3(0, 0, -1)*transformationFactor;
-			scene->operate(parameters);
+			parameters.v = vec3(1, 0, 0)*DEFAULT_ANGLE*transformationFactor;
 		}
-		break;
+	break;
 
 	case GLUT_KEY_DOWN:
-		if (direction = elevated)
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
 		{
-			parameters.v = vec3(0, -1, 0)*transformationFactor;
-			scene->operate(parameters);
+			if (direction = elevated)
+			{
+				parameters.v = vec3(0, -1, 0)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+			else
+			{
+				parameters.v = vec3(0, 0, 1)*DEFAULT_TRANSLATION*transformationFactor;
+			}
 		}
+		//set rotation parameters
 		else
 		{
-			parameters.v = vec3(0, 0, 1)*transformationFactor;
-			scene->operate(parameters);
+			parameters.v = vec3(-1, 0, 0)*DEFAULT_ANGLE*transformationFactor;
 		}
-		break;
+	break;
 
 	case GLUT_KEY_LEFT:
-		parameters.v = vec3(-1, 0, 0)*transformationFactor;
-		scene->operate(parameters);
-		break;
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			parameters.v = vec3(-1, 0, 0)*DEFAULT_TRANSLATION*transformationFactor;
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(0, 0, 1)*DEFAULT_ANGLE*transformationFactor;
+		}
+	break;
 
 	case GLUT_KEY_RIGHT:
-		parameters.v = vec3(1, 0, 0)*transformationFactor;
-		scene->operate(parameters);
-		break;
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			parameters.v = vec3(1, 0, 0)*DEFAULT_TRANSLATION*transformationFactor;
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(0, 0, -1)*DEFAULT_ANGLE*transformationFactor;
+		}
+	break;
 	}
+	scene->operate(parameters);
 }
 
 void rotate(int x, int y, int dy)
