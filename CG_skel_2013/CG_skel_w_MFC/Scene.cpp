@@ -37,8 +37,27 @@ void Camera::toggleRenderMe()
 	cameraRendered = !cameraRendered;
 }
 
-void Camera::setTransformation(const mat4& transform){
-	cTransform = cTransform*transform;
+Camera& Camera::operator =(const Camera& c) {
+	if (this != &c){
+		cTransform = c.cTransform;
+		cameraToWorld = c.cameraToWorld;
+		projection = c.projection;
+		cEye = c.cEye;
+		cAt = c.cAt;
+		cUp = c.cUp;
+		projectionParameters = c.projectionParameters;
+		pType = c.pType;
+		cameraRendered = c.cameraRendered;
+		PrimMeshModel * pModel = static_cast<PrimMeshModel *>(cameraPyramid);
+		pModel->resetTransformations();
+		pModel->setWorldTransform(cameraToWorld);
+	}
+	return *this;
+}
+
+void Camera::setTransformation(const mat4& transform, const mat4& invertedTransform){
+	cTransform = cTransform * transform;
+	cameraToWorld = invertedTransform * cameraToWorld;
 }
 
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
@@ -65,6 +84,7 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 
 	//set the camera's pyramid in the world:
 	PrimMeshModel* m = static_cast<PrimMeshModel*>(cameraPyramid);
+	m->resetTransformations();
 	m->setWorldTransform(cameraToWorld);
 }
 
@@ -174,6 +194,19 @@ void Camera::zoom(GLfloat scale){
 	}
 }
 
+void Camera::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
+	projectionParameters.left	*= widthRatioChange;
+	projectionParameters.right	*= widthRatioChange;
+	projectionParameters.bottom *= heightRatioChage;
+	projectionParameters.top	*= heightRatioChage;
+	if(pType == ORTHO){
+		Ortho(projectionParameters);
+	}
+	else{
+		Frustum(projectionParameters);
+	}
+}
+
 mat4 Camera::getCameraProjection()
 {
 	return projection;
@@ -201,11 +234,11 @@ vec3 Camera::getWorldVector(vec3 in){
 	homogenous = cameraToWorld*homogenous;
 	if (homogenous[3] != 0)
 	{
-		return vec3(homogenous[x] / homogenous[3], homogenous[y] / homogenous[3], homogenous[z] / homogenous[3]);
+		return vec3(homogenous[0] / homogenous[3], homogenous[1] / homogenous[3], homogenous[2] / homogenous[3]);
 	}
 	else
 	{
-		return vec3(homogenous[x], homogenous[y], homogenous[z]);
+		return vec3(homogenous[0], homogenous[1], homogenous[2]);
 	}
 }
 
@@ -289,8 +322,7 @@ void Scene::draw()
 	if (models.empty()){return;}
 	
 	// 1. Send the renderer the current camera transform and the projection
-	if (activeCamera != NULL)
-	{
+	if (activeCamera != NULL){
 		m_renderer->SetCameraTransform(activeCamera->getCameraTransformation());
 		m_renderer->SetProjection(activeCamera->getCameraProjection());
 	}	
@@ -300,10 +332,8 @@ void Scene::draw()
 		it->second->draw(m_renderer);
 	}
 
-	for (int i = 0; i < cameras.size(); i++)
-	{
-		if (cameras[i]->id != activeCamera->id)
-		{
+	for (int i = 0; i < cameras.size(); i++){
+		if (cameras[i]->id != activeCamera->id){
 			cameras[i]->draw(m_renderer);
 		}
 	}
@@ -395,16 +425,18 @@ void Scene::handleMeshModelFrame(OperateParams &p){
 }*/
 
 void Scene::handleCameraViewFrame(OperateParams &p){
-	mat4 A;
+	mat4 A,invA;
 	switch (p.type){
 	case TRANSLATE: A = Translate(-p.v);
-		break;
-	case ROTATE: A = RotateZ(p.v[z]) * RotateY(p.v[y]) * RotateX(p.v[x]);
-		break;
-	case SCALE: activeCamera->zoom(p.uScale);
-		break;
+					invA = Translate(p.v);
+					break;
+	case ROTATE:	A = RotateZ(p.v[z]) * RotateY(p.v[y]) * RotateX(p.v[x]);
+					invA = RotateX(-p.v[x]) * RotateY(-p.v[y]) * RotateZ(-p.v[z]);
+					break;
+	case SCALE:		activeCamera->zoom(p.uScale);
+					break;
 	}
-	activeCamera->setTransformation(A);
+	activeCamera->setTransformation(A,invA);
 }
 
 void Scene::setProjection(ProjectionType &type, ProjectionParams &p){
@@ -421,7 +453,7 @@ void Scene::refreshView()
 }
 
 void Scene::LookAtActiveModel(){
-	LookAtActiveModel(FRUSTUM);
+	LookAtActiveModel(ORTHO);
 }
 
 void Scene::LookAtActiveModel(ProjectionType pType){
@@ -474,4 +506,8 @@ vector <string> Scene::getModelNames(){
 		v.push_back(it->first);
 	}
 	return v;
+}
+
+void Scene::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
+	activeCamera->changeProjectionRatio(widthRatioChange, heightRatioChage);
 }

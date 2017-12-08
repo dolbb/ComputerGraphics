@@ -41,7 +41,7 @@ enum ModelType{
 #define DEFAULT_ZNEAR   1
 #define DEFAULT_ZFAR    100
 
-typedef struct OperateParams{
+struct OperateParams{
 	Frames frame;
 	OperationType type;
 	vec3 v;
@@ -51,7 +51,7 @@ typedef struct OperateParams{
 	OperateParams() : frame(WORLD), type(ROTATE), v(0, 0, 0), theta(0), uScale(1){}
 };
 
-typedef struct ProjectionParams{
+struct ProjectionParams{
 	
 	float left;
 	float right;
@@ -105,10 +105,6 @@ class Camera : public Model {
 	vec4 cAt;
 	vec4 cUp;
 
-	vec3 cX;//position of camera
-	vec3 cY;
-	vec3 cZ;
-
 	ProjectionParams projectionParameters;
 	ProjectionType pType;
 	bool cameraRendered;
@@ -118,25 +114,8 @@ public:
 	~Camera(){
 		delete cameraPyramid;
 	}
-	Camera& operator =(const Camera& c) {
-		if (this != &c)
-		{
-			cTransform = c.cTransform;
-			cameraToWorld = c.cameraToWorld;
-			projection = c.projection;
-			cEye = c.cEye;
-			cAt = c.cAt;
-			cUp = c.cUp;
-			cX = c.cX;
-			cY = c.cY;
-			cZ = c.cZ;
-			projectionParameters = c.projectionParameters;
-			pType = c.pType;
-			cameraRendered = c.cameraRendered;
-		}
-		return *this;
-	}
-	void setTransformation(const mat4& transform);
+	Camera& operator =(const Camera& c);
+	void setTransformation(const mat4& transform, const mat4& invertedTransform);
 	void LookAt(const vec4& eye, const vec4& at, const vec4& up );
 	void Ortho(const ProjectionParams& params);
 	void Frustum(const ProjectionParams& params);
@@ -146,7 +125,8 @@ public:
 	void changeRelativePosition(vec3& v);
 	void zoom(GLfloat scale);
 	void toggleRenderMe();
-	
+	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
+
 	//getters:
 	mat4 getCameraTransformation();
 	mat4 getCameraProjection();
@@ -189,10 +169,10 @@ public:
 	void featuresStateSelection(ActivationToggleElement e);
 	void addPyramidMesh();
 	void operate(OperateParams &p);
-	void updateProjection(float aspect);
 	void setProjection(ProjectionType &type, ProjectionParams &p);
 	void refreshView();
 	void LookAtActiveModel();
 	void LookAtActiveModel(ProjectionType pType);
 	vector <string> getModelNames();
+	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
 };

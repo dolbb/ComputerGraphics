@@ -224,7 +224,7 @@ vec3 MeshModel::getCenterOfMass()
 	GLfloat z = (boundingBoxVertices[1][2] + boundingBoxVertices[0][2]) / 2;
 
 	vec4 orthogonal(x, y, z, 1);
-	orthogonal = selfVertexTransform * worldVertexTransform * orthogonal;
+	orthogonal = worldVertexTransform * selfVertexTransform * orthogonal;
 	orthogonal /= orthogonal.w;
 
 	return vec3(orthogonal.x, orthogonal.y, orthogonal.z);
