@@ -25,10 +25,9 @@
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
-
 enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
-enum newMenuIdentifier{NEW_MODEL, NEW_CAMERA};
+enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID };
 enum selectMenuIdentifier{ACTIVE_MODEL};
 enum toolsMenuIdentifier{LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP,SET_CAMERA_PRESPECTIVE};
 enum toggleMenuIdentifier{FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING};
@@ -53,6 +52,8 @@ int height = DEFAULT_SCREEN_Y;
 
 //	track ball functions parameters
 
+#define DEFAULT_ANGLE 10.0
+#define DEFAULT_TRANSLATION 0.5
 vec3 startingPoint;
 vec3 endingPoint;
 vec3 rotationAxis;
@@ -87,6 +88,9 @@ void idle()
 
 void reshape( int newWidth, int newHeight )
 {
+	float heightRatioChage = newHeight / height;
+	float widthRatioChange = newWidth / width;
+	//scene->changeProjection(widthRatioChange, heightRatioChage);
 	width = newWidth;
 	height = newHeight;
 	renderer->resizeBuffers(width, height);
@@ -132,42 +136,6 @@ void keyboard( unsigned char key, int x, int y )
 			}
 		break;
 
-		////swap model transformation frame
-		//case 'c':
-		//	cout << "current camera transformation frame: ";
-		//	if (currentCameraFrame == CAMERA_POSITION)
-		//	{
-		//		currentCameraFrame = CAMERA_VIEW;
-		//		cout << "view" << endl;
-		//	}
-		//	else
-		//	{
-		//		currentCameraFrame = CAMERA_POSITION;
-		//		cout << "world" << endl;
-		//	}
-		break;
-
-		case 'r':
-			parameters.frame = currentObjectFrame;
-			parameters.v = getParameters();
-			parameters.type = ROTATE;
-			scene->operate(parameters);
-		break;
-
-		case 's':
-			parameters.frame = currentObjectFrame;
-			parameters.v = getParameters();
-			parameters.type = SCALE;
-			scene->operate(parameters);
-		break;
-
-		case 't':
-			parameters.frame = currentObjectFrame;
-			parameters.v = getParameters();
-			parameters.type = TRANSLATE;
-			scene->operate(parameters);
-		break;
-
 		case 'x':
 			currentAxis = xT;
 			cout << "current transformation axis: X" << endl;
@@ -199,7 +167,7 @@ void keyboard( unsigned char key, int x, int y )
 				direction = nonElevated;
 				cout << "the camera is now not elevating in scene" << endl;
 			}
-			break;
+		break;
 	}
 }
 
@@ -262,49 +230,173 @@ void mouse(int button, int state, int x, int y)
 	}
 	if (lb_down)
 	{
-		if (x >= width || y >= height || x < 0 || y < 0) return;
 		startingPoint = projectToSphere(x, y);
 	}
 }
 
 void special(int key, int x, int y)
 {
-	parameters.frame = currentCameraFrame;
+	int modifier = glutGetModifiers();
 	parameters.type = TRANSLATE;
+	if (modifier == GLUT_ACTIVE_SHIFT)
+	{
+		parameters.type = ROTATE;
+	}
+	parameters.frame = currentCameraFrame;
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-		if (direction = elevated)
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
 		{
-			parameters.v = vec3(0, 1, 0)*transformationFactor;
-			scene->operate(parameters);
+			if (direction == elevated)
+			{
+				parameters.v = vec3(0, 1, 0)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+			else
+			{
+				parameters.v = vec3(0, 0, -1)*DEFAULT_TRANSLATION*transformationFactor;
+			}
 		}
+		//set rotation parameters
 		else
 		{
-			parameters.v = vec3(0, 0, -1)*transformationFactor;
-			scene->operate(parameters);
+			parameters.v = vec3(1, 0, 0)*DEFAULT_ANGLE*transformationFactor;
 		}
-		break;
+	break;
+
 	case GLUT_KEY_DOWN:
-		if (direction = elevated)
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
 		{
-			parameters.v = vec3(0, -1, 0)*transformationFactor;
-			scene->operate(parameters);
+			if (direction = elevated)
+			{
+				parameters.v = vec3(0, -1, 0)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+			else
+			{
+				parameters.v = vec3(0, 0, 1)*DEFAULT_TRANSLATION*transformationFactor;
+			}
 		}
+		//set rotation parameters
 		else
 		{
-			parameters.v = vec3(0, 0, 1)*transformationFactor;
-			scene->operate(parameters);
+			parameters.v = vec3(-1, 0, 0)*DEFAULT_ANGLE*transformationFactor;
 		}
-		break;
+	break;
+
 	case GLUT_KEY_LEFT:
-		parameters.v = vec3(-1, 0, 0)*transformationFactor;
-		scene->operate(parameters);
-		break;
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			parameters.v = vec3(-1, 0, 0)*DEFAULT_TRANSLATION*transformationFactor;
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(0, 0, 1)*DEFAULT_ANGLE*transformationFactor;
+		}
+	break;
+
 	case GLUT_KEY_RIGHT:
-		parameters.v = vec3(1, 0, 0)*transformationFactor;
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			parameters.v = vec3(1, 0, 0)*DEFAULT_TRANSLATION*transformationFactor;
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(0, 0, -1)*DEFAULT_ANGLE*transformationFactor;
+		}
+	break;
+	}
+	scene->operate(parameters);
+}
+
+void rotate(int x, int y, int dy)
+{
+	parameters.type = ROTATE;
+	if (currentAxis == xT || currentAxis == yT || currentAxis == zT)
+	{
+		//rotation around y axis in the positive\negative direction
+		if (currentAxis == xT && dy>0)	parameters.v = vec3(DEFAULT_ANGLE, 0, 0)*transformationFactor;
+		if (currentAxis == xT && dy<0)	parameters.v = vec3(-1*DEFAULT_ANGLE, 0, 0)*transformationFactor;
+
+		//rotation around y axis in the positive\negative direction
+		if (currentAxis == yT && dy>0)	parameters.v = vec3(0, DEFAULT_ANGLE, 0)*transformationFactor;
+		if (currentAxis == yT && dy<0)	parameters.v = vec3(0, -1*DEFAULT_ANGLE, 0)*transformationFactor;
+
+		//rotation around z axis in the positive\negative direction
+		if (currentAxis == zT && dy>0)	parameters.v = vec3(0, 0, DEFAULT_ANGLE)*transformationFactor;
+		if (currentAxis == zT && dy<0)	parameters.v = vec3(0, 0, -1*DEFAULT_ANGLE)*transformationFactor;
+
 		scene->operate(parameters);
-		break;
+	}
+	else
+	{
+		if (x >= width || y >= height || x < 0 || y < 0) return;
+		endingPoint = projectToSphere(x, y);
+		rotationAxis = cross(startingPoint, endingPoint);
+		angle = length(rotationAxis) / length(startingPoint)*length(endingPoint);
+		angle = (angle * 180) / M_PI;
+		if (isnan(angle)) return;
+		parameters.v = rotationAxis;
+		parameters.theta = angle;
+		scene->operate(parameters);
+	}
+}
+
+void scale(int dy)
+{
+	//scaling parameters
+	vec3 uniformScalingVector = vec3(1, 1, 1);
+	parameters.type = SCALE;
+	parameters.v = uniformScalingVector;
+	if (dy < 0)
+	{
+		if (currentAxis == xT) parameters.v[0] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		if (currentAxis == yT) parameters.v[1] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		if (currentAxis == zT) parameters.v[2] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		if (currentAxis == uniformT) parameters.v *= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		scene->operate(parameters);
+	}
+	else
+	{
+		if (currentAxis == xT) parameters.v[0] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		if (currentAxis == yT) parameters.v[1] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		if (currentAxis == zT) parameters.v[2] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		if (currentAxis == uniformT) parameters.v /= (DEFAULT_SCALING_FACTOR*transformationFactor);
+		scene->operate(parameters);
+	}
+}
+
+void translate(int x, int y, int dy)
+{
+	parameters.type = TRANSLATE;
+	parameters.v = vec3(0, 0, 0);
+	if (currentAxis == xT || currentAxis == yT || currentAxis == zT)
+	{
+		//translation along x axis in the positive\negative direction
+		if (currentAxis == xT && dy>0)	parameters.v = vec3(DEFAULT_TRANSLATION, 0, 0)*transformationFactor;
+		if (currentAxis == xT && dy<0)	parameters.v = vec3(-1*DEFAULT_TRANSLATION, 0, 0)*transformationFactor;
+
+		//translation along y axis in the positive\negative direction
+		if (currentAxis == yT && dy>0)	parameters.v = vec3(0, DEFAULT_TRANSLATION, 0)*transformationFactor;
+		if (currentAxis == yT && dy<0)	parameters.v = vec3(0, -1*DEFAULT_TRANSLATION, 0)*transformationFactor;
+
+		//translation along z axis in the positive\negative direction
+		if (currentAxis == zT && dy>0)	parameters.v = vec3(0, 0, DEFAULT_TRANSLATION)*transformationFactor;
+		if (currentAxis == zT && dy<0)	parameters.v = vec3(0, 0, -1*DEFAULT_TRANSLATION)*transformationFactor;
+
+		scene->operate(parameters);
+	}
+	else
+	{
+		if (x >= width || y >= height || x < 0 || y < 0) return;
+		endingPoint = projectToSphere(x, y);
+		parameters.v = (endingPoint - startingPoint)*transformationFactor;
+		scene->operate(parameters);
 	}
 }
 
@@ -319,53 +411,18 @@ void motion(int x, int y)
 	int modifier = glutGetModifiers();
 	parameters.frame = currentObjectFrame;
 
-	//scaling parameters
-	vec3 uniformScalingVector = vec3(1, 1, 1);
 	switch (modifier)
 	{
 		case GLUT_ACTIVE_CTRL:
-			//scaling
-			parameters.type = SCALE;
-			parameters.v = uniformScalingVector;
-			if (dy < 0)
-			{
-				if (currentAxis == xT) parameters.v[0] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				if (currentAxis == yT) parameters.v[1] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				if (currentAxis == zT) parameters.v[2] *= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				if (currentAxis == uniformT) parameters.v *= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				scene->operate(parameters);
-			}
-			else
-			{
-				if (currentAxis == xT) parameters.v[0] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				if (currentAxis == yT) parameters.v[1] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				if (currentAxis == zT) parameters.v[2] /= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				if (currentAxis == uniformT) parameters.v /= (DEFAULT_SCALING_FACTOR*transformationFactor);
-				scene->operate(parameters);
-			}
+			scale(dy);
 		break;
 
 		case GLUT_ACTIVE_SHIFT:
-			//translation
-			parameters.type = TRANSLATE;
-			if (x >= width || y >= height || x < 0 || y < 0) return;
-			endingPoint = projectToSphere(x, y);
-			parameters.v = (endingPoint - startingPoint)*transformationFactor;
-			scene->operate(parameters);
+			translate(x, y, dy);
 		break;
 
 		default:
-			//rotation
-			parameters.type = ROTATE;
-			if (x >= width || y >= height || x < 0 || y < 0) return;
-			endingPoint = projectToSphere(x, y);
-			rotationAxis = cross(startingPoint, endingPoint);
-			angle = length(rotationAxis) / length(startingPoint)*length(endingPoint);
-			angle = (angle * 180) / M_PI;
-			if (isnan(angle)) return;
-			parameters.v = rotationAxis;
-			parameters.theta = angle;
-			scene->operate(parameters);
+			rotate(x,y,dy);
 		break;
 	}
 }
@@ -384,6 +441,10 @@ void newMenuCallback(int id)
 	if(id==NEW_CAMERA)
 	{
 		scene->createCamera();
+	}
+	if (id == NEW_PYRAMID)
+	{
+		//scene->createPrimitive();
 	}
 }
 
@@ -558,6 +619,7 @@ void initMenu()
 {
 	int newMenu = glutCreateMenu(newMenuCallback);
 	glutAddMenuEntry("Model", NEW_MODEL);
+	glutAddMenuEntry("Pyramid", NEW_PYRAMID);
 	glutAddMenuEntry("Camera", NEW_CAMERA);
 	int selectMenu = glutCreateMenu(selectMenuCallback);
 	glutAddMenuEntry("Active model", ACTIVE_MODEL);
