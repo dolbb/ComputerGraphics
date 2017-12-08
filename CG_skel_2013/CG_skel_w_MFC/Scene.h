@@ -30,6 +30,10 @@ enum RotationType{
 	ROLL, PITCH, SIDES
 };
 
+enum ModelType{ 
+	MESH, PYRAMID 
+};
+
 #define DEFAULT_LEFT   -1
 #define DEFAULT_RIGHT   1
 #define DEFAULT_BOTTOM -1
@@ -58,8 +62,7 @@ typedef struct ProjectionParams{
 	float fovy;
 	float aspect;
 
-	ProjectionParams()
-	{
+	ProjectionParams(){
 		/*frustum and orthogonal view data:*/
 		left = DEFAULT_LEFT;
 		right = DEFAULT_RIGHT;
@@ -78,15 +81,13 @@ typedef struct ProjectionParams{
 class Model {
 protected:
 	string name;
+	ModelType modelType;
 public:
 	virtual ~Model() {}
 	void virtual draw(Renderer *renderer) = 0;
-	const string getName(){
-		return name;
-	}
-	void setName(const string chosenName){
-		name = chosenName;
-	}
+	const string getName(){return name;}
+	void setName(const string chosenName){name = chosenName;}
+	ModelType getModelType(){return modelType;}
 };
 
 class Light {
@@ -131,6 +132,7 @@ public:
 			cZ = c.cZ;
 			projectionParameters = c.projectionParameters;
 			pType = c.pType;
+			cameraRendered = c.cameraRendered;
 		}
 		return *this;
 	}
@@ -171,7 +173,8 @@ private:
 	//void handleCameraPosFrame(OperateParams &p);
 	void handleCameraViewFrame(OperateParams &p);
 	//void handleZoom(OperateParams &p);
-
+	bool insertNewModel(Model* m);
+	vec3 getCameraCoordsBoundaries(vec3 *bBox);
 public:
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), activeModel(NULL) {
 		cameras.push_back(activeCamera);
@@ -184,12 +187,12 @@ public:
 	void selectActiveModel(string name);
 	void selectActiveCamera(int index);
 	void featuresStateSelection(ActivationToggleElement e);
-	void addPyramidMesh(vec3 headPointingTo, vec3 headPositionXYZ, string name);
+	void addPyramidMesh();
 	void operate(OperateParams &p);
 	void updateProjection(float aspect);
 	void setProjection(ProjectionType &type, ProjectionParams &p);
 	void refreshView();
 	void LookAtActiveModel();
+	void LookAtActiveModel(ProjectionType pType);
 	vector <string> getModelNames();
-	void drawPyramid(vec3 pos, vec3 viewVec, Model* pyramid);
 };

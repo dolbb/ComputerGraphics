@@ -34,6 +34,7 @@ vertexPositions(NULL), vertexPositionsSize(INVALID_SIZE),
 vertexNormals(NULL), vertexNormalsSize(INVALID_SIZE),
 faceNormals(NULL), faceNormalsSize(INVALID_SIZE)
 {
+	modelType = MESH;
 	vector<FaceIdcs> faces;
 	vector<vec3>	 vertices;
 	vector<vec3>	 normals;
@@ -197,10 +198,10 @@ void calculateAxisExtremum(GLfloat* axisExtremum, vector<vec3>& vertices)
 void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 {
 	/*
-		axisExtremum holds x,y,z extremum values starting from x axis up to z axis.
-		even indexes hold x,y,z min values, odd indexes hold x,y,z max values.
-		for example: axisExtremum[0]=X_MIN value, axisExtremum[1]=X_MAX value
-		*/
+	axisExtremum holds x,y,z extremum values starting from x axis up to z axis.
+	even indexes hold x,y,z min values, odd indexes hold x,y,z max values.
+	for example: axisExtremum[0]=X_MIN value, axisExtremum[1]=X_MAX value
+	*/
 	GLfloat axisExtremum[6];
 	calculateAxisExtremum(axisExtremum, vertices);
 	int currentVertex = 0;
@@ -216,19 +217,17 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 	}
 }
 
-const vec3& MeshModel::getCenterOfMass()
+vec3 MeshModel::getCenterOfMass()
 {
-/*	vec3 mass;
-	for (int i = 0; i < vertexPositionsSize; i++)
-	{
-		mass += vertexPositions[i];
-	}
-	return mass / vertexPositionsSize;*/
 	GLfloat x = (boundingBoxVertices[4][0] + boundingBoxVertices[0][0]) / 2;
 	GLfloat y = (boundingBoxVertices[2][1] + boundingBoxVertices[0][1]) / 2;
 	GLfloat z = (boundingBoxVertices[1][2] + boundingBoxVertices[0][2]) / 2;
 
-	return vec3(x,y,z);
+	vec4 orthogonal(x, y, z, 1);
+	orthogonal = selfVertexTransform * worldVertexTransform * orthogonal;
+	orthogonal /= orthogonal.w;
+
+	return vec3(orthogonal.x, orthogonal.y, orthogonal.z);
 }
 
 vec3* MeshModel::getBoundingBox()
@@ -372,4 +371,8 @@ vec3 MeshModel::getVertexBeforeSelf(vec3 &v){
 	vec4 u = selfInvertedVertexTransform * worldInvertedVertexTransform * vec4(v);
 	//TODO: check if sufficient or normalization needed "u/=u[3];".
 	return vec3(u[0], u[1], u[2]);
+}
+
+void PrimMeshModel::setWorldTransform(mat4 trans){
+	worldVertexTransform = trans;
 }
