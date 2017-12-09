@@ -1,0 +1,24 @@
+﻿Build started 25-Nov-17 4:55:45 PM.
+     1>Project "D:\software\gitProjects\CG_HW1\CG_skel_2013\CG_skel_w_MFC\CG_skel_w_MFC.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         D:\software\visual studio 2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\software\gitProjects\CG_HW1\CG_skel_2013\Release\CG_skel_w_MFC.exe" /INCREMENTAL:NO /NOLOGO ../freeglut/lib/freeglut_static.lib ../glew/lib/glew.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:"D:\software\visual studio 2013\VC\Include\Manifest\dpiaware.manifest" /PDB:"D:\software\gitProjects\CG_HW1\CG_skel_2013\Release\CG_skel_w_MFC.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\software\gitProjects\CG_HW1\CG_skel_2013\Release\CG_skel_w_MFC.lib" /MACHINE:X86 /SAFESEH Release\CG_skel_w_MFC.res
+         Release\CG_skel_w_MFC.obj
+         Release\InitShader.obj
+         Release\InputDialog.obj
+         Release\MeshModel.obj
+         Release\Renderer.obj
+         Release\Scene.obj
+         Release\stdafx.obj
+         Release\UnitTest.obj
+         D:\software\gitProjects\CG_HW1\CG_skel_2013\freeglut\lib\freeglut_static.lib
+         D:\software\gitProjects\CG_HW1\CG_skel_2013\glew\lib\glew.lib
+     1>LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+         Generating code
+     1>d:\software\gitprojects\cg_hw1\cg_skel_2013\cg_skel_w_mfc\cg_skel_w_mfc.cpp(99): warning C4715: 'getParameters' : not all control paths return a value
+         Finished generating code
+         CG_skel_w_MFC.vcxproj -> D:\software\gitProjects\CG_HW1\CG_skel_2013\Release\CG_skel_w_MFC.exe
+     1>Done Building Project "D:\software\gitProjects\CG_HW1\CG_skel_2013\CG_skel_w_MFC\CG_skel_w_MFC.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.66

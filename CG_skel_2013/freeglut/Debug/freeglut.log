@@ -1,0 +1,96 @@
+﻿Build started 09-Dec-17 7:36:34 PM.
+     1>Project "D:\software\gitProjects\ComputerGraphics\CG_skel_2013\freeglut\freeglut.vcxproj" on node 2 (Rebuild target(s)).
+     1>ClCompile:
+         D:\software\visual studio 2013\VC\bin\CL.exe /c /Iinclude\ /ZI /nologo /W3 /WX- /Od /Oy- /D FREEGLUT_STATIC /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:prompt src\freeglut_callbacks.c src\freeglut_cursor.c src\freeglut_display.c src\freeglut_ext.c src\freeglut_font.c src\freeglut_font_data.c src\freeglut_gamemode.c src\freeglut_geometry.c src\freeglut_glutfont_definitions.c src\freeglut_init.c src\freeglut_input_devices.c src\freeglut_joystick.c src\freeglut_main.c src\freeglut_menu.c src\freeglut_misc.c src\freeglut_overlay.c src\freeglut_spaceball.c src\freeglut_state.c src\freeglut_stroke_mono_roman.c src\freeglut_stroke_roman.c src\freeglut_structure.c src\freeglut_teapot.c src\freeglut_videoresize.c src\freeglut_window.c
+         freeglut_window.c
+         fgSetupPixelFormat(): there is still some work to do here!
+         freeglut_videoresize.c
+         freeglut_teapot.c
+         freeglut_structure.c
+         freeglut_stroke_roman.c
+         freeglut_stroke_mono_roman.c
+         freeglut_state.c
+         freeglut_spaceball.c
+         freeglut_overlay.c
+         freeglut_misc.c
+         freeglut_menu.c
+         freeglut_main.c
+         freeglut_joystick.c
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_joystick.c(1021): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(346) : see declaration of '_snprintf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_joystick.c(1031): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(346) : see declaration of '_snprintf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_joystick.c(1039): warning C4996: '_snprintf': This function or variable may be unsafe. Consider using _snprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(346) : see declaration of '_snprintf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_joystick.c(1273): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\string.h(195) : see declaration of 'strncpy'
+         freeglut_input_devices.c
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_input_devices.c(152): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdlib.h(462) : see declaration of 'getenv'
+         freeglut_init.c
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_init.c(717): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdlib.h(462) : see declaration of 'getenv'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_init.c(722): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_init.c(741): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdlib.h(462) : see declaration of 'getenv'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_init.c(685): warning C4101: 'sLen' : unreferenced local variable
+         freeglut_glutfont_definitions.c
+         freeglut_geometry.c
+         freeglut_gamemode.c
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(394): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(395): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(396): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(397): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(398): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(399): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+     1>d:\software\gitprojects\computergraphics\cg_skel_2013\freeglut\src\freeglut_gamemode.c(400): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\software\visual studio 2013\vc\include\stdio.h(304) : see declaration of 'sscanf'
+         freeglut_font_data.c
+         freeglut_font.c
+         Generating Code...
+         Compiling...
+         freeglut_ext.c
+         freeglut_display.c
+         freeglut_cursor.c
+         freeglut_callbacks.c
+         Generating Code...
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1361,5): warning MSB8012: TargetPath(D:\software\gitProjects\ComputerGraphics\CG_skel_2013\Debug\freeglut.lib) does not match the Library's OutputFile property value (D:\software\gitProjects\ComputerGraphics\CG_skel_2013\freeglut\lib\freeglut_static.lib). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1363,5): warning MSB8012: TargetName(freeglut) does not match the Library's OutputFile property value (freeglut_static). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
+       Lib:
+         D:\software\visual studio 2013\VC\bin\Lib.exe /OUT:"lib\freeglut_static.lib" /NOLOGO Debug\freeglut_callbacks.obj
+         Debug\freeglut_cursor.obj
+         Debug\freeglut_display.obj
+         Debug\freeglut_ext.obj
+         Debug\freeglut_font.obj
+         Debug\freeglut_font_data.obj
+         Debug\freeglut_gamemode.obj
+         Debug\freeglut_geometry.obj
+         Debug\freeglut_glutfont_definitions.obj
+         Debug\freeglut_init.obj
+         Debug\freeglut_input_devices.obj
+         Debug\freeglut_joystick.obj
+         Debug\freeglut_main.obj
+         Debug\freeglut_menu.obj
+         Debug\freeglut_misc.obj
+         Debug\freeglut_overlay.obj
+         Debug\freeglut_spaceball.obj
+         Debug\freeglut_state.obj
+         Debug\freeglut_stroke_mono_roman.obj
+         Debug\freeglut_stroke_roman.obj
+         Debug\freeglut_structure.obj
+         Debug\freeglut_teapot.obj
+         Debug\freeglut_videoresize.obj
+         Debug\freeglut_window.obj
+         freeglut.vcxproj -> D:\software\gitProjects\ComputerGraphics\CG_skel_2013\Debug\freeglut.lib
+     1>Done Building Project "D:\software\gitProjects\ComputerGraphics\CG_skel_2013\freeglut\freeglut.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.32
