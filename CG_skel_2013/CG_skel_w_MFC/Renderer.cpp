@@ -5,7 +5,7 @@
 #include "GL\freeglut.h"
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
-#define TRIANGLE_VERTICES 3
+#define ZINDEX(width,x,y) (x+y*width)*3
 #define BOUNDING_BOX_VERTICES 8
 #define CLIPPING_PLANES 6
 #define EDGE_VERTICES 2
@@ -50,6 +50,43 @@ void Renderer::SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& 
 {
 	objectTransform = chosenObjectTransform;
 	normalTransform = chosenNormalTransform;
+}
+
+void Renderer::setModelMaterial(vec3 emissiveColor,vec3 ambientCoeff, vec3 diffuseCoeff, vec3 specularCoeff, GLfloat alpha)
+{
+	material.emissiveColor	= emissiveColor;
+	material.ambientCoeff	= ambientCoeff;
+	material.diffuseCoeff	= diffuseCoeff;
+	material.specularCoeff	= specularCoeff;
+	material.alpha			= alpha;
+}
+
+void Renderer::setModelGeometry(vec3* vertices, int verticesSize, vec3* vertexNormals, vec3* faceNormals)
+{
+	geometry.vertices		=	vertices;
+	geometry.vertexNormals	=	vertexNormals;
+	geometry.faceNormals	=	faceNormals;
+	geometry.verticesSize	=	verticesSize;
+}
+
+void Renderer::setShadingMethod(shadingMethod chosenShading)
+{
+	shading = chosenShading;
+}
+
+void Renderer::setLightSources(const vector<Light>& sceneLightSources)
+{
+	lightSources = sceneLightSources;
+}
+
+void Renderer::setEye(vec4 cameraEye)
+{
+	eye = cameraEye;
+}
+
+void Renderer::setFar(GLfloat sceneFarPlane)
+{
+	farPlane = sceneFarPlane;
 }
 
 void Renderer::CreateBuffers(int width, int height)
@@ -137,6 +174,8 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 	vec4 faceCenter;
 	vec4 normal;
 	vec3 v0, v1, v2;
+	clipResult* res;
+	int clipRes = 0;
 	//for each face
 	for (int i = 0, currentFace=0; i < vertexPositionsSize; i += TRIANGLE_VERTICES, currentFace++)
 	{
@@ -156,7 +195,12 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 		//project the exit point and the normal
 		faceCenter = worldToClipCoords*faceCenter;
 		normal = worldToClipCoords*normal;
-		if (clipLine(faceCenter, normal) == OUT_OF_BOUNDS)
+		res = clipLine(faceCenter, normal);
+		for (int i = 0; i < CLIPPING_PLANES; i++)
+		{
+			clipRes += res[i];
+		}
+		if (clipRes == OUT_OF_BOUNDS)
 		{
 			continue;
 		}
@@ -170,6 +214,8 @@ void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int 
 	mat4 worldToClipCoords = projection*cameraTransform;
 	vec4 vertex;
 	vec4 normal;
+	clipResult* res;
+	int clipRes = 0;
 	if (vertexNormals == NULL) { return; }
 	for (int i = 0; i < vertexSize; i++)
 	{
@@ -184,7 +230,12 @@ void Renderer::drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int 
 		//project points
 		vertex = worldToClipCoords*vertex;
 		normal = worldToClipCoords*normal;
-		if (clipLine(vertex, normal) == OUT_OF_BOUNDS)
+		res = clipLine(vertex, normal);
+		for (int i = 0; i < CLIPPING_PLANES; i++)
+		{
+			clipRes += res[i];
+		}
+		if (clipRes == OUT_OF_BOUNDS)
 		{
 			continue;
 		}
@@ -197,6 +248,8 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 {
 	vec4 v0, v1;
 	mat4 objectToClipCoordinates = projection*cameraTransform*objectTransform;
+	clipResult* res;
+	int clipRes = 0;
 	//for each pair i,j check if i,j is a posible combination for Bounding box edge, if it is, process the vertex and draw the dege
 	for (int i = 0; i < BOUNDING_BOX_VERTICES; i++)
 	{
@@ -209,7 +262,12 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 				//process the vertex and draw line unless its clipped fully.
 				v0 = objectToClipCoordinates*v0;
 				v1 = objectToClipCoordinates*v1;
-				if (clipLine(v0, v1) == OUT_OF_BOUNDS){
+				res = clipLine(v0, v1);
+				for (int i = 0; i < CLIPPING_PLANES; i++)
+				{
+					clipRes += res[i];
+				}
+				if (clipRes == OUT_OF_BOUNDS){
 					continue;
 				}
 				v0 /= v0[w];
@@ -225,8 +283,9 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 	the CVV (clips the outer parts).
 */
 
-void clipToBoundries(vec4& startingPoint, float* startBoundryRes, vec4& endingPoint, float* endBoundryRes, int startClipRes, int endClipRes)
+clipResult* clipToBoundries(vec4& startingPoint, float* startBoundryRes, vec4& endingPoint, float* endBoundryRes, int startClipRes, int endClipRes)
 {
+	clipResult res[CLIPPING_PLANES];
 	/*
 		set t interval to [0,1] to start with, t interval will detarmine which portion of the line is in the box.
 		after calculation of tIn and tOut its promised that the portion of the line in the CVV is within the t interval [tIn, tOut]
@@ -245,15 +304,17 @@ void clipToBoundries(vec4& startingPoint, float* startBoundryRes, vec4& endingPo
 		{
 			tIntersect = startBoundryRes[i] / (startBoundryRes[i] - endBoundryRes[i]);
 			tOut = tIntersect <= tOut ? tIntersect : tOut;
+			res[i] = EXIT;
 		}
 		//in this case the starting point is outside the plane i, we enter the box from outisde so we calculate tIn.
 		else if (startBoundryRes[i] < 0)
 		{
 			tIntersect = startBoundryRes[i] / (startBoundryRes[i] - endBoundryRes[i]);
 			tIn = tIntersect >= tIn ? tIntersect : tIn;
+			res[i] = ENTER;
 		}
 		//the interval is invalid, early return.
-		if (tIn > tOut) return;
+		if (tIn > tOut) OUT_OF_BOUNDS;
 	}
 	//modify the end points of the line according to tIn and tOut.
 	vec4 temp=startingPoint;
@@ -268,6 +329,7 @@ void clipToBoundries(vec4& startingPoint, float* startBoundryRes, vec4& endingPo
 		endingPoint = endingPoint + tOut*(endingPoint - startingPoint);
 	}
 	startingPoint = temp;
+	return res;
 }
 
 void computeClipRes(int clipRes[3][CLIPPING_PLANES], float boundryRes[CLIPPING_PLANES], vec4 point, clipResTable curPointRes)
@@ -305,8 +367,15 @@ void computeClipRes(int clipRes[3][CLIPPING_PLANES], float boundryRes[CLIPPING_P
 	the line is completly out of the the box and CLIPPED in case the line was partially in and was clipped to the box planes as needed.
 */
 
-clipResult Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
+clipResult* Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 {
+	clipResult outOfBounds[CLIPPING_PLANES];
+	clipResult inBounds[CLIPPING_PLANES];
+	for (int i = 0; i < CLIPPING_PLANES; i++)
+	{
+		outOfBounds[i] = OUT_OF_BOUNDS;
+		inBounds[i] = IN_BOUNDS;
+	}
 	/*
 		a point is inside the CVV(canonical view volume) if w-x>0 w+x>0 w-y>0 w+y>0 w-z>0 w+z>0, following from the inequalities
 		x<w x>-w and same goes for the other axis. 
@@ -349,7 +418,7 @@ clipResult Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 		//in this case both endpoints of the line are outside some plane therefore out of bounds, return OUT_OF_BOUNDS.
 		if (startRes == OUT_OF_BOUNDS && endRes == OUT_OF_BOUNDS)
 		{
-			return OUT_OF_BOUNDS;
+			return outOfBounds;
 		}
 		counter += startRes;
 		counter += endRes;
@@ -357,13 +426,101 @@ clipResult Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 	//in this case both the endpoints are completely in bounds and no clipping is needed, return IN_BOUNDS.
 	if (counter == IN_BOUNDS)
 	{
-		return IN_BOUNDS;
+		return inBounds;
 	}
 
 	//after we checked for trivial out of bounds and in bounds we clip.
-	clipToBoundries(startingPoint, startBoundryRes, endingPoint, endBoundryRes, startClipRes, endClipRes);
-	//starting point and ending point are now clipped to the CVV, return clipped.
-	return CLIPPED;
+	return clipToBoundries(startingPoint, startBoundryRes, endingPoint, endBoundryRes, startClipRes, endClipRes);
+}
+
+vec4 interpolate(vec4 start, vec4 end, GLfloat t)
+{
+	return (t*end + (1 - t)*start);
+}
+
+clipResult Renderer::clipTriangle(vector<vec4>& faceVertices, vector<vec4>& faceVertexNormals, vector<vec4>& faceVertexColors)
+{
+	clipResult res = IN_BOUNDS;
+	clipResult* lineRes;
+	//	vertices normals and colors will be updated to the most updated polygon verrtices, vertex normals and colors every iteration
+	vector<vec4> vertices = faceVertices, normals = faceVertexNormals, colors = faceVertexColors;
+	vector<vec4> newPolygonVertices, newPolygonVertexNormals, newPolygonVertexColors;
+	//start end and t are used to calculate normal vectors and colors for mid points using linear interpolation
+	vec4 start, end;
+	GLfloat t;
+	//for every clipping plane
+	for (int plane = 0; plane < CLIPPING_PLANES; plane++)
+	{
+		newPolygonVertices.clear();
+		newPolygonVertexNormals.clear();
+		newPolygonVertexColors.clear();
+		//for every vertex
+		for (int i = 0; i <vertices.size() ; i++)
+		{
+			//i,j is an edge
+			int j = (i + 1) % vertices.size();
+			//save start and end point in case they will be clipped
+			start = vertices[i];
+			end = vertices[j];
+			//calculate clip result against the current clipping plane
+			lineRes = clipLine(vertices[i], vertices[j]);
+			//in case the line is entering the boundry from outside we keep both intersection and in point
+			if (lineRes[plane] == ENTER)
+			{
+				//insert both vertices to the vertices list, calculate normal vectors and colors for the new vertices
+				for (int v = i; v <= j; v++)
+				{
+					newPolygonVertices.push_back(vertices[v]);
+					//if shading is flat we dont need to calculate color.
+					if (shading != FLAT)
+					{
+						t = length((vertices[v] - start) / length(end - start));
+						newPolygonVertexNormals.push_back(interpolate(normals[i], normals[j], t));
+						newPolygonVertexColors.push_back(calculateColor(newPolygonVertices.back(), newPolygonVertexNormals.back()));
+					}
+				}
+				res = CLIPPED;
+			}
+			else if (res == OUT_OF_BOUNDS)
+			{
+				continue;
+			}
+			//in this case we are totally in bounds or we are going from inside out, we save only the second vertex (intersection/end point)
+			else
+			{
+				newPolygonVertices.push_back(vertices[j]);
+				if (shading != FLAT)
+				{
+					t = length((vertices[j] - start) / length(end - start));
+					newPolygonVertexNormals.push_back(interpolate(normals[i], normals[j], t));
+					newPolygonVertexColors.push_back(calculateColor(newPolygonVertices.back(), newPolygonVertexColors.back()));
+				}
+				//we signal that some portion of the triangle was clipped
+				if (lineRes[plane] == EXIT)
+				{
+					res = CLIPPED;
+				}
+			}
+		}
+		vertices = newPolygonVertices;
+		normals = newPolygonVertexNormals;
+		colors = newPolygonVertexColors;
+	}
+	newPolygonVertices = vertices;
+	newPolygonVertexNormals = normals;
+	newPolygonVertexColors = colors;
+
+	if (newPolygonVertices.empty())
+	{
+		return OUT_OF_BOUNDS;
+	}
+	else
+	{
+		faceVertices = newPolygonVertices;
+		faceVertexColors = newPolygonVertexColors;
+		faceVertexNormals = newPolygonVertexNormals;
+		return res;
+	}
 }
 
 void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
@@ -371,6 +528,8 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 	if (vertexPositions == NULL) { return; }
 	mat4 objectToClipCoordinates = projection*cameraTransform*objectTransform;
 	vec4 triangleVertices[TRIANGLE_VERTICES];
+	clipResult* res;
+	int clipRes = 0;
 	//for each triangle
 	for (int i = 0; i < vertexPositionsSize; i += TRIANGLE_VERTICES)
 	{
@@ -391,8 +550,13 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 			//for vertices v1,v2
 			for (int end = start + 1; end < TRIANGLE_VERTICES; end++)
 			{
+				res = clipLine(triangleVertices[start], triangleVertices[end]);
+				for (int i = 0; i < CLIPPING_PLANES; i++)
+				{
+					clipRes += res[i];
+				}
 				//the edge is completly out of the view volume and we ignore it else the edge is atleaast partialy in the view volume, draw it.
-				if (clipLine(triangleVertices[start], triangleVertices[end]) == OUT_OF_BOUNDS)
+				if (clipRes == OUT_OF_BOUNDS)
 				{
 					continue;
 				}
@@ -405,12 +569,306 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 	}
 }
 
+vec4 Renderer::calculateFaceNormal(vec4 faceCenter, vec4 normal)
+{
+	faceCenter = objectTransform*faceCenter;
+	normal = normalTransform*normal;
+	normal = normal - faceCenter;
+	normalize(normal);
+	return normal;
+}
+
+vec3 Renderer::calculateColor(vec4 vertex, vec4 normal)
+{
+	vec3 finalColor = vec3(0, 0, 0);
+	vec4 V = normalize(eye - vertex);
+	vec4 N = normalize(normal);
+	vec4 L;
+	vec4 R;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+	finalColor += material.emissiveColor;
+	//for every light in the scene
+	for (int i = 0; i < lightSources.size(); i++)
+	{
+		Light currentLight = lightSources[i];
+		L = normalize(currentLight.position - vertex);
+		//calculate reflection vector
+		R = normalize(2 * (dot(L, N))*(N - L));
+		//ambient light contribution
+		ambient = material.ambientCoeff*currentLight.ambientIntensity;
+		//diffuse light contribution
+		diffuse = material.diffuseCoeff*currentLight.diffuseIntensity*(dot(L,N));
+		//specular light contribution
+		specular = material.specularCoeff*currentLight.specularIntensity*(pow(dot(R, V), material.alpha));
+		finalColor += ambient;
+		finalColor += diffuse;
+		finalColor += specular;
+	}
+	return finalColor;
+}
+
+//triangulatePolygon creates a triangle fan from the given convex polygon using the first vertex to connect to each vertex but his current neighbours
+vector<Poly> triangulatePolygon(Poly polygon)
+{
+	vector<Poly> triangles;
+	vector<vec4> triangleV;
+	vector<vec4> triangleVN;
+	vector<vec4> triangleVC;
+	vector<vec2> triangleSV;
+	vec3		 triangleFaceColor;
+	for (int i = 2; i < polygon.vertices.size() - 1; i++)
+	{
+		triangleV.clear();
+		triangleVN.clear();
+		triangleVC.clear();
+		triangleSV.clear();
+
+		triangleV.push_back(polygon.vertices[0]);
+		triangleVN.push_back(polygon.vertexNormals[0]);
+		triangleVC.push_back(polygon.vertexColors[0]);
+		triangleSV.push_back(polygon.screenVertices[0]);
+		triangleFaceColor = polygon.faceColor;
+		for (int j = 0; j < 2; j++)
+		{
+			triangleV.push_back(polygon.vertices[i - j]);
+			triangleVN.push_back(polygon.vertexNormals[i - j]);
+			triangleVC.push_back(polygon.vertexColors[i - j]);
+			triangleSV.push_back(polygon.screenVertices[i - j]);
+		}
+		triangles.push_back(Poly(triangleV, triangleVN, triangleVC, triangleSV, triangleFaceColor));
+	}
+	return triangles;
+}
+
+/*	calculatePolygons function will go over all triangles in the mesh and calculate their final vertices after clipping, final vertex colors
+ *	and vertex normals. after this function has ended its operation the polygons vector in the renderer holds the most up to date data
+ *	about all polygons in the scene, ready to rasterize.
+ */
+void Renderer::calculatePolygons()
+{
+	polygons.clear();
+	int size = geometry.verticesSize;
+	vec3 faceColor;
+	//face vertices
+	vector<vec4> faceVertices;
+	//face vertex normals
+	vector<vec4> faceVertexNormals;
+	//face vertex colors
+	vector<vec4> faceVertexColors;
+	vector<vec2>  faceScreenVertices;
+	//for each face
+	for (int i = 0, currentFace=0; i < size; i+=TRIANGLE_VERTICES, currentFace++)
+	{
+		faceVertices.clear();
+		faceVertexNormals.clear();
+		faceVertexColors.clear();
+		//set v0, v1, v2 as the current face vertices
+		for (int v = 0; v < TRIANGLE_VERTICES; v++)
+		{
+			faceVertices.push_back(geometry.vertices[i+v]);
+		}
+		if (shading == FLAT)
+		{
+			//faceCenter = (v0+v1+v2)/3 hence center of mass for the current triangle
+			vec4 faceCenter = (faceVertices[0] + faceVertices[1] + faceVertices[2]) / 3;
+			//calculate the face normal and normalize it, the vector leaves the face's center of mass
+			vec4 curFaceNormal = calculateFaceNormal(faceCenter, geometry.faceNormals[currentFace]);
+			//set the face color
+			faceColor = calculateColor(faceCenter,curFaceNormal);
+		}
+		//transform to world coordinates
+		for (int v = 0; v < TRIANGLE_VERTICES; v++)
+		{
+			faceVertices[v] = objectTransform*faceVertices[v];
+		}
+		//lighting per vertex
+		if (shading != FLAT && geometry.vertexNormals != NULL)
+		{
+			for (int v = 0; v < TRIANGLE_VERTICES; v++)
+			{
+				faceVertexNormals.push_back(normalTransform*geometry.vertexNormals[i + v]);
+				//normals are in world coordinate, calculate color for vertices
+				faceVertexColors.push_back(calculateColor(faceVertices[v], faceVertexNormals[v]));
+			}
+			
+		}
+		//project
+		for (int v = 0; v < TRIANGLE_VERTICES; v++)
+		{
+			faceVertices[v] = projection*cameraTransform*faceVertices[v];
+		}
+		//clip
+		clipResult res = clipTriangle(faceVertices, faceVertexNormals, faceVertexColors);
+		if (res == OUT_OF_BOUNDS)
+		{
+			continue;
+		}
+		//some portion of the triangle is in bounds, devide by w and calculate screen coordinates for vertices
+		for (int v = 0; v < faceVertices.size(); v++)
+		{
+			faceVertices[v] /= faceVertices[v][w];
+			faceScreenVertices.push_back(transformToScreen(faceVertices[v]));
+		}
+		//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
+		Poly currentPolygon = Poly(faceVertices, faceVertexNormals, faceVertexColors, faceScreenVertices, faceColor);
+		vector<Poly> triangles;
+		if (faceVertices.size() > 3)
+		{
+			triangles = triangulatePolygon(currentPolygon);
+			for (int i = 0; i < triangles.size(); i++)
+			{
+				polygons.push_back(triangles[i]);
+			}
+		}
+		else
+		{
+			polygons.push_back(currentPolygon);
+		}
+	}
+}
+
+void Renderer::putZ(int x, int y, GLfloat z)
+{
+	m_zbuffer[ZINDEX(m_width,x, y)] = z;
+}
+
+GLfloat triangleArea(vec2 v0, vec2 v1, vec2 v2)
+{
+	GLfloat edgeLength1 = length(v0 - v1);
+	GLfloat edgeLength2 = length(v1 - v2);
+	GLfloat edgeLength3 = length(v1 - v2);
+	GLfloat semiParameter = 0.5*(edgeLength1 + edgeLength2 + edgeLength3);
+	return sqrt(semiParameter*(semiParameter - edgeLength1)*(semiParameter - edgeLength2)*(semiParameter - edgeLength3));
+}
+
+vec4 interpolateNormal(vector<vec4> normals, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
+{
+	return (normals[0] * coeff[0] + normals[1] * coeff[1] + normals[2] * coeff[2]) / faceArea;
+}
+
+vec4 interpolateColor(vector<vec4> colors, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
+{
+	return (colors[0] * coeff[0] + colors[1] * coeff[1] + colors[2] * coeff[2]) / faceArea;
+}
+
+GLfloat getZ(vec3 zValues, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
+{
+	return (zValues[0] * coeff[0] + zValues[1] * coeff[1] + zValues[2] * coeff[2]) / faceArea;
+}
+
+void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], Poly currentPoly, GLfloat faceArea)
+{
+	//calculate a0,a1,a2 coefficients for barycentric interpolation
+	for (int coeff = 0; coeff < TRIANGLE_VERTICES; coeff++)
+	{
+		vec2 vertex1 = currentPoly.screenVertices[(coeff + 1) % TRIANGLE_VERTICES];
+		vec2 vertex2 = currentPoly.screenVertices[(coeff + 2) % TRIANGLE_VERTICES];
+		vec2 P(x, y);
+		barycentricCoeff[coeff] = triangleArea(vertex1, vertex2, P) / faceArea;
+	}
+}
+
+vec4 Renderer::shade(Poly currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIANGLE_VERTICES], GLfloat faceArea)
+{
+	vec4 pointColor=(0,0,0,0);
+	if (shading == FLAT)
+	{
+		//set face color
+		pointColor = currentPolygon.faceColor;
+	}
+	else if (shading == GOURAUD)
+	{
+		//interpolate neighbour colors
+		vector<vec4> colors;
+		for (int i = 0; i < TRIANGLE_VERTICES; i++)
+		{
+			colors.push_back(currentPolygon.vertexColors[i]);
+		}
+		pointColor = interpolateColor(colors, barycentricCoeff, faceArea);
+	}
+	else
+	{
+		//we need to interpolate vertex normals and then calculate color according to the normal at vertex p
+		vector<vec4> vertexNormals;
+		for (int i = 0; i < TRIANGLE_VERTICES; i++)
+		{
+			vertexNormals.push_back(currentPolygon.vertexNormals[i]);
+		}
+		vec4 pNormal=interpolateNormal(vertexNormals,barycentricCoeff,faceArea);
+		pointColor = calculateColor(P, pNormal);
+	}
+	return pointColor;
+}
+
+void Renderer::drawPolygons()
+{
+	//calculate the final state of the polygons in the scene, convex polygons with more then 3 edges are triangulated
+	calculatePolygons();
+	//variables to be used by the scan line algorithm
+	int yMin, yMax, xMin, xMax;
+	vector<int> xIntersections;
+	GLfloat barycentricCoeff[TRIANGLE_VERTICES];
+	if (polygons.empty())
+	{
+		//nothing to draw
+		return;
+	}
+	//set zBuffer values to zMax
+	for (int x = 0; x < m_width; x++)
+	{
+		for (int y = 0; y < m_height; y++)
+		{
+			putZ(x, y, farPlane);
+		}
+	}
+	int size = polygons.size();
+	//for each polygon
+	for (int curPoly = 0; curPoly < size; curPoly++)
+	{
+		Poly currentPoly = polygons[curPoly];
+		GLfloat faceArea = triangleArea(currentPoly.screenVertices[0], currentPoly.screenVertices[1], currentPoly.screenVertices[2]);
+		//calculate triangle area for barycentric interpolation
+		yMin = currentPoly.getMinY();
+		yMax = currentPoly.getMaxY();
+		//for each scanline
+		for (int y = yMin; y < yMax; y++)
+		{
+			//calculate x intersections
+			xIntersections = currentPoly.getIntersectionsX(y);
+			sort(xIntersections.begin(), xIntersections.end());
+			//set xMin and xMax for the current scanline
+			xMin = xIntersections.front();
+			xMax = xIntersections.back();
+			for (int x = xMin; x < xMax; x++)
+			{
+				vec2 P(x, y);
+				setBarycentricCoeff(barycentricCoeff, currentPoly, faceArea);
+				//set triangle vertice's z values to interpolate the current point z value
+				vec3 zValues = vec3(currentPoly.vertices[0][z], currentPoly.vertices[1][z], currentPoly.vertices[2][z]);
+				GLfloat zP = getZ(zValues, barycentricCoeff, faceArea);
+				//the pixel is closer then what we currently have in the zBudffer, it should be drawn.
+				if (zP < m_zbuffer[ZINDEX(m_width, x, y)])
+				{
+					vec4 p3d = vec4(vec3(x, y, zP));
+					m_zbuffer[ZINDEX(m_width, x, y)] = zP;
+					vec4 vertexColor = shade(currentPoly, p3d,barycentricCoeff, faceArea);
+					m_outBuffer[INDEX(m_width, x, y, R)] = vertexColor[R];
+					m_outBuffer[INDEX(m_width, x, y, G)] = vertexColor[G];
+					m_outBuffer[INDEX(m_width, x, y, B)] = vertexColor[B];
+				}
+			}
+		}
+	}
+}
+
 void Renderer::plotPixel(int x, int y, float* m_outBuffer, vec3 RGB)
 {
 	if (m_outBuffer == NULL || x < 0 || x >= m_width || y < 0 || y >= m_height){ return; }
-	m_outBuffer[INDEX(m_width, x, y, 0)] = RGB[0];
-	m_outBuffer[INDEX(m_width, x, y, 1)] = RGB[1];
-	m_outBuffer[INDEX(m_width, x, y, 2)] = RGB[2];
+	m_outBuffer[INDEX(m_width, x, y, R)] = RGB[0];
+	m_outBuffer[INDEX(m_width, x, y, G)] = RGB[1];
+	m_outBuffer[INDEX(m_width, x, y, B)] = RGB[2];
 }
 
 void Renderer::drawLine(const vec2& v0, const vec2& v1)
@@ -536,9 +994,9 @@ void Renderer::refresh()
 	{
 		for (int j = 0; j < m_height; j++)
 		{
-			m_outBuffer[INDEX(m_width, i, j, 0)] = 0;
-			m_outBuffer[INDEX(m_width, i, j, 1)] = 0;
-			m_outBuffer[INDEX(m_width, i, j, 2)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, R)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, G)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, B)] = 0;
 		}
 	}
 }

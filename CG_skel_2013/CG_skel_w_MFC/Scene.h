@@ -90,10 +90,6 @@ public:
 	ModelType getModelType(){return modelType;}
 };
 
-class Light {
-
-};
-
 class Camera : public Model {
 	mat4 cTransform;
 	mat4 cameraToWorld;
