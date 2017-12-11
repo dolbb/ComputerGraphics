@@ -49,3 +49,20 @@ CG_skel/CG_skel_w_MFC/CG_skel_w_MFC.vcxproj.user
 CG_skel/UpgradeLog.XML
 *.log
 
+*.opensdf
+CG_skel_2013/CG_skel.sdf
+*.suo
+*.sdf
+*.obj
+*.pch
+*.lastbuildstate
+*.tlog
+*.idb
+*.pdb
+*.exe
+*.ilk
+*.pdb
+*.obj
+*.lib
+*.tlog
+*.tlog
