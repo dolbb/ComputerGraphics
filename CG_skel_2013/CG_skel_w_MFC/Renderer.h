@@ -213,7 +213,7 @@ public:
 	void drawLine(const vec2& v0, const vec2& v1);
 	void drawPolygons();
 	void setLineInBuffer(int xMin, int xMax, int yMin, int yMax, int horizontalDirection, int verticalDirection, int swapped, float *m_outBuffer);
-	void plotPixel(int x, int y, float* m_outBuffer, vec3 RGB);
+	void plotPixel(int x, int y, vec3 RGB);
 	void SetCameraTransform(const mat4& chosenCameraTransform);
 	void SetProjection(const mat4& chosenProjection);
 	void SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& chosenNormalTransform);
