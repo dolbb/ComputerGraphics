@@ -14,12 +14,113 @@ using namespace std;
 #define DEFAULT_G 1
 #define DEFAULT_B 1
 #define TRIANGLE_VERTICES 3
+#define ANTI_ALIASING_FACTOR 2
 
 enum drawType{VERTEX, NORMAL};
 enum clipResult{ OUT_OF_BOUNDS,IN_BOUNDS, ENTER, EXIT, CLIPPED };
 enum shadingMethod{FLAT, GOURAUD, PHONG};
 enum lightType{POINT_LIGHT, PARALLEL_LIGHT};
 enum {R,G,B};
+
+struct Light
+{
+	lightType type;
+	//position in world coordinates
+	vec4	  position;
+	//	ambientIntensity, diffuseIntensity and specularIntensity represent the intensity (ambient, diffuse and specular) for r,g,b channels.
+	vec3      ambientIntensity;
+	vec3      diffuseIntensity;
+	vec3      specularIntensity;
+
+	Light(lightType chosenType, vec3 chosenPosition, vec3 chosenambientIntensity, vec3 chosendiffuseIntensity, vec3 chosenspecularIntensity)
+	{
+		type = chosenType;
+		position = chosenPosition;
+		ambientIntensity = chosenambientIntensity;
+		diffuseIntensity = chosendiffuseIntensity;
+		specularIntensity = chosenspecularIntensity;
+	}
+};
+
+struct Material
+{
+	/*	emissiveColor is a 3d vector representing the color of the model independent of a light source.
+	 *	ambientCoeff diffuseCoeff specularCoeff  are 3d vector representing the returned percentage of light rays from the object's material.
+	 *	each component of the vector represents the returned percentage for one color channel (r,g,b) and contains number in range [0,1].
+	 *	alpha represents the brightness intensity of the material upon interaction with specular light.
+	 */
+	vec3	emissiveColor;
+	vec3    ambientCoeff;
+	vec3	diffuseCoeff;
+	vec3	specularCoeff;
+	GLfloat	alpha;
+
+	//default Material is polished silver
+	Material() :emissiveColor(0.23125), ambientCoeff(0.23125), diffuseCoeff(0.2775), specularCoeff(0.773911), alpha(89.6){}
+	Material(vec3 chosenEmissive, vec3 chosenAmbient, vec3 chosenDiffuse, vec3 chosenSpecular, GLfloat chosenAlpha)
+	{
+		emissiveColor		= chosenEmissive;
+		ambientCoeff		= chosenAmbient;
+		diffuseCoeff		= chosenDiffuse;
+		specularCoeff		= chosenSpecular;
+		alpha				= chosenAlpha;
+	}
+	void clamp(vec3& vector, GLfloat lowValue, GLfloat highValue)
+	{
+		for (int i = 0; i <= 2; i++)
+		{
+			if (vector[i] < lowValue)
+			{
+				vector[i] = lowValue;
+			}
+			else if (vector[i]>highValue)
+			{
+				vector[i] = highValue;
+			}
+		}
+	}
+	Material operator+(Material& other)
+	{
+		Material res;
+		res.emissiveColor = emissiveColor + other.emissiveColor;
+		res.ambientCoeff	= ambientCoeff + other.ambientCoeff;
+		res.diffuseCoeff	= diffuseCoeff + other.diffuseCoeff;
+		res.specularCoeff	= specularCoeff + other.specularCoeff;
+		res.alpha			= alpha + other.alpha;
+		clamp(res.emissiveColor, 0.0, 1.0);
+		clamp(res.ambientCoeff, 0.0, 1.0);
+		clamp(res.diffuseCoeff, 0.0, 1.0);
+		clamp(res.specularCoeff, 0.0, 1.0);
+		return res;
+	}
+
+	Material operator*(GLfloat x)
+	{
+		Material res;
+		res.emissiveColor	= emissiveColor*x;
+		res.ambientCoeff	= ambientCoeff*x;
+		res.diffuseCoeff	= diffuseCoeff*x;
+		res.specularCoeff	= specularCoeff*x;
+		res.alpha			= alpha*x;
+		clamp(res.emissiveColor, 0.0, 1.0);
+		clamp(res.ambientCoeff, 0.0, 1.0);
+		clamp(res.diffuseCoeff, 0.0, 1.0);
+		clamp(res.specularCoeff, 0.0, 1.0);
+		return res;
+	}
+
+	Material operator/(GLfloat x)
+	{
+		if (x == 0)
+		{
+			return *this;
+		}
+		else
+		{
+			return (*this)*(1 / x);
+		}
+	}
+};
 
 struct Poly
 {
@@ -28,16 +129,18 @@ struct Poly
 	vector<vec4>	 vertexColors;
 	vector<vec2>	 screenVertices;
 	vec3			 faceColor;
+	vector<Material> vertexMaterial;
 
 	Poly(){}
 
-	Poly(vector<vec4> chosenV, vector<vec4> chosenVN, vector<vec4> chosenVC, vector<vec2> chosenSV, vec3 chosenColor)
+	Poly(vector<vec4> chosenV, vector<vec4> chosenVN, vector<vec4> chosenVC, vector<vec2> chosenSV, vec3 chosenColor, vector<Material> chosenVM)
 	{
-		vertices		= chosenV;
-		vertexNormals	= chosenVN;
-		vertexColors	= chosenVC;
-		screenVertices	= chosenSV;
-		faceColor		= chosenColor;
+		vertices = chosenV;
+		vertexNormals = chosenVN;
+		vertexColors = chosenVC;
+		screenVertices = chosenSV;
+		faceColor = chosenColor;
+		vertexMaterial = chosenVM;
 	}
 	int getMinY()
 	{
@@ -78,7 +181,7 @@ struct Poly
 				//end point of the triangle, ignore it
 				continue;
 			}
-			slope = (y1 -y0 ) / (x1 - x0);
+			slope = (y1 - y0) / (x1 - x0);
 			//completely horizontal line, we ignore it.
 			if (slope == 0)
 			{
@@ -102,55 +205,12 @@ struct Poly
 	}
 };
 
-struct Light 
-{
-		lightType type;
-		vec4	  position;
-		//	ambientIntensity, diffuseIntensity and specularIntensity represent the intensity (ambient, diffuse and specular) for r,g,b channels.
-		vec3      ambientIntensity;
-		vec3      diffuseIntensity;
-		vec3      specularIntensity;
-
-		Light(lightType chosenType, vec3 chosenPosition, vec3 chosenambientIntensity, vec3 chosendiffuseIntensity, vec3 chosenspecularIntensity)
-		{
-			type = chosenType;
-			position = chosenPosition;
-			ambientIntensity = chosenambientIntensity;
-			diffuseIntensity = chosendiffuseIntensity;
-			specularIntensity = chosenspecularIntensity;
-		}
-};
-
-struct Material
-{
-	/*	emissiveColor is a 3d vector representing the color of the model independent of a light source.
-	 *	ambientCoeff diffuseCoeff specularCoeff  are 3d vector representing the returned percentage of light rays from the object's material.
-	 *	each component of the vector represents the returned percentage for one color channel (r,g,b) and contains number in range [0,1].
-	 *	alpha represents the brightness intensity of the material upon interaction with specular light.
-	 */
-	vec3	emissiveColor;
-	vec3    ambientCoeff;
-	vec3	diffuseCoeff;
-	vec3	specularCoeff;
-	GLfloat	alpha;
-
-	//default Material is polished silver
-	Material() :emissiveColor(0.23125), ambientCoeff(0.23125), diffuseCoeff(0.2775), specularCoeff(0.773911), alpha(89.6){}
-	Material(vec3 chosenEmissive, vec3 chosenAmbient, vec3 chosenDiffuse, vec3 chosenSpecular, GLfloat chosenAlpha)
-	{
-		emissiveColor		= chosenEmissive;
-		ambientCoeff		= chosenAmbient;
-		diffuseCoeff		= chosenDiffuse;
-		specularCoeff		= chosenSpecular;
-		alpha				= chosenAlpha;
-	}
-};
-
 struct modelGeometry
 {
 	vec3*	vertices;
 	vec3*	vertexNormals;
 	vec3*   faceNormals;
+	vec3*	boundingBoxVertices;
 	int		verticesSize;
 };
 
@@ -158,26 +218,53 @@ class Renderer
 {
 private:
 
-	/*	drawing buffers
-	*/
+	/****************************************************************
+						RENDERER STATE PARAMETERS
+	****************************************************************/
+
 	float *m_outBuffer; // 3*width*height
 	float *m_zbuffer; // width*height
+	float *m_aliasingBuffer;//3*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR*width*height
 	int m_width, m_height;
 
-	/*	transformation matrices
-	 */
 	mat4 cameraTransform;
 	mat4 projection;
 	mat4 objectTransform;
 	mat4 normalTransform;
 
-	modelGeometry	geometry;
-	Material		material;
-	shadingMethod	shading;
-	vector<Light>	lightSources;
-	vector<Poly>	polygons;
-	vec4			eye;
-	GLfloat			farPlane;
+	modelGeometry		geometry;
+	vector<Material>	material;
+	shadingMethod		shading;
+	vector<Light>		lightSources;
+	vector<Poly>		polygons;
+	vec4				eye;
+	GLfloat				farPlane;
+	vec3				fogColor;
+	bool				supersamplingAA;
+	bool				fogEffect;
+	
+	/****************************************************************
+						PRIVATE RENDERER FUNCTIONS
+	 ****************************************************************/
+
+	void CreateBuffers(int width, int height);
+	void CreateLocalBuffer();
+	vec4 calculateFaceNormal(vec4 faceCenter, vec4 normal);
+	vec3 calculateColor(vec4 vertex, vec4 normal,const Material& vertexMaterial);
+	void rasterizePolygon(const vector<vec4>& vertices, const vector<vec4>& vertexColors, vec3 faceColor);
+	void putZ(int x, int y, GLfloat z);
+	vec4 shade(Poly currentPolygon, vec4 P, GLfloat* barycentricCoeff, GLfloat faceArea);
+	vector<clipResult> clipLine(vec4& endPointA, vec4& endPointB);
+	clipResult  clipTriangle(Poly& currentPolygon);
+	vec2 transformToScreen(vec4 vertex);
+	vec2 transformToAA(vec4 vertex);
+	void calculatePolygons();
+	void drawLine(const vec2& v0, const vec2& v1);
+	clipResult modelVisibility();
+	/*	downSample orders the renderer to average the values of the aliasing buffer to every pixel.
+	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
+	*/
+	void downSample();
 
 	//////////////////////////////
 	// openGL stuff. Don't touch.
@@ -186,34 +273,27 @@ private:
 	GLuint gScreenVtc;
 	void CreateOpenGLBuffer();
 	void InitOpenGLRendering();
-	//////////////////////////////
-
-	void CreateBuffers(int width, int height);
-	void CreateLocalBuffer();
-	vec4 calculateFaceNormal(vec4 faceCenter, vec4 normal);
-	vec3 calculateColor(vec4 vertex, vec4 normal);
-	void rasterizePolygon(const vector<vec4>& vertices, const vector<vec4>& vertexColors, vec3 faceColor);
-	void putZ(int x, int y, GLfloat z);
-	vec4 shade(Poly currentPolygon, vec4 P, GLfloat* barycentricCoeff, GLfloat faceArea);
 
 public:
+
+	/****************************************************************
+						PUBLIC RENDERER FUNCTIONS
+	****************************************************************/
+
 	Renderer();
 	Renderer(int width, int height);
 	~Renderer(void);
 	void Init();
 	void resizeBuffers(int chosenWidth, int chosenHeight);
-	clipResult* clipLine(vec4& endPointA, vec4& endPointB);
-	clipResult  clipTriangle(vector<vec4>& faceVertices, vector<vec4>& faceVertexNormals, vector<vec4>& faceVertexColors);
-	vec2 transformToScreen(vec4 vertex);
 	void drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int vertexPositionsSize);
 	void drawVertexNormals(vec3* vertexPositions,vec3* vertexNormals, int vertexSize);
 	void drawBoundingBox(vec3* boundingBoxVertices);
 	void drawTriangles(vec3* vertexPositions, int vertexPositionsSize);
-	void calculatePolygons();
-	void drawLine(const vec2& v0, const vec2& v1);
 	void drawPolygons();
 	void setLineInBuffer(int xMin, int xMax, int yMin, int yMax, int horizontalDirection, int verticalDirection, int swapped, float *m_outBuffer);
 	void plotPixel(int x, int y, vec3 RGB);
+	void toggleAntiAliasing();
+	void toggleFogEffect();
 	void SetCameraTransform(const mat4& chosenCameraTransform);
 	void SetProjection(const mat4& chosenProjection);
 	void SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& chosenNormalTransform);
@@ -221,13 +301,18 @@ public:
 	 *	from ambient, diffuse and specular lights (ambientCoeff, diffuseCoeff, specularCoeff),
 	 *	vec3 representing the model's color independent of a light source(emissiveColor)
 	 *	and a GLfloat alpha representing the amount of brightness the model has in response to specular lighting.
+	 *	those values are incapsolated in the Material vector, as a uniform or non uniform material.
+	 *	if the vector's size is 1 the renderer will treat the material as uniform, else, it will treat it as a per vertex material.
+	 *	meaning the i material in the vector will match the i vertex in the model vertices
 	 *  sets the material for the current model rendered in the renderer.
 	 */
-	void setModelMaterial(vec3 emissiveColor,vec3 ambientCoeff, vec3 diffuseCoeff, vec3 specularCoeff, GLfloat alpha);
+	void setModelMaterial(const vector<Material>& material);
 	/*	setModelGeometry gets 3 vec3 arrays representing the current rendered model's vertices, vertex normals and face normals, and the number
 	 *	of vertices, sets the geometry for the currently rendered model in the renderer.
+	 *  the values are incapsolated in modelGeometry struct.
+	 *	if there are no vertex normals, set NULL
 	 */
-	void setModelGeometry(vec3* vertices, int verticesSize, vec3* vertexNormals, vec3* faceNormals);
+	void setModelGeometry(const modelGeometry& chosenModelGeometry);
 	/*	setShadingMethod sets the shadingMethod specified by the user (flat, gouraud, phong).
 	*/
 	void setShadingMethod(shadingMethod method);
