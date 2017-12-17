@@ -62,7 +62,7 @@ CG_skel_2013/CG_skel.sdf
 *.exe
 *.ilk
 *.pdb
-*/*.obj
+*.obj
 *.lib
 *.tlog
 *.tlog
