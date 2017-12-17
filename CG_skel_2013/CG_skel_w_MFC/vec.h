@@ -494,7 +494,14 @@ struct vec4 {
 
     vec4& operator /= ( const GLfloat s )
 	{
-		GLfloat r = GLfloat(1.0) / s;
+		GLfloat r;
+		if (s == 0){
+			r = 0;
+			std::cout << "error: vec4 divided by 0!" << std::endl;
+		}
+		else{
+			r = GLfloat(1.0) / s;
+		}
 		*this *= r;
 		return *this;
     }

@@ -31,7 +31,6 @@ Camera::Camera(int ID) : cameraPyramid(new PrimMeshModel), id(ID)
 	Ortho(projectionParameters);
 }
 
-//TODO: check if needed or even ever called:
 void Camera::toggleRenderMe()
 {
 	cameraRendered = !cameraRendered;
@@ -229,6 +228,10 @@ vec4 Camera::getUp(){
 	return cUp;
 }
 
+GLfloat Camera::getFar(){
+	return projectionParameters.zFar;
+}
+
 vec3 Camera::getWorldVector(vec3 in){
 	vec4 homogenous = in;
 	homogenous = cameraToWorld*homogenous;
@@ -295,10 +298,10 @@ Scene::~Scene(){
 		delete(cameras[i]);
 		cameras[i] = NULL;
 	}
-	for (int i = 0; i < lights.size(); i++){
-		delete(lights[i]);
-		lights[i] = NULL;
-	}
+	//for (int i = 0; i < lights.size(); i++){
+	//	delete(lights[i]);
+	//	lights[i] = NULL;
+	//}
 }
 
 void Scene::loadOBJModel(string fileName)
@@ -321,6 +324,11 @@ void Scene::draw()
 	//check if we have nothing to draw:
 	if (models.empty()){return;}
 	
+	m_renderer->setLightSources(lights);
+	m_renderer->setEye(activeCamera->getEye());
+	m_renderer->setFar(activeCamera->getFar());
+	m_renderer->setShadingMethod(shading);
+
 	// 1. Send the renderer the current camera transform and the projection
 	if (activeCamera != NULL){
 		m_renderer->SetCameraTransform(activeCamera->getCameraTransformation());
@@ -510,4 +518,45 @@ vector <string> Scene::getModelNames(){
 
 void Scene::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
 	activeCamera->changeProjectionRatio(widthRatioChange, heightRatioChage);
+}
+
+void Scene::toggleDisplayMode(){
+	if (models.size() == 0){return;}
+	MeshModel *m = changeToMeshModel(activeModel);
+	DisplayMode d = m->getDisplayMode();
+	d = (d == SKELETON) ? COLORED : SKELETON;
+	
+	for (map<string, Model*>::iterator it = models.begin(); it != models.end(); ++it){
+		m = changeToMeshModel(it->second);
+		m->setDisplayMode(d);
+	}
+}
+
+void Scene::toggleFogMode(){
+	m_renderer->toggleFogEffect();
+}
+
+void Scene::toggleAliasingMode(){
+	m_renderer->toggleAntiAliasing();
+}
+
+void Scene::setShading(shadingMethod s){
+	shading = s;
+}
+
+void Scene::addLight(Light l){
+	lights.push_back(l);
+}
+
+void Scene::setLight(Light l, int index){
+	if (index >= lights.size()){
+		cout << "you have entered an invalid light id" << endl;
+		return;
+	}
+	lights[index] = l;
+}
+
+void Scene::changeModelColor(vec3 c){
+	if (models.empty()){ return; }
+	changeToMeshModel(activeModel)->setUniformColor(c);
 }

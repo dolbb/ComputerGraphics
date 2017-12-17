@@ -75,7 +75,6 @@ struct ProjectionParams{
 		fovy = 45.0;
 		aspect = 1;
 	}
-	
 };
 
 class Model {
@@ -126,10 +125,10 @@ public:
 	//getters:
 	mat4 getCameraTransformation();
 	mat4 getCameraProjection();
-	const vec3& getPosition();//TODO: CHECK IF NEEDED.
 	vec4 getEye();
 	vec4 getAt();
 	vec4 getUp();
+	GLfloat getFar();
 	vec3 getWorldVector(vec3 in);
 
 	int id;
@@ -138,12 +137,14 @@ public:
 class Scene {
 private:
 	map<string, Model*> models;
-	vector<Light*> lights;
+	vector<Light> lights;
 	vector<Camera*> cameras;
 	Renderer *m_renderer;
 
 	Model*  activeModel;
 	Camera* activeCamera;
+
+	shadingMethod shading;
 
 	void handleMeshModelFrame(OperateParams &p);
 	//void handleCameraPosFrame(OperateParams &p);
@@ -152,8 +153,10 @@ private:
 	bool insertNewModel(Model* m);
 	vec3 getCameraCoordsBoundaries(vec3 *bBox);
 public:
-	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), activeModel(NULL) {
+	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), 
+								activeModel(NULL), shading(FLAT){
 		cameras.push_back(activeCamera);
+		lights.push_back(Light());
 	}
 	~Scene();
 	void loadOBJModel(string fileName);
@@ -171,4 +174,11 @@ public:
 	void LookAtActiveModel(ProjectionType pType);
 	vector <string> getModelNames();
 	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
+	void toggleDisplayMode();
+	void toggleFogMode();
+	void toggleAliasingMode();
+	void setShading(shadingMethod s);
+	void addLight(Light l);
+	void setLight(Light l, int index);
+	void changeModelColor(vec3 c);
 };

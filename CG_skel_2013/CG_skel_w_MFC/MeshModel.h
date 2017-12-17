@@ -12,6 +12,7 @@
 using namespace std;
 
 enum axis{ X_AXIS, Y_AXIS, Z_AXIS };
+enum DisplayMode{SKELETON, COLORED};
 
 class MeshModel : public Model{
 private:
@@ -56,6 +57,8 @@ private:
 	void initVertexNormals(vector<FaceIdcs>& faces, vector<vec3>& normals);
 	void initFaceNormals(vector<FaceIdcs>& faces, vector<vec3>& vertices);
 	void initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices);
+	void initMaterials();
+
 protected :
 	MeshModel() {}
 	/*
@@ -103,6 +106,13 @@ protected :
 		actionType will determine if an operator should be in world frame or self frame.
 	*/
 	ActionType actionType;
+	vector<Material> materials;
+	/*
+		the display mode should decide the proper draw function - skeleton or colored model draw
+	*/
+	DisplayMode mode;
+	void drawSkeleton(Renderer *renderer);
+	void drawColored(Renderer *renderer);
 
 public:
 	MeshModel(string fileName);
@@ -130,6 +140,12 @@ public:
 	vec3 getNormalBeforeSelf(vec3&);
 	vec3 getVertexBeforeWorld(vec3&);
 	vec3 getVertexBeforeSelf(vec3&);
+	
+	/*setMaterial can be used for uniform materials only*/
+	void setMaterial(Material m);
+	void setUniformColor(vec3 c);
+	void setDisplayMode(DisplayMode m);
+	DisplayMode getDisplayMode();
 };
 
 /*=======================================================
@@ -138,67 +154,18 @@ public:
 
 class PrimMeshModel : public MeshModel
 {
+	void skeletonInit();
+	void coloredInit();
 public:
-	PrimMeshModel(){
-		/*init the fields needed to make a pyramid:*/
-		vertexPositionsSize = FACES_NUM_IN_PYRAMID * VERTEX_NUM_IN_FACE;
-		modelType = PYRAMID;
-		vertexNormalsSize = 0;
-		vertexPositions = new vec3[vertexPositionsSize];
-		vertexNormals = NULL;
-		boundingBoxDisplayed = false;
-
-		/*define the needed vertices:*/
-		vec3 vHead( 0,  0,  0);
-		vec3 vLeg1( 1,  1, -1);
-		vec3 vLeg2( 1, -1, -1);
-		vec3 vLeg3(-1, -1, -1);
-		vec3 vLeg4(-1,  1, -1);
-
-		/*use the vertices to create the wanted faces:*/
-		/*set sides of pyramid:*/
-		vertexPositions[0] = vHead;
-		vertexPositions[1] = vLeg1;
-		vertexPositions[2] = vLeg4;
-
-		vertexPositions[3] = vHead;
-		vertexPositions[4] = vLeg4;
-		vertexPositions[5] = vLeg3;
-
-		vertexPositions[6] = vHead;
-		vertexPositions[7] = vLeg3;
-		vertexPositions[8] = vLeg2;
-
-		vertexPositions[9] = vHead;
-		vertexPositions[10] = vLeg2;
-		vertexPositions[11] = vLeg1;
-
-		/*bottom of pyramid divided into 2 triangles:*/
-		vertexPositions[12] = vLeg1;
-		vertexPositions[13] = vLeg3;
-		vertexPositions[14] = vLeg4;
-
-		vertexPositions[15] = vLeg3;
-		vertexPositions[16] = vLeg1;
-		vertexPositions[17] = vLeg2;
-
-		/*
-		set bounding box vertices:
-		axisExtremum holds x,y,z extremum values starting from x axis up to z axis.
-		even indexes hold x,y,z min values, odd indexes hold x,y,z max values.
-		for example: axisExtremum[0]=X_MIN value, axisExtremum[1]=X_MAX value
-		*/
-		GLfloat axisExtremum[6] = {-1, 1, -1, 1, -1, 0};
-		int currentVertex = 0;
-		for (int i = 0; i <= 1; i++)
-		{
-			for (int j = 0; j <= 1; j++)
-			{
-				for (int k = 0; k <= 1; k++, currentVertex++)
-				{
-					boundingBoxVertices[currentVertex] = vec3(axisExtremum[i], axisExtremum[j], axisExtremum[k]);
-				}
-			}
+	PrimMeshModel(){ 
+		skeletonInit();
+	}
+	PrimMeshModel(DisplayMode m){
+		if (m == COLORED){
+			coloredInit();
+		}
+		else{
+			skeletonInit();
 		}
 	};
 	PrimMeshModel(string fileName){ };

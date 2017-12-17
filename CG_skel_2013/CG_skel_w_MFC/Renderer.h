@@ -32,6 +32,10 @@ struct Light
 	vec3      diffuseIntensity;
 	vec3      specularIntensity;
 
+	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), ambientIntensity(1, 1, 1),
+		diffuseIntensity(0, 0, 0), specularIntensity(0, 0, 0){}
+	Light(const Light & l) : type(l.type), position(l.position), ambientIntensity(l.ambientIntensity),
+		diffuseIntensity(l.diffuseIntensity), specularIntensity(l.specularIntensity){}
 	Light(lightType chosenType, vec3 chosenPosition, vec3 chosenambientIntensity, vec3 chosendiffuseIntensity, vec3 chosenspecularIntensity)
 	{
 		type = chosenType;

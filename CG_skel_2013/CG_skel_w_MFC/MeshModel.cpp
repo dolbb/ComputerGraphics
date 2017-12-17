@@ -32,7 +32,7 @@ vec2 vec2fFromStream(std::istream & aStream)
 MeshModel::MeshModel(string fileName) :
 vertexPositions(NULL), vertexPositionsSize(INVALID_SIZE),
 vertexNormals(NULL), vertexNormalsSize(INVALID_SIZE),
-faceNormals(NULL), faceNormalsSize(INVALID_SIZE)
+faceNormals(NULL), faceNormalsSize(INVALID_SIZE), mode(SKELETON)
 {
 	modelType = MESH;
 	vector<FaceIdcs> faces;
@@ -43,6 +43,7 @@ faceNormals(NULL), faceNormalsSize(INVALID_SIZE)
 	initVertexNormals(faces, normals);
 	initFaceNormals(faces, vertices);
 	initBoundingBox(faces, vertices);
+	initMaterials();
 	actionType = OBJECT_ACTION;
 	vertexNormalsDisplayed = false;
 	faceNormalsDisplayed = false;
@@ -217,6 +218,11 @@ void MeshModel::initBoundingBox(vector<FaceIdcs>& faces, vector<vec3>& vertices)
 	}
 }
 
+void MeshModel::initMaterials(){
+	Material m;
+	materials.push_back(m);
+}
+
 vec3 MeshModel::getCenterOfMass()
 {
 	GLfloat x = (boundingBoxVertices[4][0] + boundingBoxVertices[0][0]) / 2;
@@ -235,23 +241,48 @@ vec3* MeshModel::getBoundingBox()
 	return boundingBoxVertices;
 }
 
-void MeshModel::draw(Renderer *renderer){
-	if (renderer == NULL){ return; }
+void MeshModel::drawSkeleton(Renderer *renderer){
+	renderer->drawTriangles(vertexPositions, vertexPositionsSize);
+}
+
+void MeshModel::drawColored(Renderer *renderer){
+	//set geometry params:
+	modelGeometry geometry;
+	geometry.vertices = vertexPositions;
+	geometry.vertexNormals = vertexNormals;
+	geometry.faceNormals = faceNormals;
+	geometry.boundingBoxVertices = boundingBoxVertices;
+	geometry.verticesSize = vertexPositionsSize;
+	renderer->setModelGeometry(geometry);
+
+	//set materials
+	renderer->setModelMaterial(materials);
+
+	//draw the colored mesh:
+	renderer->drawPolygons();
+}
+
+void MeshModel::draw(Renderer *r){
+	if (r == NULL){ return; }
 	mat4 vertexTransMat = worldVertexTransform * selfVertexTransform;
 	mat3 normalTransMat = worldNormalTransform * selfNormalTransform;
-	//TODO: check if normalTransform needs any manipulation(or during each transformation?).
-	renderer->SetObjectMatrices(vertexTransMat, normalTransMat);
-	//draw all the needed objects:
-		renderer->drawTriangles(vertexPositions, vertexPositionsSize);
-		if (vertexNormalsDisplayed){
-			renderer->drawVertexNormals(vertexPositions, vertexNormals, vertexNormalsSize);
-		}
-		if (faceNormalsDisplayed){
-			renderer->drawFaceNormals(vertexPositions, faceNormals, vertexNormalsSize);
-		}
-		if (boundingBoxDisplayed){
-			renderer->drawBoundingBox(boundingBoxVertices);
-		}
+	r->SetObjectMatrices(vertexTransMat, normalTransMat);
+
+	if (mode == SKELETON || vertexNormals == NULL){
+		drawSkeleton(r);
+	}
+	else{
+		drawColored(r);
+	}
+	if (vertexNormalsDisplayed){
+		r->drawVertexNormals(vertexPositions, vertexNormals, vertexNormalsSize);
+	}
+	if (faceNormalsDisplayed){
+		r->drawFaceNormals(vertexPositions, faceNormals, vertexNormalsSize);
+	}
+	if (boundingBoxDisplayed){
+		r->drawBoundingBox(boundingBoxVertices);
+	}
 }
 
 void MeshModel::featuresStateToggle(ActivationToggleElement e){
@@ -363,14 +394,105 @@ vec3 MeshModel::getNormalBeforeSelf(vec3 &v){
 
 vec3 MeshModel::getVertexBeforeWorld(vec3 &v){
 	vec4 u = worldInvertedVertexTransform * vec4(v);
-	//TODO: check if sufficient or normalization needed "u/=u[3];".
+	u /= u[3];
 	return vec3(u[0], u[1], u[2]);
 }
 
 vec3 MeshModel::getVertexBeforeSelf(vec3 &v){
 	vec4 u = selfInvertedVertexTransform * worldInvertedVertexTransform * vec4(v);
-	//TODO: check if sufficient or normalization needed "u/=u[3];".
+	u /= u[3];
 	return vec3(u[0], u[1], u[2]);
+}
+
+void MeshModel::setMaterial(Material m){
+	if (materials.size() <= 1){
+		materials[0] = m;
+	}
+}
+
+void MeshModel::setUniformColor(vec3 c){
+	
+	for (int i = 0; i < materials.size(); ++i){
+		materials[i].emissiveColor = c;
+	}	
+}
+
+void MeshModel::setDisplayMode(DisplayMode m){
+	mode = m;
+}
+
+DisplayMode MeshModel::getDisplayMode(){
+	return mode;
+}
+
+void PrimMeshModel::skeletonInit(){
+	/*init the fields needed to make a pyramid:*/
+	vertexPositionsSize = FACES_NUM_IN_PYRAMID * VERTEX_NUM_IN_FACE;
+	modelType = PYRAMID;
+	mode = SKELETON;
+	vertexNormalsSize = 0;
+	vertexPositions = new vec3[vertexPositionsSize];
+	vertexNormals = NULL;
+	faceNormals = NULL;
+	boundingBoxDisplayed = false;
+
+	/*define the needed vertices:*/
+	vec3 vHead(0, 0, 0);
+	vec3 vLeg1(1, 1, -1);
+	vec3 vLeg2(1, -1, -1);
+	vec3 vLeg3(-1, -1, -1);
+	vec3 vLeg4(-1, 1, -1);
+
+	/*use the vertices to create the wanted faces:*/
+	/*set sides of pyramid:*/
+	vertexPositions[0] = vHead;
+	vertexPositions[1] = vLeg1;
+	vertexPositions[2] = vLeg4;
+
+	vertexPositions[3] = vHead;
+	vertexPositions[4] = vLeg4;
+	vertexPositions[5] = vLeg3;
+
+	vertexPositions[6] = vHead;
+	vertexPositions[7] = vLeg3;
+	vertexPositions[8] = vLeg2;
+
+	vertexPositions[9] = vHead;
+	vertexPositions[10] = vLeg2;
+	vertexPositions[11] = vLeg1;
+
+	/*bottom of pyramid divided into 2 triangles:*/
+	vertexPositions[12] = vLeg1;
+	vertexPositions[13] = vLeg3;
+	vertexPositions[14] = vLeg4;
+
+	vertexPositions[15] = vLeg3;
+	vertexPositions[16] = vLeg1;
+	vertexPositions[17] = vLeg2;
+
+	/*
+	set bounding box vertices:
+	axisExtremum holds x,y,z extremum values starting from x axis up to z axis.
+	even indexes hold x,y,z min values, odd indexes hold x,y,z max values.
+	for example: axisExtremum[0]=X_MIN value, axisExtremum[1]=X_MAX value
+	*/
+	GLfloat axisExtremum[6] = { -1, 1, -1, 1, -1, 0 };
+	int currentVertex = 0;
+	for (int i = 0; i <= 1; i++)
+	{
+		for (int j = 0; j <= 1; j++)
+		{
+			for (int k = 0; k <= 1; k++, currentVertex++)
+			{
+				boundingBoxVertices[currentVertex] = vec3(axisExtremum[i], axisExtremum[j], axisExtremum[k]);
+			}
+		}
+	}
+}
+
+void PrimMeshModel::coloredInit(){
+	skeletonInit();
+	//TODO: HOW DO I IMPLEMENT THE COLOR YELLOW AS WHITE AND USE IT TO DRAW THE PYRAMID?
 }
 
 void PrimMeshModel::setWorldTransform(mat4 trans){
