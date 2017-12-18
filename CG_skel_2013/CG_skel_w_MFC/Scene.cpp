@@ -137,6 +137,7 @@ void Camera::Frustum(const ProjectionParams& param){
 	p[2][2] = -(zFar + zNear) / (zFar - zNear);
 	p[2][3] = -2 * zFar * zNear / (zFar - zNear);
 	p[3][2] = -1;
+	p[3][3] = 0;
 	projection = p;
 	
 	//create H = a sheering mat to symmetrize the frustrum:
