@@ -319,6 +319,8 @@ void Renderer::drawBoundingBox(vec3* boundingBoxVertices)
 	the CVV (clips the outer parts).
 */
 
+#if 0
+
 vector<clipResult> clipToBoundries(vec4& startingPoint, float* startBoundryRes, vec4& endingPoint, float* endBoundryRes, int startClipRes, int endClipRes)
 {
 	vector<clipResult> res(CLIPPING_PLANES);
@@ -372,31 +374,21 @@ vector<clipResult> clipToBoundries(vec4& startingPoint, float* startBoundryRes, 
 	return res;
 }
 
-void computeClipRes(int clipRes[3][CLIPPING_PLANES], float boundryRes[CLIPPING_PLANES], vec4 point, clipResTable curPointRes)
+void computeClipRes(float boundryRes[CLIPPING_PLANES], vec4 point)
 {
 	float res;
 	int boundryIndex = 0;
-	int planeIndex = 0;
 	int sign = 1;
 	//for every axis
-	for (int i = x; i < z; i++)
+	for (int i = x; i <= z; i++)
 	{
 		//calculate -axis and +axis
-		for (int j = 0; j < 2; j++)
+		for (int j = 0; j <= 1; j++)
 		{
 			//calculate the result of W+axis[i], if res is greater than zero the point is in axis=-1 boundry
 			res = point[w] + (sign*point[i]);
 			boundryRes[boundryIndex] = res;
 			boundryIndex++;
-			if (res <= 0)
-			{
-				clipRes[curPointRes][planeIndex] = OUT_OF_BOUNDS;
-			}
-			else
-			{
-				clipRes[curPointRes][planeIndex] = IN_BOUNDS;
-			}
-			planeIndex++;
 			sign *= -1;
 		}
 	}
@@ -427,22 +419,10 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 	float startBoundryRes[CLIPPING_PLANES];
 	float endBoundryRes[CLIPPING_PLANES];
 	/*
-		clipRes will hold the result of the clipping against each plane, the first row will represent the clipping planes availible,
-		the next rows will represent starting point and ending point clip result against the clipping planes.
-		for example: clipRes[2][1] will hold the ending point clipping result against the second plane.
-		the result will be 1 if the point is outside the current plane, and 0 otherwise.
-
-		clipRes sketch:
-		clipping plane				0	1	2	3	4	5
-		starting point clipped		1	0	0	0	1	0
-		ending point cliiped		0	0	1	0	1	0
-	*/
-	int clipRes[3][CLIPPING_PLANES];
-	/*
 		compute the inequalities to know which point is in or out each plane.
 	*/
-	computeClipRes(clipRes, startBoundryRes, startingPoint, START_RES);
-	computeClipRes(clipRes, endBoundryRes, endingPoint, END_RES);
+	computeClipRes(startBoundryRes, startingPoint);
+	computeClipRes(endBoundryRes, endingPoint);
 
 	//holds the number of planes which we need to clip against
 	int counter = 0;
@@ -455,8 +435,8 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 	for (int i = 0; i < CLIPPING_PLANES; i++)
 	{
 		//set startRes and endRes to the clipping result against that plane
-		startRes = clipRes[START_RES][i];
-		endRes = clipRes[END_RES][i];
+		startRes = !(startBoundryRes[i] < 0);
+		endRes = !(endBoundryRes[i] < 0);
 		//increment startClipRes and endClipRes by the result, if the point is inside the plane we increment by 0 hence do nothing
 		startClipRes += startRes;
 		endClipRes += endRes;
@@ -465,12 +445,12 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 		{
 			return outOfBounds;
 		}
-		//increment total counter by the number of outside points
+		//increment total counter by the starting point and ending point clipping result
 		counter += startRes;
 		counter += endRes;
 	}
 	//in this case both the endpoints are completely in bounds and no clipping is needed, return IN_BOUNDS.
-	if (counter == IN_BOUNDS)
+	if (counter == IN_BOUNDS*CLIPPING_PLANES*2)
 	{
 		return inBounds;
 	}
@@ -485,6 +465,200 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 	{
 		return res;
 	}
+}
+
+#endif
+
+#if 0
+vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
+{
+	vector<clipResult>	outOfBounds(CLIPPING_PLANES);
+	vector<clipResult>	inBounds(CLIPPING_PLANES);
+	vector<clipResult>	clippingRes(CLIPPING_PLANES);
+	for (int i = 0; i < CLIPPING_PLANES; i++)
+	{
+		outOfBounds[i] = OUT_OF_BOUNDS;
+		inBounds[i] = IN_BOUNDS;
+	}
+	float P[CLIPPING_PLANES];
+	float Q[CLIPPING_PLANES];
+	float delta[AXIS];
+
+	float tIn = 0.0, tOut = 1.0, tIntersect;
+	int sign = 1;
+
+	for (int axis = x, index = 0; axis <= z; axis++)
+	{
+		for (int i = 0; i<2; i++, index++)
+		{
+			P[index] = sign*(startingPoint[axis] - endingPoint[axis]);
+			Q[index] = sign*(startingPoint[axis] - startingPoint[w]);
+			sign *= -1;
+		}
+		delta[axis] = endingPoint[axis] - startingPoint[axis];
+	}
+
+	for (int i = 0; i < CLIPPING_PLANES; i++)
+	{
+		//line is parallel to the window
+		if (abs(P[i])<EPSILON)
+		{
+			//line is outside the boundry
+			if (Q[i] < 0)
+			{
+				return outOfBounds;
+			}
+			//line is inside/partially inside the boundry
+			else if (Q[i] >= 0)
+			{
+				//parallel to y 
+				if (i < 2)
+				{
+
+				}
+				//parallel to x
+				else if (i < 4)
+				{
+
+				}
+				//parallel to z
+				else
+				{
+
+				}
+			}
+		}
+		//the line proceeds outside to inside the clip window, calculate tIntersect
+		else if (P[i] < 0)
+		{
+			clippingRes[i] = ENTER;
+			tIntersect = (Q[i] / P[i]) >= tIn ? (Q[i] / P[i]) : tIn;
+			tIn = tIntersect;
+		}
+		// the line proceeds inside to outside
+		else
+		{
+			clippingRes[i] = EXIT;
+			tIntersect = (Q[i] / P[i]) <= tOut ? (Q[i] / P[i]) : tOut;
+			tOut = tIntersect;
+		}
+	}
+	if (tIn > tOut)
+	{
+		return outOfBounds;
+	}
+	for (int axis = x; axis <= z; axis++)
+	{
+		startingPoint[axis] = startingPoint[axis] + tIn*delta[axis];
+		endingPoint[axis] = endingPoint[axis] + tOut*delta[axis];
+	}
+	return clippingRes;
+}
+
+#endif
+
+clipResult evaluateClipping(const vec4& startingPoint, const vec4& endingPoint, float startClipRes[CLIPPING_PLANES], float endClipRes[CLIPPING_PLANES])
+{
+	int sign = 1;
+	//calculate clip results for every endpoint of the line against all clipping planes
+	for (int axis = x, index = 0; axis <= z; axis++)
+	{
+		//calculate w+axis and w-axis for every axis and for every endpoint of the line
+		for (int i = 0; i < 2; i++, index++)
+		{
+			startClipRes[index] = startingPoint[w] + sign*startingPoint[axis];
+			endClipRes[index] = endingPoint[w] + sign*endingPoint[axis];
+			sign *= -1;
+		}
+	}
+	//check for trivial in bounds and out of bounds
+	int inBoundsCheck = OUT_OF_BOUNDS;
+	for (int i = 0; i < CLIPPING_PLANES; i++)
+	{
+		//both endpoints are out of the same plane, line is trivially rejected
+		if (startClipRes[i] < 0 && endClipRes[i] < 0)
+		{
+			return OUT_OF_BOUNDS;
+		}
+		//sum up the number of IN_BOUNDS results
+		inBoundsCheck += (startClipRes[i] >= 0);
+		inBoundsCheck += (endClipRes[i] >= 0);
+	}
+	//if every check result was in bounds for both endpoint and all planes, line in trivially accepted
+	if (inBoundsCheck == IN_BOUNDS*CLIPPING_PLANES * 2)
+	{
+		return IN_BOUNDS;
+	}
+	else
+	{
+		return CLIPPED;
+	}
+}
+
+vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
+{
+	vector<clipResult> outOfBounds(CLIPPING_PLANES);
+	vector<clipResult> inBounds(CLIPPING_PLANES);
+	vector<clipResult> clipRes(CLIPPING_PLANES);
+	for (int i = 0; i < CLIPPING_PLANES; i++)
+	{
+		outOfBounds[i] = OUT_OF_BOUNDS;
+		inBounds[i] = IN_BOUNDS;
+	}
+	float startClipRes[CLIPPING_PLANES];
+	float endClipRes[CLIPPING_PLANES];
+	float tIn = 0.0, tOut = 1.0, tIntersect;
+
+	clipResult lineClipRes = evaluateClipping(startingPoint, endingPoint, startClipRes, endClipRes);
+	//trivial acceptence
+	if (lineClipRes == IN_BOUNDS)
+	{
+		return inBounds;
+	}
+	//trivial rejection
+	else if (lineClipRes == OUT_OF_BOUNDS)
+	{
+		return outOfBounds;
+	}
+	//some portion of the line is clipped
+	else
+	{
+		for (int plane = 0; plane < CLIPPING_PLANES; plane++)
+		{
+			//we exit the plane 
+			if (endClipRes[plane] < 0)
+			{
+				clipRes[plane] = EXIT;
+				tIntersect = startClipRes[plane] / (startClipRes[plane] - endClipRes[plane]);
+				tOut = tIntersect <= tOut ? tIntersect : tOut;
+			}
+			//we enter the plane
+			else if (startClipRes[plane] < 0)
+			{
+				clipRes[plane] = ENTER;
+				tIntersect = startClipRes[plane] / (startClipRes[plane] - endClipRes[plane]);
+				tIn = tIntersect >= tIn ? tIntersect : tIn;
+			}
+			if (tIn > tOut)
+			{
+				return outOfBounds;
+			}
+		}
+	}
+	//calculate number of out planes for each end point
+	vec4 temp=startingPoint;
+	//tIn has changed, evaluate new end point
+	if (tIn>0.0)
+	{
+		temp = startingPoint + tIn*(endingPoint - startingPoint);
+	}
+	//tOut has changed, evaluate new end point
+	if (tOut < 1.0)
+	{
+		endingPoint = startingPoint + tOut*(endingPoint - startingPoint);
+	}
+	startingPoint = temp;
+	return clipRes;
 }
 
 vec4 interpolate(const vec4& start, const vec4& end, const GLfloat& t)
@@ -997,11 +1171,13 @@ clipResult Renderer::modelVisibility()
 
 void Renderer::drawPolygons()
 {
+#if 0
 	//the entire model is out of the view volume, we dont draw it.
 	if (modelVisibility() == OUT_OF_BOUNDS)
 	{
 		return;
 	}
+#endif
 	//calculate the final state of the polygons in the scene, convex polygons with more than 3 edges are triangulated
 	calculatePolygons();
 	//variables to be used by the scan line algorithm
