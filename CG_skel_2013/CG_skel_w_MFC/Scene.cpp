@@ -439,8 +439,8 @@ void Scene::handleCameraViewFrame(OperateParams &p){
 	case TRANSLATE: A = Translate(-p.v);
 					invA = Translate(p.v);
 					break;
-	case ROTATE:	A = RotateZ(p.v[z]) * RotateY(p.v[y]) * RotateX(p.v[x]);
-					invA = RotateX(-p.v[x]) * RotateY(-p.v[y]) * RotateZ(-p.v[z]);
+	case ROTATE:	A = RotateZ(p.v[Z]) * RotateY(p.v[Y]) * RotateX(p.v[X]);
+					invA = RotateX(-p.v[X]) * RotateY(-p.v[Y]) * RotateZ(-p.v[Z]);
 					break;
 	case SCALE:		activeCamera->zoom(p.uScale);
 					break;
@@ -628,7 +628,8 @@ void Scene::changeLightColor(vec3 c){
 }
 
 void Scene::changeLightDirection(vec3 c){
-	lights[activeLight].direction = c;
+	//TODO: implement
+	//lights[activeLight].direction = c;
 }
 
 void Scene::changeModelColor(vec3 c){

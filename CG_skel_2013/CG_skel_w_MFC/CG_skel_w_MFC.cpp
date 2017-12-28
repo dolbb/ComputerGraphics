@@ -99,17 +99,6 @@ void reshape( int newWidth, int newHeight )
 	scene->draw();
 }
 
-void keyboard(unsigned char key, int x, int y){
-	switch (keyboardMode){
-	case CG1:
-		CG1keyboard(key, x, y);
-		break;
-	case CG2:
-		CG2keyboard(key, x, y);
-		break;
-	}
-}
-
 void CG2keyboard(unsigned char key, int x, int y){
 	if (key >= '0' && key <= '9')
 	{
@@ -211,6 +200,17 @@ void CG1keyboard(unsigned char key, int x, int y)
 				direction = nonElevated;
 				cout << "the camera is now not elevating in scene" << endl;
 			}
+		break;
+	}
+}
+
+void keyboard(unsigned char key, int x, int y){
+	switch (keyboardMode){
+	case CG1:
+		CG1keyboard(key, x, y);
+		break;
+	case CG2:
+		CG2keyboard(key, x, y);
 		break;
 	}
 }

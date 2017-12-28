@@ -590,9 +590,9 @@ mat4 RotateZ(const GLfloat theta)
 inline
 mat4 RotateVec(vec3 p1, vec3 p2, GLfloat theta)
 {
-	vec3 v(p2[x] - p1[x], p2[y] - p1[y], p2[z] - p1[z]);
+	vec3 v(p2[X] - p1[X], p2[Y] - p1[Y], p2[Z] - p1[Z]);
 	vec3 u = normalize(v); // u = (a,b,c)
-	GLfloat a = u[x], b = u[y], c = u[z];
+	GLfloat a = u[X], b = u[Y], c = u[Z];
 	GLfloat radAngle = (M_PI / 180.0) * theta;
 	GLfloat mCos = cos(radAngle);
 	GLfloat mSin = sin(radAngle);

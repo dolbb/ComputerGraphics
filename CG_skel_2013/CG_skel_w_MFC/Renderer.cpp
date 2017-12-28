@@ -6,7 +6,7 @@
 #include <assert.h>
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
-#define ZINDEX(width,x,y) (x+y*width)*3
+#define ZINDEX(width,x,y) (x+y*width)
 #define BOUNDING_BOX_VERTICES 8
 #define CLIPPING_PLANES 6
 #define EDGE_VERTICES 2
@@ -149,16 +149,16 @@ void Renderer::SetDemoBuffer()
 vec2 Renderer::transformToScreen(vec4 vertex)
 {
 	//convert to screen coordinates
-	int xScreen = (vertex[x] + 1)*(m_width / 2);
-	int yScreen = (vertex[y] + 1)*(m_height / 2);
+	GLfloat xScreen = (vertex[X] + 1)*(m_width / 2);
+	GLfloat yScreen = (vertex[Y] + 1)*(m_height / 2);
 	return vec2(xScreen, yScreen);
 }
 
 vec2 Renderer::transformToAA(vec4 vertex)
 {
 	//convert to screen coordinates
-	int xScreen = (vertex[x] + 1)*(m_width*ANTI_ALIASING_FACTOR / 2);
-	int yScreen = (vertex[y] + 1)*(m_height*ANTI_ALIASING_FACTOR / 2);
+	GLfloat xScreen = (vertex[X] + 1)*(m_width*ANTI_ALIASING_FACTOR / 2);
+	GLfloat yScreen = (vertex[Y] + 1)*(m_height*ANTI_ALIASING_FACTOR / 2);
 	return vec2(xScreen, yScreen);
 }
 
@@ -198,7 +198,7 @@ void Renderer::drawFaceNormals(vec3* vertexPositions, vec3* faceNormals, int ver
 		v1 = vertexPositions[i + 1];
 		v2 = vertexPositions[i + 2];
 		//calculate the exit point of the face normal - center of mass.
-		faceCenter = vec4((v0[x] + v1[x] + v2[x]) / 3, (v0[y] + v1[y] + v2[y]) / 3, (v0[z] + v1[z] + v2[z]) / 3, 1);
+		faceCenter = vec4((v0[X] + v1[X] + v2[X]) / 3, (v0[Y] + v1[Y] + v2[Y]) / 3, (v0[Z] + v1[Z] + v2[Z]) / 3, 1);
 		//transform the faceCenter point to its final world loctaion
 		faceCenter = objectTransform * faceCenter;
 		normal = faceNormals[currentFace];
@@ -561,7 +561,7 @@ clipResult evaluateClipping(const vec4& startingPoint, const vec4& endingPoint, 
 {
 	int sign = 1;
 	//calculate clip results for every endpoint of the line against all clipping planes
-	for (int axis = x, index = 0; axis <= z; axis++)
+	for (int axis = X, index = 0; axis <= Z; axis++)
 	{
 		//calculate w+axis and w-axis for every axis and for every endpoint of the line
 		for (int i = 0; i < 2; i++, index++)
@@ -660,15 +660,14 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 	startingPoint = temp;
 	return clipRes;
 }
-
-vec4 interpolate(const vec4& start, const vec4& end, const GLfloat& t)
+/**
+*	interpolate function gets 2 values one for start and one for end and t value representing the midpoint location
+*	and returns the linearlly interpolated value of the 2 values according to the t value.
+*/
+template<class T>
+T interpolate(T& start, T& end, GLfloat t)
 {
-	return (t*end + (1 - t)*start);
-}
-
-Material interpolateMaterial(Material& start, Material& end, GLfloat& t)
-{
-	return (end*t + start*(1 - t));
+	return(end*t + start*(1 - t));
 }
 
 clipResult Renderer::clipTriangle(Poly& polygon)
@@ -729,10 +728,10 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 						//non uniform material, set for each vertex
 						if (mat.size() > 1)
 						{
-							newMaterial.push_back(interpolateMaterial(mat[i], mat[j], t));
+							newMaterial.push_back(interpolate<Material>(mat[i], mat[j], t));
 						}
 						//set new vertex normal
-						newNormals.push_back(interpolate(normals[i], normals[j], t));
+						newNormals.push_back(interpolate<vec4>(normals[i], normals[j], t));
 						//set new vertex color
 						newColors.push_back(calculateColor(newVertices.back(), newNormals.back(),newMaterial.back()));
 					}
@@ -837,11 +836,8 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 	vec3 finalColor = vec3(0, 0, 0);
 	vec4 V = normalize(eye - vertex);
 	vec4 N = normalize(normal);
-	vec4 L;
-	vec4 R;
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
+	vec4 L,R;
+	vec3 ambient,diffuse,specular;
 	finalColor += vertexMaterial.emissiveColor;
 	//for every light in the scene
 	for (int i = 0; i < lightSources.size(); i++)
@@ -1002,14 +998,17 @@ void Renderer::calculatePolygons()
 		for (int v = 0; v < TRIANGLE_VERTICES; v++)
 		{
 			faceVertices[v] = projection*cameraTransform*faceVertices[v];
+		
 		}
 		Poly currentPolygon = Poly(faceVertices, faceVertexNormals, faceVertexColors, faceScreenVertices, faceColor, faceMaterial);
 		//clip
+		/*
 		clipResult res = clipTriangle(currentPolygon);
 		if (res == OUT_OF_BOUNDS)
 		{
 			continue;
 		}
+		*/
 		//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
 		vector<Poly> triangles;
 		//more than one triangle
@@ -1020,18 +1019,18 @@ void Renderer::calculatePolygons()
 			for (int i = 0; i < triangles.size(); i++)
 			{
 				//for each vertex
-				for (int v = 0; v < faceVertices.size(); v++)
+				for (int v = 0; v < currentPolygon.vertices.size(); v++)
 				{
 					//devide by w and transform to screen coordinates and save in the triangle data
 					vec4 currentVertex = triangles[i].vertices[v];
 					currentVertex /= currentVertex[w];
 					if (supersamplingAA)
 					{
-						triangles[i].screenVertices[v] = transformToAA(currentVertex);
+						triangles[i].screenVertices.push_back(transformToAA(currentVertex));
 					}
 					else
 					{
-						triangles[i].screenVertices[v] = transformToScreen(currentVertex);
+						triangles[i].screenVertices.push_back(transformToScreen(currentVertex));
 					}
 					
 				}
@@ -1042,18 +1041,18 @@ void Renderer::calculatePolygons()
 		else
 		{
 			//for each vertex
-			for (int v = 0; v < faceVertices.size(); v++)
+			for (int v = 0; v < currentPolygon.vertices.size(); v++)
 			{
 				//devide by w and transform to screen coordinates and save in the triangle data
 				vec4 currentVertex = currentPolygon.vertices[v];
 				currentVertex /= currentVertex[w];
 				if (supersamplingAA)
 				{
-					currentPolygon.screenVertices[v] = transformToAA(currentVertex);
+					currentPolygon.screenVertices.push_back(transformToAA(currentVertex));
 				}
 				else
 				{
-					currentPolygon.screenVertices[v] = transformToScreen(currentVertex);
+					currentPolygon.screenVertices.push_back(transformToScreen(currentVertex));
 				}
 			}
 			polygons.push_back(currentPolygon);
@@ -1069,40 +1068,25 @@ void Renderer::putZ(int x, int y, GLfloat z)
 GLfloat triangleArea(vec2 v0, vec2 v1, vec2 v2)
 {
 	GLfloat edgeLength1 = length(v0 - v1);
-	GLfloat edgeLength2 = length(v1 - v2);
+	GLfloat edgeLength2 = length(v0 - v2);
 	GLfloat edgeLength3 = length(v1 - v2);
 	GLfloat semiParameter = 0.5*(edgeLength1 + edgeLength2 + edgeLength3);
 	return sqrt(semiParameter*(semiParameter - edgeLength1)*(semiParameter - edgeLength2)*(semiParameter - edgeLength3));
 }
 
-Material triangleMatInterpolation(vector<Material>& triangleMat, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
+template<class T> 
+T barycentricInterpolation(vector<T>& endPoints, GLfloat coeff[TRIANGLE_VERTICES])
 {
-	return (triangleMat[0] * coeff[0] + triangleMat[1] * coeff[1] + triangleMat[2] * coeff[2]) / faceArea;
+	return(endPoints[0] * coeff[0] + endPoints[1] * coeff[1] + endPoints[2] * coeff[2]);
 }
 
-vec4 interpolateNormal(vector<vec4> normals, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
-{
-	return (normals[0] * coeff[0] + normals[1] * coeff[1] + normals[2] * coeff[2]) / faceArea;
-}
-
-vec4 interpolateColor(vector<vec4> colors, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
-{
-	return (colors[0] * coeff[0] + colors[1] * coeff[1] + colors[2] * coeff[2]) / faceArea;
-}
-
-GLfloat getZ(vec3 zValues, GLfloat coeff[TRIANGLE_VERTICES], GLfloat faceArea)
-{
-	return (zValues[0] * coeff[0] + zValues[1] * coeff[1] + zValues[2] * coeff[2]) / faceArea;
-}
-
-void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], Poly currentPoly, GLfloat faceArea)
+void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], Poly currentPoly, GLfloat faceArea, vec2 P)
 {
 	//calculate a0,a1,a2 coefficients for barycentric interpolation
 	for (int coeff = 0; coeff < TRIANGLE_VERTICES; coeff++)
 	{
 		vec2 vertex1 = currentPoly.screenVertices[(coeff + 1) % TRIANGLE_VERTICES];
 		vec2 vertex2 = currentPoly.screenVertices[(coeff + 2) % TRIANGLE_VERTICES];
-		vec2 P(x, y);
 		barycentricCoeff[coeff] = triangleArea(vertex1, vertex2, P) / faceArea;
 	}
 }
@@ -1123,7 +1107,7 @@ vec4 Renderer::shade(Poly currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIAN
 		{
 			colors.push_back(currentPolygon.vertexColors[i]);
 		}
-		pointColor = interpolateColor(colors, barycentricCoeff, faceArea);
+		pointColor = barycentricInterpolation<vec4>(colors, barycentricCoeff);
 	}
 	else
 	{
@@ -1135,8 +1119,8 @@ vec4 Renderer::shade(Poly currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIAN
 			vertexNormals.push_back(currentPolygon.vertexNormals[i]);
 			vertexMat.push_back(currentPolygon.vertexMaterial[i]);
 		}
-		vec4 pNormal=interpolateNormal(vertexNormals,barycentricCoeff,faceArea);
-		Material pMat = triangleMatInterpolation(vertexMat, barycentricCoeff, faceArea);
+		vec4 pNormal=barycentricInterpolation<vec4>(vertexNormals,barycentricCoeff);
+		Material pMat = barycentricInterpolation<Material>(vertexMat, barycentricCoeff);
 		pointColor = calculateColor(P, pNormal, pMat);
 	}
 	return pointColor;
@@ -1169,6 +1153,319 @@ clipResult Renderer::modelVisibility()
 
 }
 
+#if 0
+void Renderer::scanTriangle(Poly triangle)
+{
+	GLfloat barycentricCoeff[TRIANGLE_VERTICES];
+	GLfloat faceArea = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
+	GLfloat x0 = triangle.screenVertices[0][x];
+	GLfloat x1 = triangle.screenVertices[1][x];
+	GLfloat x2 = triangle.screenVertices[2][x];
+	GLfloat y0 = triangle.screenVertices[0][y];
+	GLfloat y1 = triangle.screenVertices[1][y];
+	GLfloat y2 = triangle.screenVertices[2][y];
+	//if y0>y1 we go from yMax of the triangle to yMin(increments of -1), else we go from yMin to yMax (increments of 1)
+	int yDelta = (y0 > y1) ? -1 : 1;
+	GLfloat dxL = x0 - x1;
+	GLfloat dyL = y0 - y1;
+	if (dyL == 0)	return;
+	//xIncL is the amount to be subtracted from the leftX left edge x tracker to move to the next scan line
+	GLfloat xIncL = dxL / dyL;
+	GLfloat dxR = x0 - x2;
+	GLfloat dyR = y0 - y2;
+	if (dyR == 0)	return;
+	//xIncR is the amount to be subtracted from the rightX right edge x tracker to move to the next scan line
+	GLfloat xIncR = dxR / dyR;
+	//leftX and rightX are x trackers that track left and right edges as we go along the scan lines
+	GLfloat leftX = x0 - (y0 - (int)y0)*(dxL / dyL);
+	GLfloat rightX = x0 - (y0 - (int)y0)*(dxR / dyR);
+	//for every scan line
+	for (int y = y0; abs(y0 - y1) > DBL_EPSILON; y += yDelta)
+	{
+		//for every pixel in the triangle
+		for (int x = leftX; x <= rightX; x++)
+		{
+			//set P to the current pixel
+			vec2 P(x, y);
+			setBarycentricCoeff(barycentricCoeff, triangle, faceArea, P);
+			//set triangle vertice's z values to interpolate the current point z value
+			vec3 zValues = vec3(triangle.vertices[0][z], triangle.vertices[1][z], triangle.vertices[2][z]);
+			//interpolate z values of the triangle vertices to find z at P
+			GLfloat zP = getZ(zValues, barycentricCoeff);
+			//in this case the pixel is closer than what we currently have in the zBudffer, it should be drawn.
+			if (zP < m_zbuffer[ZINDEX(m_width, x, y)])
+			{
+				vec4 p3d = vec4(vec3(x, y, zP));
+				//sets the pixel's place in the zBuffer to the pixel's depth
+				putZ(x, y, zP);
+				//calculate the color of the current pixel (flat gouraud or phong)
+				vec4 vertexColor = shade(triangle, p3d, barycentricCoeff, faceArea);
+				vec3 screenVertexColor;
+				if (fogEffect)
+				{
+					//zNear is represented as -1 and zFar as 1 so for (zP-zStart)/(zEnd-zStart) we get:
+					GLfloat fogFactor = (zP + 1) / 2;
+					vec4 fogVertexColor(fogColor);
+					vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
+					screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
+				}
+				else
+				{
+					screenVertexColor = vec3(vertexColor[R], vertexColor[G], vertexColor[B]);
+				}
+				plotPixel(x, y, screenVertexColor);
+			}
+		}
+		leftX -= xIncL;
+		rightX -= xIncR;
+	}
+}
+#endif
+
+vector<GLfloat> calculateXIntersections(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES], int scanline)
+{
+	vector<GLfloat> intersections;
+	//triangle is an horizontal line. return xMin and xMax as intersections if the y value matches the scanline
+	if ((int)triangle.screenVertices[0][Y] == (int)triangle.screenVertices[1][Y] && 
+		(int)triangle.screenVertices[1][Y] == (int)triangle.screenVertices[2][Y]
+	   )
+	{
+		if ((int)triangle.screenVertices[0][Y] == scanline)
+		{
+			GLfloat xMin = min(min(triangle.screenVertices[0][X], triangle.screenVertices[1][X]), triangle.screenVertices[2][X]);
+			GLfloat xMax = max(max(triangle.screenVertices[0][X], triangle.screenVertices[1][X]), triangle.screenVertices[2][X]);
+			intersections.push_back(xMin);
+			intersections.push_back(xMax);
+		}
+		return intersections;
+	}
+	//for every edge
+	for (int i = 0; i < TRIANGLE_VERTICES; i++)
+	{
+		//{i,j} is an edge
+		int j = (i + 1) % TRIANGLE_VERTICES;
+		GLfloat xi = triangle.screenVertices[i][X];
+		GLfloat xj = triangle.screenVertices[j][X];
+		GLfloat yi = triangle.screenVertices[i][Y];
+		//horizontal line merging with scanline, we take both x endpoints
+		if (invSlope[i] == 0 && (int)yi==scanline)
+		{
+			intersections.push_back(xi);
+			intersections.push_back(xj);
+			continue;
+		}
+		bool firstCrossing = ((int)triangle.screenVertices[i][Y]>scanline && (int)triangle.screenVertices[j][Y] <= scanline);
+		bool secondCrossing = ((int)triangle.screenVertices[j][Y]>scanline && (int)triangle.screenVertices[i][Y] <= scanline);
+		//there is an intersection of the current edge with the current scan line
+		if (firstCrossing || secondCrossing)
+		{
+			intersections.push_back(xi + invSlope[i] * (scanline - yi));
+		}
+	}
+	return intersections;
+}
+
+void calculateInvSlopes(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES])
+{
+	//for every edge
+	for (int i = 0; i < triangle.screenVertices.size(); i++)
+	{
+		//{i,j} is an edge
+		int j = (i + 1) % triangle.screenVertices.size();
+		//calculate 1/m for the current edge
+		GLfloat dx = triangle.screenVertices[i][X] - triangle.screenVertices[j][X];
+		GLfloat dy = triangle.screenVertices[i][Y] - triangle.screenVertices[j][Y];
+		invSlope[i] = abs(dy)<DBL_EPSILON ? 0 : dx / dy;
+	}
+}
+
+void Renderer::scanTriangle(Poly triangle)
+{
+	/**
+	*	invSlope will hold 1/m for m the slope of the i edge as:
+	*	first edge is {v0,v1} second edge is {v1,v2} third edge is {v0,v2}
+	*	if dy is zero for any line the invSlope for that line will be defined as 0
+	*/
+	GLfloat invSlope[TRIANGLE_EDGES];
+	vector<GLfloat> xIntersections;
+	GLfloat barycentricCoeff[TRIANGLE_VERTICES];
+	GLfloat area;
+	calculateInvSlopes(triangle, invSlope);
+	/**
+	*	the vertices are sorted in decreasing y order so v2 holds the smallest y value in comparison to the others,
+	*	accordingly, v0 holds the maximum y value
+	*/
+	GLfloat yMin = triangle.screenVertices[2][Y];
+	GLfloat yMax = triangle.screenVertices[0][Y];
+	//for every scan line from top to bottom
+	for (int curY = yMax; curY >= yMin; curY--)
+	{
+		xIntersections=calculateXIntersections(triangle, invSlope, curY);
+		//there are no intersections with the current scan line, we continue to the next line
+		if (xIntersections.empty())
+		{
+			continue;
+		}
+		//sort the x values in ascending order
+		sort(xIntersections.begin(), xIntersections.end());
+		GLfloat xMin = xIntersections[0];
+		//there are 2 options for xMax: if there is only 1 intersection xMax=xMin else(there are 2 intersection points) there is an xMax
+		GLfloat xMax = xIntersections.size() > 1 ? xMax = xIntersections[1] : xIntersections[0];
+		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
+		//for every pixel in the triangle, calculate and select its color if it should be shown
+		for (int curX = xMin; curX <= xMax; curX++)
+		{
+			vec2 P(curX, curY);
+			setBarycentricCoeff(barycentricCoeff, triangle, area, P);
+			vector<GLfloat> verticesZ = { triangle.vertices[0][Z], triangle.vertices[1][Z], triangle.vertices[2][Z] };
+			//interpolate z value of the point P using barycentric coordinates
+			GLfloat curZ = barycentricInterpolation<GLfloat>(verticesZ, barycentricCoeff);
+			//the current pixel should be drawn
+			if (curZ > m_zbuffer[ZINDEX(m_width, curX, curY)])
+			{
+				//set the current z value to the cur x,y position in the z buffer
+				putZ(curX, curY, curZ);
+				vec4 vertexColor = shade(triangle, vec4(vec3(P, curZ)), barycentricCoeff, area);
+				vec3 screenVertexColor;
+				if (fogEffect)
+				{
+					//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
+					GLfloat fogFactor = (curZ + 1) / 2;
+					vec4 fogVertexColor(fogColor);
+					vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
+					screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
+				}
+				else
+				{
+					screenVertexColor = vec3(vertexColor[R], vertexColor[G], vertexColor[B]);
+				}
+				plotPixel(curX, curY, screenVertexColor);
+			}
+		}
+	}
+}
+/**
+*	break triangle gets a triangle with its vertices sorted by their y value in decreasing order and breaks it into two flat bottom/top
+*	triangles, returns a vector with 2 triangles accordingly.
+*/
+vector<Poly> Renderer::breakTriangle(Poly triangle)
+{
+	vector<Poly> brokenTriangles;
+	/**
+	*	check if there is no need for cutting (horizontal bottom or top case)
+	*	in this case broken triangles will hold only the current triangle because there is no need to break it into two.
+	*/
+	if (abs(triangle.screenVertices[0][Y] - triangle.screenVertices[1][Y]) < 1 || abs(triangle.screenVertices[1][Y] - triangle.screenVertices[2][Y]) < 1)
+	{
+		brokenTriangles.push_back(triangle);
+		return brokenTriangles;
+	}
+	/**
+	*	the middle(index 1) vertex of the triangle holds the 2nd largest y value, we will cut the triangle according to this line.
+	*	we need to calculate the intersection point of a horzontal line through that vertex with the opposing edge.
+	*	we linearlly interpolate its position, material, color and vertex normal using the first and last vertex.
+	*/
+	GLfloat  t = (triangle.screenVertices[1][Y] - triangle.screenVertices[0][Y]) / (triangle.screenVertices[2][Y] - triangle.screenVertices[0][Y]);
+	vec4	 cutPointPosition=interpolate<vec4>(triangle.vertices[0], triangle.vertices[2], t);
+	vec4	 cutPointColor;
+	vec4	 cutPointVertexNormal;
+	if (shading != FLAT)
+	{
+		cutPointColor = interpolate<vec4>(triangle.vertexColors[0], triangle.vertexColors[2], t);
+		cutPointVertexNormal = interpolate<vec4>(triangle.vertexNormals[0], triangle.vertexNormals[2], t);
+	}
+	vec2	 cutPointScreenCoordinate = interpolate<vec2>(triangle.screenVertices[0], triangle.screenVertices[2], t);
+	Material cutPointMaterial;
+	if (triangle.vertexMaterial.size() > 1)
+	{
+		cutPointMaterial = interpolate<Material>(triangle.vertexMaterial[0], triangle.vertexMaterial[2], t);
+	}
+	/**
+	*	after calculating cutpoint value, color, vertex normal, screen coordinates and material (if needed) we create 2 triangles using that point
+	*	and other vertices as follows: 
+	*	first triangle consists of vertices: 0, 1, cutpoint
+	*	second triangle consists of vertices: 1, cutpoint, 2
+	*	in that order
+	*/
+	vector<vec4>	 vertices, vertexNormals, vertexColors;
+	vector<vec2>	 screenVertices;
+	vector<Material> vertexMaterial;
+	/**
+	*	set the vectors to hold the data corresponding to the vertices: v0, v1, cutPoint, v2 in that order
+	*/
+	for(int i=0; i<TRIANGLE_VERTICES+1; i++)
+	{
+		int j = i;
+		if (i == TRIANGLE_VERTICES - 1)
+		{
+			vertices.push_back(cutPointPosition);
+			if (triangle.vertexNormals.size() != 0 && triangle.vertexColors.size() != 0)
+			{
+				vertexNormals.push_back(cutPointVertexNormal);
+				vertexColors.push_back(cutPointColor);
+			}
+			screenVertices.push_back(cutPointScreenCoordinate);
+			if (triangle.vertexMaterial.size() != 1)
+			{
+				vertexMaterial.push_back(cutPointMaterial);
+			}
+		}
+		if(i==TRIANGLE_VERTICES)
+		{
+			j = i - 1;
+		}
+		vertices.push_back(triangle.vertices[j]);
+		if (triangle.vertexNormals.size() != 0 && triangle.vertexColors.size() != 0)
+		{
+			vertexNormals.push_back(triangle.vertexNormals[j]);
+			vertexColors.push_back(triangle.vertexNormals[j]);
+		}
+		screenVertices.push_back(triangle.screenVertices[j]);
+		if (triangle.vertexMaterial.size() != 1)
+		{
+			vertexMaterial.push_back(triangle.vertexMaterial[j]);
+		}
+		else if (vertexMaterial.size()==0)
+		{
+			vertexMaterial.push_back(triangle.vertexMaterial[0]);
+		}
+	}
+	vector<vec4>	 triVertices, triVertexNormals, triVertexColors;
+	vector<vec2>	 triScreenCoords;
+	vector<Material> triVertexMaterial;
+	/**
+	*	create 2 triangles, flat top and flat bottom, when the first one will be flat bottom and second will be flat top
+	*/
+	for (int start = 0; start < 2; start++)
+	{
+		for (int i = 0; i<TRIANGLE_VERTICES; i++)
+		{
+			triVertices.push_back(vertices[i + start]);
+			if (vertexNormals.size() != 0 && vertexColors.size() != 0)
+			{
+				triVertexNormals.push_back(vertexNormals[i + start]);
+				triVertexColors.push_back(vertexColors[i + start]);
+			}
+			triScreenCoords.push_back(screenVertices[i + start]);
+			if (vertexMaterial.size() == 1)
+			{
+				if (triVertexMaterial.size() == 0)
+				{
+					triVertexMaterial.push_back(vertexMaterial[0]);
+				}
+			}
+			else
+			{
+				triVertexMaterial.push_back(vertexMaterial[i + start]);
+			}
+		}
+		brokenTriangles.push_back(Poly(triVertices, triVertexNormals, triVertexColors, triScreenCoords, triangle.faceColor, triVertexMaterial));
+		triVertices.clear();	triVertexNormals.clear();	triVertexColors.clear();	triScreenCoords.clear();	triVertexMaterial.clear();
+	}
+	return brokenTriangles;
+}
+
+#if 0
 void Renderer::drawPolygons()
 {
 #if 0
@@ -1211,7 +1508,7 @@ void Renderer::drawPolygons()
 		{
 			xIntersections.clear();
 			//calculate x intersections with the current scanline
-			xIntersections = currentPoly.getIntersectionsX(y);
+			//xIntersections = currentPoly.getIntersectionsX(y);
 			//if there are no intersections continue to the next scanline
 			if (xIntersections.empty())
 			{
@@ -1226,11 +1523,11 @@ void Renderer::drawPolygons()
 			{
 				//set P to the current pixel
 				vec2 P(x, y);
-				setBarycentricCoeff(barycentricCoeff, currentPoly, faceArea);
+				setBarycentricCoeff(barycentricCoeff, currentPoly, faceArea, P);
 				//set triangle vertice's z values to interpolate the current point z value
 				vec3 zValues = vec3(currentPoly.vertices[0][z], currentPoly.vertices[1][z], currentPoly.vertices[2][z]);
 				//interpolate z values of the triangle vertices to find z at P
-				GLfloat zP = getZ(zValues, barycentricCoeff, faceArea);
+				GLfloat zP = getZ(zValues, barycentricCoeff);
 				//in this case the pixel is closer than what we currently have in the zBudffer, it should be drawn.
 				if (zP < m_zbuffer[ZINDEX(m_width, x, y)])
 				{
@@ -1246,7 +1543,7 @@ void Renderer::drawPolygons()
 						//zNear is represented as -1 and zFar as 1 so for (zP-zStart)/(zEnd-zStart) we get:
 						GLfloat fogFactor = (zP+1) / 2;
 						vec4 fogVertexColor(fogColor);
-						vec4 foggedColor = interpolate(vertexColor, fogColor, fogFactor);
+						vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
 						screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
 					}
 					else
@@ -1256,6 +1553,65 @@ void Renderer::drawPolygons()
 					plotPixel(x, y, screenVertexColor);
 				}
 			}
+		}
+	}
+}
+#endif
+void Renderer::drawPolygons()
+{
+	//calculate polygons for the current object
+	calculatePolygons();
+	if (polygons.empty())
+	{
+		//nothing to draw
+		return;
+	}
+	resetZbuffer();
+	Poly curTriangle;
+	//for every polygon of the current object
+	for (int curPoly = 0; curPoly < polygons.size(); curPoly++)
+	{
+		curTriangle = polygons[curPoly];
+		//sort polygon's vertices in decreasing order by their y values
+		curTriangle.sortVerticesYDecreasing();
+		//scan triangle and draw the visible parts of it
+		scanTriangle(curTriangle);
+	}
+#if 0
+		Poly originalTriangle = polygons[curPoly];
+		Poly curTriangle;
+		/**
+		*	sort the vertices vertically (according to their screen coordinates), in decreasing order, after the operation screenvertices[0]
+		*	will hold the largest y point in the polygon, screenvertices[2] will hold the smallest y point in the polygon.
+		*/
+		originalTriangle.sortVerticesYDecreasing();
+		/**
+		*	we cut the triangle to 2 flat top/bottom triangles to simplify drawing, flatEdgeTriangles[0] will hold a flat bottom triangle
+		*	which represents the top part of the triangle, flatEdgeTriangles[1] will hold flat top triangle which represents the bottom part
+		*	of the triangle, cutting the triangle in two helps us later to track its left and right edges.
+		*/
+		vector<Poly> flatEdgeTriangles = breakTriangle(originalTriangle);
+		for (int triangle = 0; triangle <= flatEdgeTriangles.size(); triangle++)
+		{
+			curTriangle = flatEdgeTriangles[triangle];
+			//a top flat edge triangle
+			if (triangle == 1)
+			{
+				curTriangle.sortVerticesYIncreasing();
+			}
+			scanTriangle(curTriangle);
+		}
+#endif
+}
+
+void Renderer::resetZbuffer()
+{
+	//set zBuffer values to zMax(max depth)
+	for (int x = 0; x < m_width; x++)
+	{
+		for (int y = 0; y < m_height; y++)
+		{
+			putZ(x, y, -farPlane);
 		}
 	}
 }
@@ -1292,7 +1648,7 @@ void Renderer::toggleFogEffect()
 
 void Renderer::drawLine(const vec2& v0, const vec2& v1)
 {
-	int x0 = v0[x]; int y0 = v0[y]; int x1 = v1[x]; int y1 = v1[y];
+	int x0 = v0[X]; int y0 = v0[Y]; int x1 = v1[X]; int y1 = v1[Y];
 	bool swapped = false;
 
 	if (abs(x0 - x1) < abs(y0 - y1))
@@ -1453,9 +1809,9 @@ void Renderer::refresh()
 			m_outBuffer[INDEX(m_width, i, j, R)] = 0;
 			m_outBuffer[INDEX(m_width, i, j, G)] = 0;
 			m_outBuffer[INDEX(m_width, i, j, B)] = 0;
-			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x, y, R)] = 0;
-			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x, y, G)] = 0;
-			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x, y, B)] = 0;
+			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, R)] = 0;
+			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, G)] = 0;
+			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, B)] = 0;
 		}
 	}
 }

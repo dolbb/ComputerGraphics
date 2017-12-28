@@ -14,6 +14,7 @@ using namespace std;
 #define DEFAULT_G 1
 #define DEFAULT_B 1
 #define TRIANGLE_VERTICES 3
+#define TRIANGLE_EDGES 3
 #define ANTI_ALIASING_FACTOR 2
 
 enum drawType{VERTEX, NORMAL};
@@ -146,6 +147,93 @@ struct Poly
 		faceColor = chosenColor;
 		vertexMaterial = chosenVM;
 	}
+	/**
+	*	sortVerticesYDecreasing sorts(in decreasing order) the polygon's vertices according to y values
+	*   of its vertices in screen coordinates and rearranges the world vertices, vertex normals, material and colors accordingly.
+	*/
+	void sortVerticesYDecreasing()
+	{
+		vector<vec4>	 sortedVertices;
+		vector<vec2>	 sortedScreenVertices=screenVertices;
+		vector<Material> sortedVertexMaterial;
+		vector<vec4>	 sortedVertexNormals;
+		vector<vec4>	 sortedVertexColors;
+		int maxIndex = 0;
+		for (int i = 0; i < screenVertices.size(); i++)
+		{
+			for (int j = i + 1; j < screenVertices.size(); j++)
+			{
+				if (sortedScreenVertices[j][Y] >= sortedScreenVertices[maxIndex][Y])
+				{
+					maxIndex = j;
+				}
+			}
+			swap(sortedScreenVertices[i], sortedScreenVertices[maxIndex]);
+			sortedVertices.push_back(vertices[maxIndex]);
+			if (vertexMaterial.size() != 1)
+			{
+				sortedVertexMaterial.push_back(vertexMaterial[maxIndex]);
+			}
+			else if (sortedVertexMaterial.size() == 0)
+			{
+				sortedVertexMaterial.push_back(vertexMaterial[0]);
+			}
+			if (vertexNormals.size() != 0)
+			{
+				sortedVertexNormals.push_back(vertexNormals[maxIndex]);
+			}
+			if (vertexColors.size() != 0)
+			{
+				sortedVertexColors.push_back(vertexColors[maxIndex]);
+			}
+		}
+		vertices = sortedVertices;
+		vertexMaterial = sortedVertexMaterial;
+		vertexNormals = sortedVertexNormals;
+		vertexColors = sortedVertexColors;
+	}
+	void sortVerticesYIncreasing()
+	{
+		vector<vec4>	 sortedVertices;
+		vector<vec2>	 sortedScreenVertices=screenVertices;
+		vector<Material> sortedVertexMaterial;
+		vector<vec4>	 sortedVertexNormals;
+		vector<vec4>	 sortedVertexColors;
+		int minIndex = 0;
+		for (int i = 0; i < TRIANGLE_VERTICES; i++)
+		{
+			for (int j = i + 1; j < TRIANGLE_VERTICES; j++)
+			{
+				if (sortedScreenVertices[j][Y] <= sortedScreenVertices[minIndex][Y])
+				{
+					minIndex = j;
+				}
+			}
+			swap(sortedScreenVertices[i], sortedScreenVertices[minIndex]);
+			sortedVertices.push_back(vertices[minIndex]);
+			if (vertexMaterial.size() != 1)
+			{
+				sortedVertexMaterial.push_back(vertexMaterial[minIndex]);
+			}
+			else if (sortedVertexMaterial.size() == 0)
+			{
+				sortedVertexMaterial.push_back(vertexMaterial[0]);
+			}
+			if (vertexNormals.size() != 0)
+			{
+				sortedVertexNormals.push_back(vertexNormals[minIndex]);
+			}
+			if (vertexColors.size() != 0)
+			{
+				sortedVertexColors.push_back(vertexColors[minIndex]);
+			}
+		}
+		vertices = sortedVertices;
+		vertexMaterial = sortedVertexMaterial;
+		vertexNormals = sortedVertexNormals;
+		vertexColors = sortedVertexColors;
+	}
+#if 0
 	int getMinY()
 	{
 		int size = screenVertices.size();
@@ -166,6 +254,7 @@ struct Poly
 		}
 		return res;
 	}
+
 	vector<int> getIntersectionsX(int intersectLine)
 	{
 		vector<int> xIntersect;
@@ -207,6 +296,7 @@ struct Poly
 		}
 		return xIntersect;
 	}
+#endif
 };
 
 struct modelGeometry
@@ -265,6 +355,8 @@ private:
 	void calculatePolygons();
 	void drawLine(const vec2& v0, const vec2& v1);
 	clipResult modelVisibility();
+	vector<Poly> breakTriangle(Poly triangle);
+	void scanTriangle(Poly triangle);
 	/*	downSample orders the renderer to average the values of the aliasing buffer to every pixel.
 	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
 	*/
@@ -323,6 +415,7 @@ public:
 	/*	setLightSources will get a list of the currently availible light sources in the scene and set them in the renderer
 	*/
 	void setLightSources(const vector<Light>& lightSources);
+	void resetZbuffer();
 	void setEye(vec4 cameraEye);
 	void setFar(GLfloat sceneFarPlane);
 	void SwapBuffers();
