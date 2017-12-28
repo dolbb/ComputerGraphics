@@ -30,9 +30,11 @@ enum RotationType{
 	ROLL, PITCH, SIDES
 };
 
-enum ModelType{ 
-	MESH, PYRAMID 
+enum ModelType{
+	MESH, PYRAMID
 };
+
+enum LightStat{ AMBIENT, DIFFUSE, SPECULAR };
 
 #define DEFAULT_LEFT   -1
 #define DEFAULT_RIGHT   1
@@ -143,7 +145,7 @@ private:
 
 	Model*  activeModel;
 	Camera* activeCamera;
-
+	int activeLight;
 	shadingMethod shading;
 
 	void handleMeshModelFrame(OperateParams &p);
@@ -154,7 +156,7 @@ private:
 	vec3 getCameraCoordsBoundaries(vec3 *bBox);
 public:
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), 
-								activeModel(NULL), shading(FLAT){
+		activeModel(NULL), shading(FLAT), activeLight(0){
 		cameras.push_back(activeCamera);
 		lights.push_back(Light());
 	}
@@ -178,7 +180,15 @@ public:
 	void toggleFogMode();
 	void toggleAliasingMode();
 	void setShading(shadingMethod s);
+	void addDefaultLight();
 	void addLight(Light l);
-	void setLight(Light l, int index);
+	void setActiveLight(Light l);
+	void switchActiveLight(int i);
+	void toggleActiveLightType();
+	void activeLightChangePosition(vec3 pos);
+	void activeLightIncrementStats(LightStat s);
+	void activeLightDecrementStats(LightStat s);
+	void changeLightColor(vec3 c);
+	void changeLightDirection(vec3 c);
 	void changeModelColor(vec3 c);
 };

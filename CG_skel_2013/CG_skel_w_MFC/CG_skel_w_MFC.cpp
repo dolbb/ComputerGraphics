@@ -27,20 +27,22 @@
 
 enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
-enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID };
+enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID, NEW_DEFAULT_LIGHT, NEW_CUSTOM_LIGHT };
 enum selectMenuIdentifier{ACTIVE_MODEL};
-enum toolsMenuIdentifier{LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP,SET_CAMERA_PRESPECTIVE};
-enum toggleMenuIdentifier{FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING};
+enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_COLOR, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION };
+enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE };
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
 enum scalingAxis{xT,yT,zT,uniformT};
 enum cameraDirection{elevated, nonElevated};
+enum KeyboardMode{CG1,CG2};
 
 #define DEFAULT_ZOOM 1.2
 #define DEFAULT_SCALING_FACTOR 1.2
 
 Scene *scene;
 Renderer *renderer;
+KeyboardMode keyboardMode;
 
 //	mouse call back parameters
 int last_x,last_y;
@@ -97,7 +99,58 @@ void reshape( int newWidth, int newHeight )
 	scene->draw();
 }
 
-void keyboard( unsigned char key, int x, int y )
+void keyboard(unsigned char key, int x, int y){
+	switch (keyboardMode){
+	case CG1:
+		CG1keyboard(key, x, y);
+		break;
+	case CG2:
+		CG2keyboard(key, x, y);
+		break;
+	}
+}
+
+void CG2keyboard(unsigned char key, int x, int y){
+	if (key >= '0' && key <= '9')
+	{
+		int index = key - '0';
+		scene->switchActiveLight(index);
+	}
+	switch (key)
+	{
+	//ESC
+	case 033:
+		exit(EXIT_SUCCESS);
+		break;
+	//change light spec (inc \ dec) in a specific aspect:
+	case 'e':
+		scene->activeLightIncrementStats(AMBIENT);
+		cout << "current light was incremented in its AMBIENT field" << endl;
+		break;
+	case 'd':
+		scene->activeLightDecrementStats(AMBIENT);
+		cout << "current light was decremented in its AMBIENT field" << endl;
+		break;
+	case 'r':
+		scene->activeLightIncrementStats(DIFFUSE);
+		cout << "current light was incremented in its DIFFUSE field" << endl;
+		break;
+	case 'f':
+		scene->activeLightDecrementStats(DIFFUSE);
+		cout << "current light was decremented in its DIFFUSE field" << endl;
+		break;
+	case 't':
+		scene->activeLightIncrementStats(SPECULAR);
+		cout << "current light was incremented in its SPECULAR field" << endl;
+		break;
+	case 'g':
+		scene->activeLightDecrementStats(SPECULAR);
+		cout << "current light was decremented in its SPECULAR field" << endl;
+		break;
+	}
+}
+
+void CG1keyboard(unsigned char key, int x, int y)
 {
 	vec3 transformationParameters;
 	if (key >= '0' && key <= '9')
@@ -420,8 +473,7 @@ void motion(int x, int y)
 
 void newMenuCallback(int id)
 {
-	if (id == NEW_MODEL)
-	{
+	if (id == NEW_MODEL){
 		CFileDialog dlg(TRUE, _T(".obj"), NULL, NULL, _T("*.obj|*.*"));
 		if (dlg.DoModal() == IDOK)
 		{
@@ -432,13 +484,54 @@ void newMenuCallback(int id)
 			return;
 		}
 	}
-	if(id==NEW_CAMERA)
-	{
+	switch (id){
+	case NEW_MODEL:	
+		break;
+	case NEW_CAMERA:
 		scene->createCamera();
-	}
-	if (id == NEW_PYRAMID)
-	{
+		break;
+	case NEW_PYRAMID:
 		scene->addPyramidMesh();
+		break;
+	case NEW_DEFAULT_LIGHT:
+		scene->addDefaultLight();
+		break;
+	case NEW_CUSTOM_LIGHT:
+		Light l;
+		string lightTypeString;
+		lightType type;
+		CCmdDialog dialogType("pleaes choose a type of light - paralel or point");
+		CXyzDialog parameterPos("please enter the light's position in the world - 3d coords");
+		CXyzDialog parameterAmbient("please enter ambient INTENSITY(!) in RGB format [0,1] values");
+		CXyzDialog parameterdiffuse("same for diffuse intensity");
+		CXyzDialog parameterSpecular("same for specular intensity");
+		if (parameterPos.DoModal() == IDOK){
+			lightTypeString = dialogType.GetCmd();
+			if (lightTypeString == "paralel"){
+				l.type = PARALLEL_LIGHT;
+			}
+			else if (lightTypeString == "point"){
+				l.type = POINT_LIGHT;
+			}
+			else{
+				cout << "invalid light type" << endl;
+				return;
+			}
+		}else{ return; }
+		if (parameterPos.DoModal() == IDOK){
+			l.position = vec4(parameterPos.GetXYZ());
+		}else{ return; }
+		if (parameterAmbient.DoModal() == IDOK){
+			l.ambientIntensity = parameterAmbient.GetXYZ();
+		}else{ return; }
+		if (parameterdiffuse.DoModal() == IDOK){
+			l.diffuseIntensity = parameterdiffuse.GetXYZ();
+		}else{ return; }
+		if (parameterSpecular.DoModal() == IDOK){
+			l.specularIntensity = parameterSpecular.GetXYZ();
+		}else{ return; }
+		scene->addLight(l);
+		break;
 	}
 }
 
@@ -592,19 +685,43 @@ void mainMenu(int id)
 
 void toolsMenuCallback(int id)
 {
-	if (id == LOOKAT_ACTIVE_MODEL)
-	{
+	switch (id){
+	case LOOKAT_ACTIVE_MODEL:
 		scene->LookAtActiveModel();
-	}
-	
-	if (id == SET_TRANSFORMATION_STEP)
-	{
+		break;
+	case SET_TRANSFORMATION_STEP:
 		setTransformationStep();
-	}
-
-	if (id == SET_CAMERA_PRESPECTIVE)
-	{
+		break;
+	case SET_CAMERA_PRESPECTIVE:
 		setCameraPerspective();
+		break;
+	}
+	if (id == SET_MODEL_COLOR || id == SET_LIGHT_COLOR){
+		vec3 c;
+		CXyzDialog colorMsg("please enter RGB color as [0,255] value per base color");
+		if (colorMsg.DoModal() == IDOK)
+		{
+			c = colorMsg.GetXYZ();
+			//check color validation:
+			if (c[0] < 0 || c[0] > 255 ||
+				c[1] < 0 || c[1] > 255 ||
+				c[2] < 0 || c[2] > 255){
+				cout << "your color does not exist" << endl;
+				return;
+			}
+		}
+		else{ return; }
+		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c / 255) : scene->changeLightColor(c / 255);
+	}
+	if (id == SET_LIGHT_DIRECTION){
+		vec3 d;
+		CXyzDialog dirMsg("please enter current light direction");
+		if (dirMsg.DoModal() == IDOK)
+		{
+			d = dirMsg.GetXYZ();
+		}
+		else{ return; }
+		scene->changeLightDirection(d);
 	}
 }
 
@@ -627,6 +744,14 @@ void toggleMenuCallback(int id)
 	case CAMERA_RENDERING:
 		scene->featuresStateSelection(TOGGLE_CAMERA_RENDERING);
 		break;
+	
+	case KEYBOARD_MODE:
+		keyboardMode = (keyboardMode == CG1) ? CG2 : CG1;
+		break;
+	
+	case ACTIVE_LIGHT_TYPE:
+		scene->toggleActiveLightType();
+		break;
 	}
 }
 
@@ -636,6 +761,8 @@ void initMenu()
 	glutAddMenuEntry("Model", NEW_MODEL);
 	glutAddMenuEntry("Pyramid", NEW_PYRAMID);
 	glutAddMenuEntry("Camera", NEW_CAMERA);
+	glutAddMenuEntry("default Light source", NEW_DEFAULT_LIGHT);
+	glutAddMenuEntry("customized Light source", NEW_CUSTOM_LIGHT);
 	int selectMenu = glutCreateMenu(selectMenuCallback);
 	glutAddMenuEntry("Active model", ACTIVE_MODEL);
 	int toggleMenu = glutCreateMenu(toggleMenuCallback);
@@ -643,10 +770,15 @@ void initMenu()
 	glutAddMenuEntry("Vertex normals", VERTEX_NORMALS);
 	glutAddMenuEntry("Bounding box", BOUNDING_BOX);
 	glutAddMenuEntry("Camera rendering", CAMERA_RENDERING);
+	glutAddMenuEntry("keyboard mode", KEYBOARD_MODE);
+	glutAddMenuEntry("active light type", ACTIVE_LIGHT_TYPE);
 	int toolsMenu = glutCreateMenu(toolsMenuCallback);
 	glutAddMenuEntry("LookAt active model", LOOKAT_ACTIVE_MODEL);
 	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
 	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
+	glutAddMenuEntry("set a new color for the model", SET_MODEL_COLOR);
+	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
+	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
 	glutAddSubMenu("Toggle", toggleMenu);
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);
@@ -682,6 +814,7 @@ int my_main( int argc, char **argv )
 
 	renderer = new Renderer();
 	scene = new Scene(renderer);
+	keyboardMode = CG2;
 	currentCameraFrame = CAMERA_VIEW;
 	currentObjectFrame = WORLD;
 	//----------------------------------------------------------------------------

@@ -545,16 +545,90 @@ void Scene::setShading(shadingMethod s){
 	shading = s;
 }
 
+void Scene::addDefaultLight(){
+	Light l;
+	addLight(l);
+}
+
 void Scene::addLight(Light l){
 	lights.push_back(l);
 }
 
-void Scene::setLight(Light l, int index){
+void Scene::setActiveLight(Light l){
+
+	lights[activeLight] = l;
+}
+
+void Scene::switchActiveLight(int index){
 	if (index >= lights.size()){
 		cout << "you have entered an invalid light id" << endl;
 		return;
 	}
-	lights[index] = l;
+	else{
+		activeLight = index;
+	}
+}
+void Scene::toggleActiveLightType(){
+	lights[activeLight].type = (lights[activeLight].type == POINT_LIGHT) ? PARALLEL_LIGHT : POINT_LIGHT;
+}
+
+void Scene::activeLightChangePosition(vec3 pos){
+	lights[activeLight].position = vec4(pos);
+}
+
+void Scene::activeLightIncrementStats(LightStat s){
+	float factor = 1.05;
+	switch (s){
+	case AMBIENT:	
+		if (lights[activeLight].ambientIntensity[0] * factor <= 1)
+			lights[activeLight].ambientIntensity[0] *= factor;
+		if (lights[activeLight].ambientIntensity[1] * factor <= 1)
+			lights[activeLight].ambientIntensity[1] *= factor;
+		if (lights[activeLight].ambientIntensity[2] * factor <= 1)
+			lights[activeLight].ambientIntensity[2] *= factor;
+		break;
+	case DIFFUSE:
+		if (lights[activeLight].diffuseIntensity[0] * factor <= 1)
+			lights[activeLight].diffuseIntensity[0] *= factor;
+		if (lights[activeLight].diffuseIntensity[1] * factor <= 1)
+			lights[activeLight].diffuseIntensity[1] *= factor;
+		if (lights[activeLight].diffuseIntensity[2] * factor <= 1)
+			lights[activeLight].diffuseIntensity[2] *= factor;
+		break;
+	case SPECULAR:
+		if (lights[activeLight].specularIntensity[0] * factor <= 1)
+			lights[activeLight].specularIntensity[0] *= factor;
+		if (lights[activeLight].specularIntensity[1] * factor <= 1)
+			lights[activeLight].specularIntensity[1] *= factor;
+		if (lights[activeLight].specularIntensity[2] * factor <= 1)
+			lights[activeLight].specularIntensity[2] *= factor;
+		break;
+	}
+}
+
+void Scene::activeLightDecrementStats(LightStat s){
+	float factor = 0.95;
+	switch (s){
+	case AMBIENT:
+		lights[activeLight].ambientIntensity *= factor;
+		break;
+	case DIFFUSE:
+		lights[activeLight].diffuseIntensity *= factor;
+		break;
+	case SPECULAR:
+		lights[activeLight].specularIntensity *= factor;
+		break;
+	}
+}
+
+void Scene::changeLightColor(vec3 c){
+	lights[activeLight].ambientIntensity *= c;
+	lights[activeLight].diffuseIntensity *= c;
+	lights[activeLight].specularIntensity *= c;
+}
+
+void Scene::changeLightDirection(vec3 c){
+	lights[activeLight].direction = c;
 }
 
 void Scene::changeModelColor(vec3 c){

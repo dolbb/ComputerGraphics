@@ -32,7 +32,7 @@ vec2 vec2fFromStream(std::istream & aStream)
 MeshModel::MeshModel(string fileName) :
 vertexPositions(NULL), vertexPositionsSize(INVALID_SIZE),
 vertexNormals(NULL), vertexNormalsSize(INVALID_SIZE),
-faceNormals(NULL), faceNormalsSize(INVALID_SIZE), mode(SKELETON)
+faceNormals(NULL), faceNormalsSize(INVALID_SIZE), mode(COLORED)
 {
 	modelType = MESH;
 	vector<FaceIdcs> faces;
