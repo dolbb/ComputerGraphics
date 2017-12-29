@@ -151,88 +151,47 @@ struct Poly
 	*	sortVerticesYDecreasing sorts(in decreasing order) the polygon's vertices according to y values
 	*   of its vertices in screen coordinates and rearranges the world vertices, vertex normals, material and colors accordingly.
 	*/
+	
 	void sortVerticesYDecreasing()
 	{
-		vector<vec4>	 sortedVertices;
-		vector<vec2>	 sortedScreenVertices=screenVertices;
-		vector<Material> sortedVertexMaterial;
-		vector<vec4>	 sortedVertexNormals;
-		vector<vec4>	 sortedVertexColors;
-		int maxIndex = 0;
-		for (int i = 0; i < screenVertices.size(); i++)
+		int maxIndex;
+		int screenVerrticesSize = screenVertices.size();
+		for (int i = 0; i < screenVerrticesSize; i++)
 		{
-			for (int j = i + 1; j < screenVertices.size(); j++)
+			maxIndex = i;
+			for (int j = i; j < screenVerrticesSize; j++)
 			{
-				if (sortedScreenVertices[j][Y] >= sortedScreenVertices[maxIndex][Y])
+				if (screenVertices[j][Y] >= screenVertices[maxIndex][Y])
 				{
 					maxIndex = j;
 				}
-			}
-			swap(sortedScreenVertices[i], sortedScreenVertices[maxIndex]);
-			sortedVertices.push_back(vertices[maxIndex]);
-			if (vertexMaterial.size() != 1)
-			{
-				sortedVertexMaterial.push_back(vertexMaterial[maxIndex]);
-			}
-			else if (sortedVertexMaterial.size() == 0)
-			{
-				sortedVertexMaterial.push_back(vertexMaterial[0]);
-			}
-			if (vertexNormals.size() != 0)
-			{
-				sortedVertexNormals.push_back(vertexNormals[maxIndex]);
-			}
-			if (vertexColors.size() != 0)
-			{
-				sortedVertexColors.push_back(vertexColors[maxIndex]);
-			}
+			}	
+			swapVertices(i, maxIndex);
 		}
-		vertices = sortedVertices;
-		vertexMaterial = sortedVertexMaterial;
-		vertexNormals = sortedVertexNormals;
-		vertexColors = sortedVertexColors;
 	}
-	void sortVerticesYIncreasing()
-	{
-		vector<vec4>	 sortedVertices;
-		vector<vec2>	 sortedScreenVertices=screenVertices;
-		vector<Material> sortedVertexMaterial;
-		vector<vec4>	 sortedVertexNormals;
-		vector<vec4>	 sortedVertexColors;
-		int minIndex = 0;
-		for (int i = 0; i < TRIANGLE_VERTICES; i++)
+
+	private:
+		void swapVertices(int i, int j)
 		{
-			for (int j = i + 1; j < TRIANGLE_VERTICES; j++)
+			if (i == j)
 			{
-				if (sortedScreenVertices[j][Y] <= sortedScreenVertices[minIndex][Y])
-				{
-					minIndex = j;
-				}
+				return;
 			}
-			swap(sortedScreenVertices[i], sortedScreenVertices[minIndex]);
-			sortedVertices.push_back(vertices[minIndex]);
-			if (vertexMaterial.size() != 1)
+			swap(vertices[i], vertices[j]);
+			if (!vertexNormals.empty())
 			{
-				sortedVertexMaterial.push_back(vertexMaterial[minIndex]);
+				swap(vertexNormals[i], vertexNormals[j]);
 			}
-			else if (sortedVertexMaterial.size() == 0)
+			if (!vertexColors.empty())
 			{
-				sortedVertexMaterial.push_back(vertexMaterial[0]);
+				swap(vertexColors[i],vertexColors[j]);
 			}
-			if (vertexNormals.size() != 0)
+			swap(screenVertices[i], screenVertices[j]);
+			if (vertexMaterial.size() > 1)
 			{
-				sortedVertexNormals.push_back(vertexNormals[minIndex]);
-			}
-			if (vertexColors.size() != 0)
-			{
-				sortedVertexColors.push_back(vertexColors[minIndex]);
+				swap(vertexMaterial[i], vertexMaterial[j]);
 			}
 		}
-		vertices = sortedVertices;
-		vertexMaterial = sortedVertexMaterial;
-		vertexNormals = sortedVertexNormals;
-		vertexColors = sortedVertexColors;
-	}
 #if 0
 	int getMinY()
 	{

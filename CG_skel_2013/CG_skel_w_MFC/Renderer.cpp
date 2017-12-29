@@ -5,6 +5,13 @@
 #include "GL\freeglut.h"
 #include <assert.h>
 
+
+//TESTING TIME
+#include <ctime>
+bool testedScanTriangle = false;
+bool testedDrawPolygons = false;
+//
+
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 #define ZINDEX(width,x,y) (x+y*width)
 #define BOUNDING_BOX_VERTICES 8
@@ -689,10 +696,11 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 		newVertices.clear(); newNormals.clear(); newColors.clear(); newMaterial.clear();
 		
 		//for every vertex
-		for (int i = 0; i <vertices.size() ; i++)
+		int verSize = vertices.size();
+		for (int i = 0; i <verSize ; i++)
 		{
 			//i,j is an edge
-			int j = (i + 1) % vertices.size();
+			int j = (i + 1) % verSize;
 
 			//save start and end point in case they will be clipped
 			start = vertices[i];
@@ -702,7 +710,7 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 			lineRes = clipLine(vertices[i], vertices[j]);
 
 			//in case of uniform material that hasn't been set, set it
-			if (lineRes[plane] != OUT_OF_BOUNDS && mat.size() == 1 && newMaterial.size() == 0)
+			if (lineRes[plane] != OUT_OF_BOUNDS && mat.size() == 1 && newMaterial.empty())
 			{
 				newMaterial.push_back(mat[0]);
 			}
@@ -840,7 +848,8 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 	vec3 ambient,diffuse,specular;
 	finalColor += vertexMaterial.emissiveColor;
 	//for every light in the scene
-	for (int i = 0; i < lightSources.size(); i++)
+	int lights = lightSources.size();
+	for (int i = 0; i < lights; i++)
 	{
 		Light currentLight = lightSources[i];
 		L = normalize(currentLight.position - vertex);
@@ -886,7 +895,8 @@ vector<Poly> triangulatePolygon(Poly polygon)
 	//triangle vertex material
 	vector<Material> triangleVM;
 	//in order to triangulate, we select the first vertex and connect it to each vertex apart from its neighbours(triangle fan effect)
-	for (int i = 2; i < polygon.vertices.size() - 1; i++)
+	int lastNonNeighbour = polygon.vertices.size() - 1;
+	for (int i = 2; i < lastNonNeighbour; i++)
 	{
 		triangleV.clear();
 		triangleVN.clear();
@@ -919,6 +929,11 @@ vector<Poly> triangulatePolygon(Poly polygon)
  */
 void Renderer::calculatePolygons()
 {
+	//TESTING TIME
+	clock_t t;
+	t = clock();
+	//
+
 	assert(geometry.vertices != NULL && geometry.vertexNormals != NULL);
 	polygons.clear();
 	int size = geometry.verticesSize;
@@ -949,7 +964,7 @@ void Renderer::calculatePolygons()
 				faceMaterial.push_back(material[i + v]);
 			}
 			//uniform material
-			else if (faceMaterial.size() == 0)
+			else if (faceMaterial.empty())
 			{
 				faceMaterial.push_back(material[0]);
 			}
@@ -1002,13 +1017,11 @@ void Renderer::calculatePolygons()
 		}
 		Poly currentPolygon = Poly(faceVertices, faceVertexNormals, faceVertexColors, faceScreenVertices, faceColor, faceMaterial);
 		//clip
-		/*
 		clipResult res = clipTriangle(currentPolygon);
 		if (res == OUT_OF_BOUNDS)
 		{
 			continue;
 		}
-		*/
 		//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
 		vector<Poly> triangles;
 		//more than one triangle
@@ -1016,10 +1029,12 @@ void Renderer::calculatePolygons()
 		{
 			triangles = triangulatePolygon(currentPolygon);
 			//for each triangle
-			for (int i = 0; i < triangles.size(); i++)
+			int trianglesSize = triangles.size();
+			for (int i = 0; i < trianglesSize; i++)
 			{
 				//for each vertex
-				for (int v = 0; v < currentPolygon.vertices.size(); v++)
+				int verticesSize = currentPolygon.vertices.size();
+				for (int v = 0; v < verticesSize; v++)
 				{
 					//devide by w and transform to screen coordinates and save in the triangle data
 					vec4 currentVertex = triangles[i].vertices[v];
@@ -1041,7 +1056,8 @@ void Renderer::calculatePolygons()
 		else
 		{
 			//for each vertex
-			for (int v = 0; v < currentPolygon.vertices.size(); v++)
+			int verticesSize = currentPolygon.vertices.size();
+			for (int v = 0; v < verticesSize; v++)
 			{
 				//devide by w and transform to screen coordinates and save in the triangle data
 				vec4 currentVertex = currentPolygon.vertices[v];
@@ -1058,6 +1074,15 @@ void Renderer::calculatePolygons()
 			polygons.push_back(currentPolygon);
 		}
 	}
+
+	//TESTING TIME
+	if (!testedDrawPolygons)
+	{
+		t = clock() - t;
+		cout << "calculatePolygons took " << (float)t / CLOCKS_PER_SEC << " seconds" << endl;
+	}
+	//
+
 }
 
 void Renderer::putZ(int x, int y, GLfloat z)
@@ -1094,7 +1119,7 @@ void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], Poly curre
 vec4 Renderer::shade(Poly currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIANGLE_VERTICES], GLfloat faceArea)
 {
 	vec4 pointColor=(0,0,0,0);
-	if (shading == FLAT || currentPolygon.vertexNormals.size()==0)
+	if (shading == FLAT || currentPolygon.vertexNormals.empty())
 	{
 		//set face color
 		pointColor = currentPolygon.faceColor;
@@ -1226,11 +1251,11 @@ vector<GLfloat> calculateXIntersections(Poly triangle, GLfloat invSlope[TRIANGLE
 {
 	vector<GLfloat> intersections;
 	//triangle is an horizontal line. return xMin and xMax as intersections if the y value matches the scanline
-	if ((int)triangle.screenVertices[0][Y] == (int)triangle.screenVertices[1][Y] && 
-		(int)triangle.screenVertices[1][Y] == (int)triangle.screenVertices[2][Y]
+	if (triangle.screenVertices[0][Y] == triangle.screenVertices[1][Y] && 
+		triangle.screenVertices[1][Y] == triangle.screenVertices[2][Y]
 	   )
 	{
-		if ((int)triangle.screenVertices[0][Y] == scanline)
+		if (triangle.screenVertices[0][Y] == scanline)
 		{
 			GLfloat xMin = min(min(triangle.screenVertices[0][X], triangle.screenVertices[1][X]), triangle.screenVertices[2][X]);
 			GLfloat xMax = max(max(triangle.screenVertices[0][X], triangle.screenVertices[1][X]), triangle.screenVertices[2][X]);
@@ -1239,23 +1264,24 @@ vector<GLfloat> calculateXIntersections(Poly triangle, GLfloat invSlope[TRIANGLE
 		}
 		return intersections;
 	}
+	int screenVerticesSize = triangle.screenVertices.size();
 	//for every edge
-	for (int i = 0; i < TRIANGLE_VERTICES; i++)
+	for (int i = 0; i < screenVerticesSize; i++)
 	{
 		//{i,j} is an edge
-		int j = (i + 1) % TRIANGLE_VERTICES;
+		int j = (i + 1) % screenVerticesSize;
 		GLfloat xi = triangle.screenVertices[i][X];
 		GLfloat xj = triangle.screenVertices[j][X];
 		GLfloat yi = triangle.screenVertices[i][Y];
 		//horizontal line merging with scanline, we take both x endpoints
-		if (invSlope[i] == 0 && (int)yi==scanline)
+		if (invSlope[i] == 0 && yi==scanline)
 		{
 			intersections.push_back(xi);
 			intersections.push_back(xj);
 			continue;
 		}
-		bool firstCrossing = ((int)triangle.screenVertices[i][Y]>scanline && (int)triangle.screenVertices[j][Y] <= scanline);
-		bool secondCrossing = ((int)triangle.screenVertices[j][Y]>scanline && (int)triangle.screenVertices[i][Y] <= scanline);
+		bool firstCrossing = (triangle.screenVertices[i][Y]>scanline && triangle.screenVertices[j][Y] <= scanline);
+		bool secondCrossing = (triangle.screenVertices[j][Y]>scanline && triangle.screenVertices[i][Y] <= scanline);
 		//there is an intersection of the current edge with the current scan line
 		if (firstCrossing || secondCrossing)
 		{
@@ -1268,10 +1294,11 @@ vector<GLfloat> calculateXIntersections(Poly triangle, GLfloat invSlope[TRIANGLE
 void calculateInvSlopes(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES])
 {
 	//for every edge
-	for (int i = 0; i < triangle.screenVertices.size(); i++)
+	int screenVerticesSize = triangle.screenVertices.size();
+	for (int i = 0; i < screenVerticesSize; i++)
 	{
 		//{i,j} is an edge
-		int j = (i + 1) % triangle.screenVertices.size();
+		int j = (i + 1) % screenVerticesSize;
 		//calculate 1/m for the current edge
 		GLfloat dx = triangle.screenVertices[i][X] - triangle.screenVertices[j][X];
 		GLfloat dy = triangle.screenVertices[i][Y] - triangle.screenVertices[j][Y];
@@ -1281,6 +1308,8 @@ void calculateInvSlopes(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES])
 
 void Renderer::scanTriangle(Poly triangle)
 {
+	time_t t = clock();//todo
+	
 	/**
 	*	invSlope will hold 1/m for m the slope of the i edge as:
 	*	first edge is {v0,v1} second edge is {v1,v2} third edge is {v0,v2}
@@ -1291,15 +1320,37 @@ void Renderer::scanTriangle(Poly triangle)
 	GLfloat barycentricCoeff[TRIANGLE_VERTICES];
 	GLfloat area;
 	calculateInvSlopes(triangle, invSlope);
+	//TESTING TIME
+	if (!testedScanTriangle)
+	{
+		cout << "scanning 1 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+		t = clock();
+	}
 	/**
 	*	the vertices are sorted in decreasing y order so v2 holds the smallest y value in comparison to the others,
 	*	accordingly, v0 holds the maximum y value
 	*/
-	GLfloat yMin = triangle.screenVertices[2][Y];
+	int screenVertices = triangle.screenVertices.size();
+	if (screenVertices < 3)
+	{
+		return;
+	}
+	GLfloat yMin = triangle.screenVertices[screenVertices-1][Y];
 	GLfloat yMax = triangle.screenVertices[0][Y];
 	//for every scan line from top to bottom
+	if (!testedScanTriangle)
+	{
+		cout << "scanning 2 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+		t = clock();
+	}
 	for (int curY = yMax; curY >= yMin; curY--)
 	{
+		if (!testedScanTriangle && curY == yMax)
+		{
+			cout << "scanning 3 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+			t = clock();
+			return;
+		}
 		xIntersections=calculateXIntersections(triangle, invSlope, curY);
 		//there are no intersections with the current scan line, we continue to the next line
 		if (xIntersections.empty())
@@ -1308,10 +1359,20 @@ void Renderer::scanTriangle(Poly triangle)
 		}
 		//sort the x values in ascending order
 		sort(xIntersections.begin(), xIntersections.end());
+		if (!testedScanTriangle && curY == yMax)
+		{
+			cout << "scanning 4 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+			t = clock();
+		}
 		GLfloat xMin = xIntersections[0];
 		//there are 2 options for xMax: if there is only 1 intersection xMax=xMin else(there are 2 intersection points) there is an xMax
 		GLfloat xMax = xIntersections.size() > 1 ? xMax = xIntersections[1] : xIntersections[0];
 		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
+		if (!testedScanTriangle && curY == yMax)
+		{
+			cout << "scanning 4 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+			t = clock();
+		}
 		//for every pixel in the triangle, calculate and select its color if it should be shown
 		for (int curX = xMin; curX <= xMax; curX++)
 		{
@@ -1341,6 +1402,12 @@ void Renderer::scanTriangle(Poly triangle)
 				}
 				plotPixel(curX, curY, screenVertexColor);
 			}
+		}
+		if (!testedScanTriangle && curY == yMax)
+		{
+			cout << "scanning 5 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+			t = clock();
+			testedScanTriangle = true;
 		}
 	}
 }
@@ -1399,7 +1466,7 @@ vector<Poly> Renderer::breakTriangle(Poly triangle)
 		if (i == TRIANGLE_VERTICES - 1)
 		{
 			vertices.push_back(cutPointPosition);
-			if (triangle.vertexNormals.size() != 0 && triangle.vertexColors.size() != 0)
+			if (!triangle.vertexNormals.empty() && !triangle.vertexColors.empty())
 			{
 				vertexNormals.push_back(cutPointVertexNormal);
 				vertexColors.push_back(cutPointColor);
@@ -1415,7 +1482,7 @@ vector<Poly> Renderer::breakTriangle(Poly triangle)
 			j = i - 1;
 		}
 		vertices.push_back(triangle.vertices[j]);
-		if (triangle.vertexNormals.size() != 0 && triangle.vertexColors.size() != 0)
+		if (!triangle.vertexNormals.empty() && !triangle.vertexColors.empty())
 		{
 			vertexNormals.push_back(triangle.vertexNormals[j]);
 			vertexColors.push_back(triangle.vertexNormals[j]);
@@ -1425,7 +1492,7 @@ vector<Poly> Renderer::breakTriangle(Poly triangle)
 		{
 			vertexMaterial.push_back(triangle.vertexMaterial[j]);
 		}
-		else if (vertexMaterial.size()==0)
+		else if (vertexMaterial.empty())
 		{
 			vertexMaterial.push_back(triangle.vertexMaterial[0]);
 		}
@@ -1441,7 +1508,7 @@ vector<Poly> Renderer::breakTriangle(Poly triangle)
 		for (int i = 0; i<TRIANGLE_VERTICES; i++)
 		{
 			triVertices.push_back(vertices[i + start]);
-			if (vertexNormals.size() != 0 && vertexColors.size() != 0)
+			if (!vertexNormals.empty() && !vertexColors.empty())
 			{
 				triVertexNormals.push_back(vertexNormals[i + start]);
 				triVertexColors.push_back(vertexColors[i + start]);
@@ -1449,7 +1516,7 @@ vector<Poly> Renderer::breakTriangle(Poly triangle)
 			triScreenCoords.push_back(screenVertices[i + start]);
 			if (vertexMaterial.size() == 1)
 			{
-				if (triVertexMaterial.size() == 0)
+				if (triVertexMaterial.empty())
 				{
 					triVertexMaterial.push_back(vertexMaterial[0]);
 				}
@@ -1569,7 +1636,8 @@ void Renderer::drawPolygons()
 	resetZbuffer();
 	Poly curTriangle;
 	//for every polygon of the current object
-	for (int curPoly = 0; curPoly < polygons.size(); curPoly++)
+	int size = polygons.size();
+	for (int curPoly = 0; curPoly < size; curPoly++)
 	{
 		curTriangle = polygons[curPoly];
 		//sort polygon's vertices in decreasing order by their y values
