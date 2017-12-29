@@ -10,6 +10,8 @@
 #include <ctime>
 bool testedScanTriangle = false;
 bool testedDrawPolygons = false;
+int calculateCounter = 0;
+#define CALCULATE_ITERATIONS 10
 bool testedClipTriangle = false;
 bool testedClipLine = false;
 //
@@ -606,11 +608,6 @@ clipResult evaluateClipping(const vec4& startingPoint, const vec4& endingPoint, 
 
 vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 {
-
-	//TESTING TIME
-	time_t clipT = clock();
-	//
-
 	vector<clipResult> outOfBounds(CLIPPING_PLANES);
 	vector<clipResult> inBounds(CLIPPING_PLANES);
 	vector<clipResult> clipRes(CLIPPING_PLANES);
@@ -672,15 +669,6 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 		endingPoint = startingPoint + tOut*(endingPoint - startingPoint);
 	}
 	startingPoint = temp;
-
-	//TESTING TIME
-	if (!testedClipLine)
-	{
-		cout << "clip line time: " << (clock() - clipT) / CLOCKS_PER_SEC << " seconds" << endl;
-		testedClipLine = true;
-	}
-	//
-
 	return clipRes;
 }
 /**
@@ -695,10 +683,6 @@ T interpolate(T& start, T& end, GLfloat t)
 
 clipResult Renderer::clipTriangle(Poly& polygon)
 {
-	//TESTING TIME
-	time_t clipT = clock();
-	//
-
 	clipResult res = IN_BOUNDS;
 	vector<clipResult> lineRes(CLIPPING_PLANES);
 	//	vertices normals and colors will be updated to the most updated polygon verrtices, vertex normals and colors every iteration
@@ -772,15 +756,6 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 	//finally, after we clipped against all planes, new vectors get the final state of the polygon
 	newVertices = vertices;	 newNormals = normals;	newColors = colors;	newMaterial = mat;
 	//the triangle was clipped completely
-
-	//TESTING TIME
-	if (!testedClipTriangle)
-	{
-		cout << "clip triangle time: " << (clock() - clipT) / CLOCKS_PER_SEC << " seconds" << endl;
-		testedClipTriangle = true;
-	}
-	//
-
 	if (newVertices.empty())
 	{
 		return OUT_OF_BOUNDS;
@@ -952,6 +927,136 @@ vector<Poly> triangulatePolygon(const Poly& polygon)
 	return triangles;
 }
 
+void Renderer::createVerticesList(vector<vec4>& faceVertices, int firstFaceVertex)
+{
+	//set v0, v1, v2 as the current face vertices
+	for (int v = 0; v < TRIANGLE_VERTICES; v++)
+	{
+		//push the vertices in world coordinates
+		faceVertices.push_back(objectTransform*geometry.vertices[firstFaceVertex + v]);
+	}
+}
+
+//for each vertex, set vertex material if the material is non uniform or single material if uniform
+void Renderer::createMaterialList(vector<Material>& faceMaterial, int firstFaceVertex)
+{
+	for (int v = 0; v < TRIANGLE_VERTICES; v++)
+	{
+		//non uniform material
+		if (material.size() > 1)
+		{
+			faceMaterial.push_back(material[firstFaceVertex + v]);
+		}
+		//uniform material
+		else if (faceMaterial.empty())
+		{
+			faceMaterial.push_back(material[0]);
+		}
+	}
+}
+
+void Renderer::createVertexColorList(vector<vec4>& faceVertices, vector<Material>& faceMaterial, vector<vec4>& faceVertexNormals,
+									 vector<vec4>& faceVertexColors, vec3& faceColor, int currentFace, int firstFaceVertex)
+{
+	//calculate vertex colors
+	if (shading == FLAT)
+	{
+		//faceCenter = (v0+v1+v2)/3 hence center of mass for the current triangle
+		vec4 faceCenter = (faceVertices[0] + faceVertices[1] + faceVertices[2]) / 3;
+		//calculate the face normal and normalize it, the vector leaves the face's center of mass
+		vec4 curFaceNormal = calculateFaceNormal(faceCenter, geometry.faceNormals[currentFace]);
+		//set the face color
+		Material faceCenterMat;
+		if (faceMaterial.size() == 1)
+		{
+			faceCenterMat = faceMaterial[0];
+		}
+		else
+		{
+			//in case of non uniform material set the face center material to be the average of the 3 vertices material
+			faceCenterMat = (faceMaterial[0] + faceMaterial[1] + faceMaterial[2]) / 3;
+		}
+		faceColor = calculateColor(faceCenter, curFaceNormal, faceCenterMat);
+	}
+	//lighting per vertex
+	else if (geometry.vertexNormals != NULL)
+	{
+		//for every vertex
+		for (int v = 0; v < TRIANGLE_VERTICES; v++)
+		{
+			faceVertexNormals.push_back(normalTransform*geometry.vertexNormals[firstFaceVertex + v]);
+			//normals are in world coordinate, calculate color for vertices
+			Material vertexMat;
+			if (faceMaterial.size() == 1)
+			{
+				vertexMat = faceMaterial[0];
+			}
+			else
+			{
+				vertexMat = faceMaterial[v];
+			}
+			faceVertexColors.push_back(calculateColor(faceVertices[v], faceVertexNormals[v], vertexMat));
+		}
+	}
+}
+
+void Renderer::projectVertices(vector<vec4>& faceVertices)
+{
+	for (int v = 0; v < TRIANGLE_VERTICES; v++)
+	{
+		faceVertices[v] = projection*cameraTransform*faceVertices[v];
+
+	}
+}
+
+void Renderer::addTriangleToPolygons(Poly& currentPolygon)
+{
+	//for each vertex
+	int verticesSize = currentPolygon.vertices.size();
+	for (int v = 0; v < verticesSize; v++)
+	{
+		//devide by w and transform to screen coordinates and save in the triangle data
+		vec4 currentVertex = currentPolygon.vertices[v];
+		currentVertex /= currentVertex[w];
+		if (supersamplingAA)
+		{
+			currentPolygon.screenVertices.push_back(transformToAA(currentVertex));
+		}
+		else
+		{
+			currentPolygon.screenVertices.push_back(transformToScreen(currentVertex));
+		}
+	}
+	polygons.push_back(currentPolygon);
+}
+
+void Renderer::clip(Poly& currentPolygon)
+{
+	clipResult res = clipTriangle(currentPolygon);
+	if (res == OUT_OF_BOUNDS)
+	{
+		return;
+	}
+	//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
+	vector<Poly> triangles;
+	//more than one triangle
+	if (currentPolygon.vertices.size() > 3)
+	{
+		triangles = triangulatePolygon(currentPolygon);
+		//for each triangle
+		int trianglesSize = triangles.size();
+		for (int i = 0; i < trianglesSize; i++)
+		{
+			addTriangleToPolygons(triangles[i]);
+		}
+	}
+	//the face is already a triangle
+	else
+	{
+		addTriangleToPolygons(currentPolygon);
+	}
+}
+
 /*	calculatePolygons function will go over all triangles in the mesh and calculate their final vertices after clipping, final vertex colors
  *	and vertex normals. after this function has ended its operation the polygons vector in the renderer holds the most up to date data
  *	about all polygons in the scene, ready to rasterize.
@@ -959,159 +1064,81 @@ vector<Poly> triangulatePolygon(const Poly& polygon)
 void Renderer::calculatePolygons()
 {
 	//TESTING TIME
-	clock_t t;
-	t = clock();
+	time_t t = clock();
 	//
 
 	assert(geometry.vertices != NULL && geometry.vertexNormals != NULL);
 	polygons.clear();
 	int size = geometry.verticesSize;
 
-	vec3				faceColor;
-	vector<vec4>		faceVertices;
-	vector<vec4>		faceVertexNormals;
-	vector<vec4>		faceVertexColors;
-	vector<vec2>		faceScreenVertices;
-	vector<Material>	faceMaterial;
+	//TESTING TIME
+	testedScanTriangle = true;
+	if (!testedScanTriangle)
+	{
+		cout << "test 0: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
+		t = clock();
+	}
+	//
 
 	//for each face
 	for (int i = 0, currentFace=0; i < size; i+=TRIANGLE_VERTICES, currentFace++)
 	{
-		faceVertices.clear();
-		faceVertexNormals.clear();
-		faceVertexColors.clear();
-		faceMaterial.clear();
-
-		//set v0, v1, v2 as the current face vertices
-		for (int v = 0; v < TRIANGLE_VERTICES; v++)
-		{
-			//push the vertices in world coordinates
-			faceVertices.push_back(objectTransform*geometry.vertices[i+v]);
-			//non uniform material
-			if (material.size() > 1)
-			{
-				faceMaterial.push_back(material[i + v]);
-			}
-			//uniform material
-			else if (faceMaterial.empty())
-			{
-				faceMaterial.push_back(material[0]);
-			}
-		}
-		//calculate vertex colors
-		if (shading == FLAT)
-		{
-			//faceCenter = (v0+v1+v2)/3 hence center of mass for the current triangle
-			vec4 faceCenter = (faceVertices[0] + faceVertices[1] + faceVertices[2]) / 3;
-			//calculate the face normal and normalize it, the vector leaves the face's center of mass
-			vec4 curFaceNormal = calculateFaceNormal(faceCenter, geometry.faceNormals[currentFace]);
-			//set the face color
-			Material faceCenterMat;
-			if (faceMaterial.size() == 1)
-			{
-				faceCenterMat = faceMaterial[0];
-			}
-			else
-			{
-				//in case of non uniform material set the face center material to be the average of the 3 vertices material
-				faceCenterMat = (faceMaterial[0] + faceMaterial[1] + faceMaterial[2]) / 3;
-			}
-			faceColor = calculateColor(faceCenter,curFaceNormal, faceCenterMat);
-		}
-		//lighting per vertex
-		else if (geometry.vertexNormals != NULL)
-		{
-			//for every vertex
-			for (int v = 0; v < TRIANGLE_VERTICES; v++)
-			{
-				faceVertexNormals.push_back(normalTransform*geometry.vertexNormals[i + v]);
-				//normals are in world coordinate, calculate color for vertices
-				Material vertexMat;
-				if (faceMaterial.size() == 1)
-				{
-					vertexMat = faceMaterial[0];
-				}
-				else
-				{
-					vertexMat = faceMaterial[v];
-				}
-				faceVertexColors.push_back(calculateColor(faceVertices[v], faceVertexNormals[v],vertexMat));
-			}	
-		}
-		//project
-		for (int v = 0; v < TRIANGLE_VERTICES; v++)
-		{
-			faceVertices[v] = projection*cameraTransform*faceVertices[v];
+		Poly p;
 		
+		//calculate face vertices
+		createVerticesList(p.vertices, i);
+
+		//TESTING TIME
+		if (!testedScanTriangle)
+		{
+			cout << "test 1: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
+			t = clock();
 		}
-		Poly currentPolygon = Poly(faceVertices, faceVertexNormals, faceVertexColors, faceScreenVertices, faceColor, faceMaterial);
+		//
+
+		//calculate face vertex material if non uniform or face material if uniform
+		createMaterialList(p.vertexMaterial, i);
+
+		//TESTING TIME
+		if (!testedScanTriangle)
+		{
+			cout << "test 2: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
+			t = clock();
+		}
+		//
+
+		//calculate vertex color for each vertex if shading is not flat or face color if shading is flat
+		createVertexColorList(p.vertices, p.vertexMaterial, p.vertexNormals, p.vertexColors, p.faceColor, currentFace, i);
+
+		//TESTING TIME
+		if (!testedScanTriangle)
+		{
+			cout << "test 3: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
+			t = clock();
+		}
+		//
+
+		//project
+		projectVertices(p.vertices);
+
+		//TESTING TIME
+		if (!testedScanTriangle)
+		{
+			cout << "test 4: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
+			t = clock();
+		}
 		//clip
-		clipResult res = clipTriangle(currentPolygon);
-		if (res == OUT_OF_BOUNDS)
-		{
-			continue;
-		}
-		//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
-		vector<Poly> triangles;
-		//more than one triangle
-		if (currentPolygon.vertices.size() > 3)
-		{
-			triangles = triangulatePolygon(currentPolygon);
-			//for each triangle
-			int trianglesSize = triangles.size();
-			for (int i = 0; i < trianglesSize; i++)
-			{
-				//for each vertex
-				int verticesSize = currentPolygon.vertices.size();
-				for (int v = 0; v < verticesSize; v++)
-				{
-					//devide by w and transform to screen coordinates and save in the triangle data
-					vec4 currentVertex = triangles[i].vertices[v];
-					currentVertex /= currentVertex[w];
-					if (supersamplingAA)
-					{
-						triangles[i].screenVertices.push_back(transformToAA(currentVertex));
-					}
-					else
-					{
-						triangles[i].screenVertices.push_back(transformToScreen(currentVertex));
-					}
-					
-				}
-				polygons.push_back(triangles[i]);
-			}
-		}
-		//the face is already a triangle
-		else
-		{
-			//for each vertex
-			int verticesSize = currentPolygon.vertices.size();
-			for (int v = 0; v < verticesSize; v++)
-			{
-				//devide by w and transform to screen coordinates and save in the triangle data
-				vec4 currentVertex = currentPolygon.vertices[v];
-				currentVertex /= currentVertex[w];
-				if (supersamplingAA)
-				{
-					currentPolygon.screenVertices.push_back(transformToAA(currentVertex));
-				}
-				else
-				{
-					currentPolygon.screenVertices.push_back(transformToScreen(currentVertex));
-				}
-			}
-			polygons.push_back(currentPolygon);
-		}
-	}
+		clip(p);
 
-	//TESTING TIME
-	if (!testedDrawPolygons)
-	{
-		t = clock() - t;
-		cout << "calculatePolygons took " << (float)t / CLOCKS_PER_SEC << " seconds" << endl;
-	}
-	//
+		//TESTING TIME
+		if (!testedScanTriangle)
+		{
+			cout << "test 5: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl<<endl;
+			t = clock();
+		}
+		//
 
+	}
 }
 
 void Renderer::putZ(int x, int y, GLfloat z)
@@ -1336,9 +1363,7 @@ void calculateInvSlopes(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES])
 }
 
 void Renderer::scanTriangle(const Poly& triangle)
-{
-	time_t t = clock();//todo
-	
+{	
 	/**
 	*	invSlope will hold 1/m for m the slope of the i edge as:
 	*	first edge is {v0,v1} second edge is {v1,v2} third edge is {v0,v2}
@@ -1349,12 +1374,6 @@ void Renderer::scanTriangle(const Poly& triangle)
 	GLfloat barycentricCoeff[TRIANGLE_VERTICES];
 	GLfloat area;
 	calculateInvSlopes(triangle, invSlope);
-	//TESTING TIME
-	if (!testedScanTriangle)
-	{
-		cout << "scanning 1 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-		t = clock();
-	}
 	/**
 	*	the vertices are sorted in decreasing y order so v2 holds the smallest y value in comparison to the others,
 	*	accordingly, v0 holds the maximum y value
@@ -1367,18 +1386,8 @@ void Renderer::scanTriangle(const Poly& triangle)
 	GLfloat yMin = triangle.screenVertices[screenVertices-1][Y];
 	GLfloat yMax = triangle.screenVertices[0][Y];
 	//for every scan line from top to bottom
-	if (!testedScanTriangle)
-	{
-		cout << "scanning 2 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-		t = clock();
-	}
 	for (int curY = yMax; curY >= yMin; curY--)
 	{
-		if (!testedScanTriangle && curY == (int)yMax)
-		{
-			cout << "scanning 3 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-			t = clock();
-		}
 		xIntersections=calculateXIntersections(triangle, invSlope, curY);
 		//there are no intersections with the current scan line, we continue to the next line
 		if (xIntersections.empty())
@@ -1387,20 +1396,10 @@ void Renderer::scanTriangle(const Poly& triangle)
 		}
 		//sort the x values in ascending order
 		sort(xIntersections.begin(), xIntersections.end());
-		if (!testedScanTriangle && curY == (int)yMax)
-		{
-			cout << "scanning 4 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-			t = clock();
-		}
 		GLfloat xMin = xIntersections[0];
 		//there are 2 options for xMax: if there is only 1 intersection xMax=xMin else(there are 2 intersection points) there is an xMax
 		GLfloat xMax = xIntersections.size() > 1 ? xMax = xIntersections[1] : xIntersections[0];
 		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
-		if (!testedScanTriangle && curY == (int)yMax)
-		{
-			cout << "scanning 5 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-			t = clock();
-		}
 		//for every pixel in the triangle, calculate and select its color if it should be shown
 		for (int curX = xMin; curX <= xMax; curX++)
 		{
@@ -1431,17 +1430,6 @@ void Renderer::scanTriangle(const Poly& triangle)
 				plotPixel(curX, curY, screenVertexColor);
 			}
 		}
-		if (!testedScanTriangle && curY == (int)yMax)
-		{
-			cout << "scanning 6 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-			t = clock();
-		}
-	}
-	if (!testedScanTriangle)
-	{
-		cout << "scanning 7 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-		t = clock();
-		testedScanTriangle = true;
 	}
 }
 /**

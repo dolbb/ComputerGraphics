@@ -316,6 +316,13 @@ private:
 	clipResult modelVisibility();
 	vector<Poly> breakTriangle(Poly triangle);
 	void scanTriangle(const Poly& triangle);
+	void createVerticesList(vector<vec4>& faceVertices,int curFace);
+	void createMaterialList(vector<Material>& faceMaterial, int curFace);
+	void createVertexColorList(vector<vec4>& faceVertices, vector<Material>& faceMaterial, vector<vec4>& faceVertexNormals,
+							   vector<vec4>& faceVertexColors, vec3& faceColor, int currentFace, int firstFaceVertex);
+	void projectVertices(vector<vec4>& faceVertices);
+	void clip(Poly& currentPolygon);
+	void addTriangleToPolygons(Poly& currentPolygon);
 	/*	downSample orders the renderer to average the values of the aliasing buffer to every pixel.
 	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
 	*/
