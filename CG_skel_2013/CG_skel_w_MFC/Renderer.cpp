@@ -10,6 +10,8 @@
 #include <ctime>
 bool testedScanTriangle = false;
 bool testedDrawPolygons = false;
+bool testedClipTriangle = false;
+bool testedClipLine = false;
 //
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
@@ -604,6 +606,11 @@ clipResult evaluateClipping(const vec4& startingPoint, const vec4& endingPoint, 
 
 vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 {
+
+	//TESTING TIME
+	time_t clipT = clock();
+	//
+
 	vector<clipResult> outOfBounds(CLIPPING_PLANES);
 	vector<clipResult> inBounds(CLIPPING_PLANES);
 	vector<clipResult> clipRes(CLIPPING_PLANES);
@@ -665,6 +672,15 @@ vector<clipResult> Renderer::clipLine(vec4& startingPoint, vec4& endingPoint)
 		endingPoint = startingPoint + tOut*(endingPoint - startingPoint);
 	}
 	startingPoint = temp;
+
+	//TESTING TIME
+	if (!testedClipLine)
+	{
+		cout << "clip line time: " << (clock() - clipT) / CLOCKS_PER_SEC << " seconds" << endl;
+		testedClipLine = true;
+	}
+	//
+
 	return clipRes;
 }
 /**
@@ -679,6 +695,10 @@ T interpolate(T& start, T& end, GLfloat t)
 
 clipResult Renderer::clipTriangle(Poly& polygon)
 {
+	//TESTING TIME
+	time_t clipT = clock();
+	//
+
 	clipResult res = IN_BOUNDS;
 	vector<clipResult> lineRes(CLIPPING_PLANES);
 	//	vertices normals and colors will be updated to the most updated polygon verrtices, vertex normals and colors every iteration
@@ -752,6 +772,15 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 	//finally, after we clipped against all planes, new vectors get the final state of the polygon
 	newVertices = vertices;	 newNormals = normals;	newColors = colors;	newMaterial = mat;
 	//the triangle was clipped completely
+
+	//TESTING TIME
+	if (!testedClipTriangle)
+	{
+		cout << "clip triangle time: " << (clock() - clipT) / CLOCKS_PER_SEC << " seconds" << endl;
+		testedClipTriangle = true;
+	}
+	//
+
 	if (newVertices.empty())
 	{
 		return OUT_OF_BOUNDS;
@@ -880,7 +909,7 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 }
 
 //triangulatePolygon creates a triangle fan from the given convex polygon using the first vertex to connect to each vertex but his current neighbours
-vector<Poly> triangulatePolygon(Poly polygon)
+vector<Poly> triangulatePolygon(const Poly& polygon)
 {
 	vector<Poly>	 triangles;
 	//triangle vertices
@@ -1105,7 +1134,7 @@ T barycentricInterpolation(vector<T>& endPoints, GLfloat coeff[TRIANGLE_VERTICES
 	return(endPoints[0] * coeff[0] + endPoints[1] * coeff[1] + endPoints[2] * coeff[2]);
 }
 
-void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], Poly currentPoly, GLfloat faceArea, vec2 P)
+void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], const Poly& currentPoly, GLfloat faceArea, vec2 P)
 {
 	//calculate a0,a1,a2 coefficients for barycentric interpolation
 	for (int coeff = 0; coeff < TRIANGLE_VERTICES; coeff++)
@@ -1116,7 +1145,7 @@ void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], Poly curre
 	}
 }
 
-vec4 Renderer::shade(Poly currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIANGLE_VERTICES], GLfloat faceArea)
+vec4 Renderer::shade(const Poly& currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIANGLE_VERTICES], GLfloat faceArea)
 {
 	vec4 pointColor=(0,0,0,0);
 	if (shading == FLAT || currentPolygon.vertexNormals.empty())
@@ -1247,7 +1276,7 @@ void Renderer::scanTriangle(Poly triangle)
 }
 #endif
 
-vector<GLfloat> calculateXIntersections(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES], int scanline)
+vector<GLfloat> calculateXIntersections(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES], int scanline)
 {
 	vector<GLfloat> intersections;
 	//triangle is an horizontal line. return xMin and xMax as intersections if the y value matches the scanline
@@ -1291,7 +1320,7 @@ vector<GLfloat> calculateXIntersections(Poly triangle, GLfloat invSlope[TRIANGLE
 	return intersections;
 }
 
-void calculateInvSlopes(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES])
+void calculateInvSlopes(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES])
 {
 	//for every edge
 	int screenVerticesSize = triangle.screenVertices.size();
@@ -1306,7 +1335,7 @@ void calculateInvSlopes(Poly triangle, GLfloat invSlope[TRIANGLE_EDGES])
 	}
 }
 
-void Renderer::scanTriangle(Poly triangle)
+void Renderer::scanTriangle(const Poly& triangle)
 {
 	time_t t = clock();//todo
 	
@@ -1345,11 +1374,10 @@ void Renderer::scanTriangle(Poly triangle)
 	}
 	for (int curY = yMax; curY >= yMin; curY--)
 	{
-		if (!testedScanTriangle && curY == yMax)
+		if (!testedScanTriangle && curY == (int)yMax)
 		{
 			cout << "scanning 3 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
 			t = clock();
-			return;
 		}
 		xIntersections=calculateXIntersections(triangle, invSlope, curY);
 		//there are no intersections with the current scan line, we continue to the next line
@@ -1359,7 +1387,7 @@ void Renderer::scanTriangle(Poly triangle)
 		}
 		//sort the x values in ascending order
 		sort(xIntersections.begin(), xIntersections.end());
-		if (!testedScanTriangle && curY == yMax)
+		if (!testedScanTriangle && curY == (int)yMax)
 		{
 			cout << "scanning 4 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
 			t = clock();
@@ -1368,9 +1396,9 @@ void Renderer::scanTriangle(Poly triangle)
 		//there are 2 options for xMax: if there is only 1 intersection xMax=xMin else(there are 2 intersection points) there is an xMax
 		GLfloat xMax = xIntersections.size() > 1 ? xMax = xIntersections[1] : xIntersections[0];
 		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
-		if (!testedScanTriangle && curY == yMax)
+		if (!testedScanTriangle && curY == (int)yMax)
 		{
-			cout << "scanning 4 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+			cout << "scanning 5 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
 			t = clock();
 		}
 		//for every pixel in the triangle, calculate and select its color if it should be shown
@@ -1403,12 +1431,17 @@ void Renderer::scanTriangle(Poly triangle)
 				plotPixel(curX, curY, screenVertexColor);
 			}
 		}
-		if (!testedScanTriangle && curY == yMax)
+		if (!testedScanTriangle && curY == (int)yMax)
 		{
-			cout << "scanning 5 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+			cout << "scanning 6 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
 			t = clock();
-			testedScanTriangle = true;
 		}
+	}
+	if (!testedScanTriangle)
+	{
+		cout << "scanning 7 took " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+		t = clock();
+		testedScanTriangle = true;
 	}
 }
 /**

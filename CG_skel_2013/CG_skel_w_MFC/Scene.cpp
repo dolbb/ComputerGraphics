@@ -323,7 +323,7 @@ void Scene::createCamera()
 void Scene::draw()
 {
 	//check if we have nothing to draw:
-	if (models.empty()){return;}
+	if (actionFlag == false && models.empty()){ return; }
 	
 	m_renderer->setLightSources(lights);
 	m_renderer->setEye(activeCamera->getEye());
@@ -350,6 +350,9 @@ void Scene::draw()
 	// 3. activate the drawing:
 	m_renderer->SwapBuffers();
 	refreshView();
+
+	//remember nothing had happened after this draw:
+	actionFlag = false;
 }
 
 void Scene::drawDemo()
@@ -405,6 +408,7 @@ void Scene::operate(OperateParams &p){
 	//case CAMERA_POSITION: handleCameraPosFrame(p); break;
 	case CAMERA_VIEW: handleCameraViewFrame(p); break;
 	}
+	actionFlag = true;
 }
 
 void Scene::handleMeshModelFrame(OperateParams &p){

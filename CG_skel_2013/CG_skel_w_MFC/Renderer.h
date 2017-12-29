@@ -306,7 +306,7 @@ private:
 	vec3 calculateColor(vec4 vertex, vec4 normal,const Material& vertexMaterial);
 	void rasterizePolygon(const vector<vec4>& vertices, const vector<vec4>& vertexColors, vec3 faceColor);
 	void putZ(int x, int y, GLfloat z);
-	vec4 shade(Poly currentPolygon, vec4 P, GLfloat* barycentricCoeff, GLfloat faceArea);
+	vec4 shade(const Poly& currentPolygon, vec4 P, GLfloat* barycentricCoeff, GLfloat faceArea);
 	vector<clipResult> clipLine(vec4& endPointA, vec4& endPointB);
 	clipResult  clipTriangle(Poly& currentPolygon);
 	vec2 transformToScreen(vec4 vertex);
@@ -315,7 +315,7 @@ private:
 	void drawLine(const vec2& v0, const vec2& v1);
 	clipResult modelVisibility();
 	vector<Poly> breakTriangle(Poly triangle);
-	void scanTriangle(Poly triangle);
+	void scanTriangle(const Poly& triangle);
 	/*	downSample orders the renderer to average the values of the aliasing buffer to every pixel.
 	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
 	*/

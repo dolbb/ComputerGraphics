@@ -147,6 +147,7 @@ private:
 	Camera* activeCamera;
 	int activeLight;
 	shadingMethod shading;
+	bool actionFlag;
 
 	void handleMeshModelFrame(OperateParams &p);
 	//void handleCameraPosFrame(OperateParams &p);
@@ -156,7 +157,7 @@ private:
 	vec3 getCameraCoordsBoundaries(vec3 *bBox);
 public:
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), 
-		activeModel(NULL), shading(FLAT), activeLight(0){
+		activeModel(NULL), shading(FLAT), activeLight(0), actionFlag(true){
 		cameras.push_back(activeCamera);
 		lights.push_back(Light());
 	}
