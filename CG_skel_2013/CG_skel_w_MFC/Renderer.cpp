@@ -83,6 +83,7 @@ void Renderer::SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& 
 {
 	objectTransform = chosenObjectTransform;
 	normalTransform = chosenNormalTransform;
+	normalTransform3d = chosenNormalTransform;
 }
 
 void Renderer::setModelMaterial(const vector<Material>& chosenMaterial)
@@ -769,6 +770,12 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 
 void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 {
+
+	//TESTING TIME
+	time_t t = clock();
+	//
+
+	
 	if (vertexPositions == NULL) { return; }
 	mat4 objectToClipCoordinates = projection*cameraTransform*objectTransform;
 	vec4 triangleVertices[TRIANGLE_VERTICES];
@@ -794,16 +801,18 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 			//for vertices v1,v2
 			for (int end = start + 1; end < TRIANGLE_VERTICES; end++)
 			{
-				res = clipLine(triangleVertices[start], triangleVertices[end]);
-				for (int i = 0; i < CLIPPING_PLANES; i++)
-				{
-					clipRes += res[i];
-				}
-				//the edge is completly out of the view volume and we ignore it else the edge is atleaast partialy in the view volume, draw it.
-				if (clipRes == OUT_OF_BOUNDS)
-				{
-					continue;
-				}
+				/*
+					res = clipLine(triangleVertices[start], triangleVertices[end]);
+					for (int i = 0; i < CLIPPING_PLANES; i++)
+					{
+						clipRes += res[i];
+					}
+					//the edge is completly out of the view volume and we ignore it else the edge is atleaast partialy in the view volume, draw it.
+					if (clipRes == OUT_OF_BOUNDS)
+					{
+						continue;
+					}
+				*/	
 				//devide by w to achive NDC coordinates
 				triangleVertices[start] /= (triangleVertices[start])[w];
 				triangleVertices[end] /= (triangleVertices[end])[w];
@@ -818,12 +827,17 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 			}
 		}
 	}
+
+	//TESTING TIME
+	cout << "draw triangles time: " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
+	//
 }
 
-vec4 Renderer::calculateFaceNormal(vec4 faceCenter, vec4 normal)
+vec4 Renderer::calculateFaceNormal(vec4 faceCenter, vec3 normal)
 {
-	normal = normalTransform*normal;
-	normal = normal - faceCenter;
+	normal = normalTransform3d*normal;
+	vec3 faceCenterN = vec3(faceCenter[X] / faceCenter[w], faceCenter[Y] / faceCenter[w], faceCenter[Z] / faceCenter[w]);
+	normal = normal - faceCenterN;
 	normalize(normal);
 	return normal;
 }
@@ -1032,29 +1046,45 @@ void Renderer::addTriangleToPolygons(Poly& currentPolygon)
 
 void Renderer::clip(Poly& currentPolygon)
 {
-	clipResult res = clipTriangle(currentPolygon);
-	if (res == OUT_OF_BOUNDS)
-	{
-		return;
-	}
-	//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
-	vector<Poly> triangles;
-	//more than one triangle
-	if (currentPolygon.vertices.size() > 3)
-	{
-		triangles = triangulatePolygon(currentPolygon);
-		//for each triangle
-		int trianglesSize = triangles.size();
-		for (int i = 0; i < trianglesSize; i++)
+	/*
+		clipResult res = clipTriangle(currentPolygon);
+		if (res == OUT_OF_BOUNDS)
 		{
-			addTriangleToPolygons(triangles[i]);
+			return;
 		}
-	}
-	//the face is already a triangle
-	else
-	{
-		addTriangleToPolygons(currentPolygon);
-	}
+		//triangulate if needed (after clipping we might end up with convex polygon, we triangulate to stay with triangles)
+		vector<Poly> triangles;
+		//more than one triangle
+		if (currentPolygon.vertices.size() > 3)
+		{
+			triangles = triangulatePolygon(currentPolygon);
+			//for each triangle
+			int trianglesSize = triangles.size();
+			for (int i = 0; i < trianglesSize; i++)
+			{
+				addTriangleToPolygons(triangles[i]);
+			}
+		}
+		//the face is already a triangle
+		else
+		{
+			addTriangleToPolygons(currentPolygon);
+		}
+	*/
+	addTriangleToPolygons(currentPolygon);
+}
+
+bool Renderer::isFaceVisible(int currentFace, int i)
+{
+	//back face culling
+	vec3 n = normalTransform3d*geometry.faceNormals[currentFace];
+	vec4 v0 = objectTransform*geometry.vertices[i];
+	vec4 v1 = objectTransform*geometry.vertices[i + 1];
+	vec4 v2 = objectTransform*geometry.vertices[i + 2];
+	vec4 faceCenter = (v0 + v1 + v2) / 3;
+	vec4 v = faceCenter - eye;
+	vec3 vN = vec3(v[X] / v[w], v[Y] / v[w], v[Z] / v[w]);
+	return dot(v, n) >= 0;
 }
 
 /*	calculatePolygons function will go over all triangles in the mesh and calculate their final vertices after clipping, final vertex colors
@@ -1063,81 +1093,34 @@ void Renderer::clip(Poly& currentPolygon)
  */
 void Renderer::calculatePolygons()
 {
-	//TESTING TIME
-	time_t t = clock();
-	//
-
 	assert(geometry.vertices != NULL && geometry.vertexNormals != NULL);
 	polygons.clear();
 	int size = geometry.verticesSize;
 
-	//TESTING TIME
-	testedScanTriangle = true;
-	if (!testedScanTriangle)
-	{
-		cout << "test 0: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
-		t = clock();
-	}
-	//
-
 	//for each face
 	for (int i = 0, currentFace=0; i < size; i+=TRIANGLE_VERTICES, currentFace++)
 	{
+		
+		if (!isFaceVisible(currentFace,i))
+		{
+			continue;
+		}
 		Poly p;
 		
 		//calculate face vertices
 		createVerticesList(p.vertices, i);
 
-		//TESTING TIME
-		if (!testedScanTriangle)
-		{
-			cout << "test 1: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
-			t = clock();
-		}
-		//
-
 		//calculate face vertex material if non uniform or face material if uniform
 		createMaterialList(p.vertexMaterial, i);
-
-		//TESTING TIME
-		if (!testedScanTriangle)
-		{
-			cout << "test 2: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
-			t = clock();
-		}
-		//
 
 		//calculate vertex color for each vertex if shading is not flat or face color if shading is flat
 		createVertexColorList(p.vertices, p.vertexMaterial, p.vertexNormals, p.vertexColors, p.faceColor, currentFace, i);
 
-		//TESTING TIME
-		if (!testedScanTriangle)
-		{
-			cout << "test 3: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
-			t = clock();
-		}
-		//
-
 		//project
 		projectVertices(p.vertices);
 
-		//TESTING TIME
-		if (!testedScanTriangle)
-		{
-			cout << "test 4: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl;
-			t = clock();
-		}
 		//clip
 		clip(p);
-
-		//TESTING TIME
-		if (!testedScanTriangle)
-		{
-			cout << "test 5: " << (float)(clock() - t) / CLOCKS_PER_SEC << endl<<endl;
-			t = clock();
-		}
-		//
-
 	}
 }
 
@@ -1364,6 +1347,11 @@ void calculateInvSlopes(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES])
 
 void Renderer::scanTriangle(const Poly& triangle)
 {	
+	//TESTING TIME
+	time_t scanT = clock();
+	//
+
+
 	/**
 	*	invSlope will hold 1/m for m the slope of the i edge as:
 	*	first edge is {v0,v1} second edge is {v1,v2} third edge is {v0,v2}
@@ -1379,6 +1367,15 @@ void Renderer::scanTriangle(const Poly& triangle)
 	*	accordingly, v0 holds the maximum y value
 	*/
 	int screenVertices = triangle.screenVertices.size();
+
+	//TESTING TIME
+	if (!testedScanTriangle)
+	{
+		cout << "test point 2: " << (float)(clock() - scanT) / CLOCKS_PER_SEC << endl;
+		scanT = clock();
+	}
+	//
+
 	if (screenVertices < 3)
 	{
 		return;
@@ -1401,6 +1398,15 @@ void Renderer::scanTriangle(const Poly& triangle)
 		GLfloat xMax = xIntersections.size() > 1 ? xMax = xIntersections[1] : xIntersections[0];
 		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
 		//for every pixel in the triangle, calculate and select its color if it should be shown
+
+		//TESTING TIME
+		if (!testedScanTriangle && curY==(int)yMax)
+		{
+			cout << "test point 3: " << (float)(clock() - scanT) / CLOCKS_PER_SEC << endl;
+			scanT = clock();
+		}
+		//
+
 		for (int curX = xMin; curX <= xMax; curX++)
 		{
 			vec2 P(curX, curY);
@@ -1430,6 +1436,15 @@ void Renderer::scanTriangle(const Poly& triangle)
 				plotPixel(curX, curY, screenVertexColor);
 			}
 		}
+
+		//TESTING TIME
+		if (!testedScanTriangle && curY == (int)yMax)
+		{
+			cout << "test point 4: " << (float)(clock() - scanT) / CLOCKS_PER_SEC << endl;
+			scanT = clock();
+			testedScanTriangle = true;
+		}
+		//
 	}
 }
 /**
@@ -1647,8 +1662,22 @@ void Renderer::drawPolygons()
 #endif
 void Renderer::drawPolygons()
 {
+
+	//TESTING TIME
+	time_t drawT = clock();
+	//
+
 	//calculate polygons for the current object
 	calculatePolygons();
+
+	//TESTING TIME
+	if (!testedDrawPolygons)
+	{
+		cout << "calculate time: " << (float)(clock() - drawT) / CLOCKS_PER_SEC << " seconds" << endl;
+		drawT = clock();
+	}
+	//
+
 	if (polygons.empty())
 	{
 		//nothing to draw
@@ -1666,6 +1695,15 @@ void Renderer::drawPolygons()
 		//scan triangle and draw the visible parts of it
 		scanTriangle(curTriangle);
 	}
+
+	//TESTING TIME
+	if (!testedDrawPolygons)
+	{
+		cout << "scanning time: " << (float)(clock() - drawT) / CLOCKS_PER_SEC << " seconds" << endl<<endl;
+	}
+	//
+
+
 #if 0
 		Poly originalTriangle = polygons[curPoly];
 		Poly curTriangle;

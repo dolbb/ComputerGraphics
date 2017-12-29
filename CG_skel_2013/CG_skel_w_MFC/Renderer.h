@@ -284,6 +284,7 @@ private:
 	mat4 projection;
 	mat4 objectTransform;
 	mat4 normalTransform;
+	mat3 normalTransform3d;
 
 	modelGeometry		geometry;
 	vector<Material>	material;
@@ -302,7 +303,7 @@ private:
 
 	void CreateBuffers(int width, int height);
 	void CreateLocalBuffer();
-	vec4 calculateFaceNormal(vec4 faceCenter, vec4 normal);
+	vec4 calculateFaceNormal(vec4 faceCenter, vec3 normal);
 	vec3 calculateColor(vec4 vertex, vec4 normal,const Material& vertexMaterial);
 	void rasterizePolygon(const vector<vec4>& vertices, const vector<vec4>& vertexColors, vec3 faceColor);
 	void putZ(int x, int y, GLfloat z);
@@ -323,6 +324,7 @@ private:
 	void projectVertices(vector<vec4>& faceVertices);
 	void clip(Poly& currentPolygon);
 	void addTriangleToPolygons(Poly& currentPolygon);
+	bool Renderer::isFaceVisible(int currentFace, int i);
 	/*	downSample orders the renderer to average the values of the aliasing buffer to every pixel.
 	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
 	*/
