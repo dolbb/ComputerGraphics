@@ -66,3 +66,4 @@ CG_skel_2013/CG_skel.sdf
 *.lib
 *.tlog
 *.tlog
+*.obj
