@@ -75,6 +75,9 @@ scalingAxis currentAxis=uniformT;
 cameraDirection direction = nonElevated;
 ProjectionParams projection;
 
+//	idle flags signalling if a move has been made by the user and a redraw is needed
+bool redraw = false;
+
 //----------------------------------------------------------------------------
 // Callbacks
 
@@ -85,7 +88,11 @@ void display( void )
 
 void idle()
 {
-	glutPostRedisplay();
+	if (redraw)
+	{
+		glutPostRedisplay();
+		redraw = false;
+	}
 }
 
 void reshape( int newWidth, int newHeight )
@@ -96,10 +103,11 @@ void reshape( int newWidth, int newHeight )
 	width = newWidth;
 	height = newHeight;
 	renderer->resizeBuffers(width, height);
-	scene->draw();
+	redraw = true;
 }
 
 void CG2keyboard(unsigned char key, int x, int y){
+	redraw = true;
 	if (key >= '0' && key <= '9')
 	{
 		int index = key - '0';
@@ -141,6 +149,7 @@ void CG2keyboard(unsigned char key, int x, int y){
 
 void CG1keyboard(unsigned char key, int x, int y)
 {
+	redraw = true;
 	vec3 transformationParameters;
 	if (key >= '0' && key <= '9')
 	{
@@ -217,6 +226,7 @@ void keyboard(unsigned char key, int x, int y){
 
 void mouseWheel(int wheel, int direction, int x, int y)
 {
+	redraw = true;
 	parameters.frame = currentCameraFrame;
 	parameters.type = SCALE;
 	if (direction > 0)
@@ -280,6 +290,7 @@ void mouse(int button, int state, int x, int y)
 
 void special(int key, int x, int y)
 {
+	redraw = true;
 	int modifier = glutGetModifiers();
 	parameters.type = TRANSLATE;
 	if (modifier == GLUT_ACTIVE_SHIFT)
@@ -446,6 +457,7 @@ void translate(int x, int y, int dy)
 
 void motion(int x, int y)
 {
+	redraw = true;
 	// calc difference in mouse movement
 	int dx=x-last_x;
 	int dy=y-last_y;
@@ -673,6 +685,7 @@ void setCameraPerspective()
 		return;
 	}
 	scene->setProjection(projType, projection);
+	redraw = true;
 }
 
 void mainMenu(int id)
@@ -688,12 +701,14 @@ void toolsMenuCallback(int id)
 	switch (id){
 	case LOOKAT_ACTIVE_MODEL:
 		scene->LookAtActiveModel();
+		redraw = true;
 		break;
 	case SET_TRANSFORMATION_STEP:
 		setTransformationStep();
 		break;
 	case SET_CAMERA_PRESPECTIVE:
 		setCameraPerspective();
+		redraw = true;
 		break;
 	}
 	if (id == SET_MODEL_COLOR || id == SET_LIGHT_COLOR){
@@ -712,6 +727,7 @@ void toolsMenuCallback(int id)
 		}
 		else{ return; }
 		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c / 255) : scene->changeLightColor(c / 255);
+		redraw = true;
 	}
 	if (id == SET_LIGHT_DIRECTION){
 		vec3 d;
@@ -722,6 +738,7 @@ void toolsMenuCallback(int id)
 		}
 		else{ return; }
 		scene->changeLightDirection(d);
+		redraw = true;
 	}
 }
 
@@ -731,18 +748,22 @@ void toggleMenuCallback(int id)
 	{
 	case BOUNDING_BOX:
 		scene->featuresStateSelection(TOGGLE_BOUNDING_BOX);
+		redraw = true;
 		break;
 
 	case VERTEX_NORMALS:
 		scene->featuresStateSelection(TOGGLE_VERTEX_NORMALS);
+		redraw = true;
 		break;
 
 	case FACE_NORMALS:
 		scene->featuresStateSelection(TOGGLE_FACE_NORMALS);
+		redraw = true;
 		break;
 
 	case CAMERA_RENDERING:
 		scene->featuresStateSelection(TOGGLE_CAMERA_RENDERING);
+		redraw = true;
 		break;
 	
 	case KEYBOARD_MODE:

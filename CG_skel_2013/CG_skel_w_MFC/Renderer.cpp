@@ -1446,6 +1446,10 @@ void Renderer::scanTriangle(const Poly& triangle)
 			//interpolate z value of the point P using barycentric coordinates
 			GLfloat curZ = barycentricInterpolation<GLfloat>(verticesZ, barycentricCoeff);
 			//the current pixel should be drawn
+			if (curX >= m_width || curY >= m_height || curX < 0 || curY < 0)
+			{
+				continue;
+			}
 			if (curZ > m_zbuffer[ZINDEX(m_width, curX, curY)])
 			{
 				//set the current z value to the cur x,y position in the z buffer
@@ -1769,7 +1773,7 @@ void Renderer::resetZbuffer()
 	{
 		for (int y = 0; y < m_height; y++)
 		{
-			putZ(x, y, -farPlane);
+			putZ(x, y, -1.5);
 		}
 	}
 }
