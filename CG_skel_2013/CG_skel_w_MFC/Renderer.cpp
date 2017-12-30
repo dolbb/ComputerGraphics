@@ -17,6 +17,7 @@ bool testedClipLine = false;
 //
 
 #define INDEX(width,x,y,c) (x+y*width)*3+c
+#define ILLEGAL_INDEX -1
 #define ZINDEX(width,x,y) (x+y*width)
 #define BOUNDING_BOX_VERTICES 8
 #define CLIPPING_PLANES 6
@@ -1286,58 +1287,87 @@ void Renderer::scanTriangle(Poly triangle)
 }
 #endif
 
-vector<GLfloat> calculateXIntersections(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES], int scanline)
+vec2 calculateXIntersections(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES], int scanline, vec3& edgeXTracker)
 {
-	vector<GLfloat> intersections;
+	vec2 retVec(ILLEGAL_INDEX, ILLEGAL_INDEX);
 	//triangle is an horizontal line. return xMin and xMax as intersections if the y value matches the scanline
-	if (triangle.screenVertices[0][Y] == triangle.screenVertices[1][Y] && 
-		triangle.screenVertices[1][Y] == triangle.screenVertices[2][Y]
-	   )
+	if (static_cast<int>(triangle.screenVertices[0][Y]) == static_cast<int>(triangle.screenVertices[1][Y]) &&
+		static_cast<int>(triangle.screenVertices[1][Y]) == static_cast<int>(triangle.screenVertices[2][Y]))
 	{
-		if (triangle.screenVertices[0][Y] == scanline)
+		if (static_cast<int>(triangle.screenVertices[0][Y]) == scanline)
 		{
 			GLfloat xMin = min(min(triangle.screenVertices[0][X], triangle.screenVertices[1][X]), triangle.screenVertices[2][X]);
 			GLfloat xMax = max(max(triangle.screenVertices[0][X], triangle.screenVertices[1][X]), triangle.screenVertices[2][X]);
-			intersections.push_back(xMin);
-			intersections.push_back(xMax);
+			retVec = vec2(xMin, xMax);
 		}
-		return intersections;
+		return retVec;
 	}
-	int screenVerticesSize = triangle.screenVertices.size();
 	//for every edge
-	for (int i = 0; i < screenVerticesSize; i++)
+	int retVecIndex = 0;
+	for (int i = 0; i < TRIANGLE_VERTICES; ++i)
 	{
 		//{i,j} is an edge
-		int j = (i + 1) % screenVerticesSize;
+		int j = (i + 1) % TRIANGLE_VERTICES;
 		GLfloat xi = triangle.screenVertices[i][X];
 		GLfloat xj = triangle.screenVertices[j][X];
 		GLfloat yi = triangle.screenVertices[i][Y];
+		/*
 		//horizontal line merging with scanline, we take both x endpoints
-		if (invSlope[i] == 0 && yi==scanline)
+		if (invSlope[i] == 0 && static_cast<int>(yi) == scanline)
 		{
-			intersections.push_back(xi);
-			intersections.push_back(xj);
-			continue;
+			return vec2(min(xi, xj), max(xi, xj));
 		}
-		bool firstCrossing = (triangle.screenVertices[i][Y]>scanline && triangle.screenVertices[j][Y] <= scanline);
-		bool secondCrossing = (triangle.screenVertices[j][Y]>scanline && triangle.screenVertices[i][Y] <= scanline);
+		*/
+		bool firstCrossing = (triangle.screenVertices[i][Y] > scanline && triangle.screenVertices[j][Y] <= scanline);
+		bool secondCrossing = (triangle.screenVertices[j][Y] > scanline && triangle.screenVertices[i][Y] <= scanline);
 		//there is an intersection of the current edge with the current scan line
 		if (firstCrossing || secondCrossing)
 		{
-			intersections.push_back(xi + invSlope[i] * (scanline - yi));
+			if (edgeXTracker[i] == ILLEGAL_INDEX)
+			{
+				edgeXTracker[i] = xi + invSlope[i] * (scanline - yi);
+			}
+			else
+			{
+				edgeXTracker[i] -= invSlope[i];
+			}
+			retVec[retVecIndex] = edgeXTracker[i];
+			retVecIndex++;
 		}
 	}
-	return intersections;
+	//no intersection points
+	if (retVec[0] == ILLEGAL_INDEX && retVec[1] == ILLEGAL_INDEX)
+	{
+		return retVec;
+	}
+	//atleast one intersection point
+	else
+	{
+		//one intersection
+		if (retVec[0] == ILLEGAL_INDEX)
+		{
+			return vec2(retVec[1], retVec[1]);
+		}
+		else if (retVec[1] == ILLEGAL_INDEX)
+		{
+			return vec2(retVec[0], retVec[0]);
+		}
+		//two intersections
+		else
+		{
+			return vec2(min(retVec[0], retVec[1]), max(retVec[0], retVec[1]));
+		}
+	}
 }
 
 void calculateInvSlopes(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES])
 {
 	//for every edge
-	int screenVerticesSize = triangle.screenVertices.size();
-	for (int i = 0; i < screenVerticesSize; i++)
+	//int screenVerticesSize = triangle.screenVertices.size();
+	for (int i = 0; i < TRIANGLE_VERTICES /*screenVerticesSize*/; i++)
 	{
 		//{i,j} is an edge
-		int j = (i + 1) % screenVerticesSize;
+		int j = (i + 1) % TRIANGLE_VERTICES/*screenVerticesSize*/;
 		//calculate 1/m for the current edge
 		GLfloat dx = triangle.screenVertices[i][X] - triangle.screenVertices[j][X];
 		GLfloat dy = triangle.screenVertices[i][Y] - triangle.screenVertices[j][Y];
@@ -1358,15 +1388,17 @@ void Renderer::scanTriangle(const Poly& triangle)
 	*	if dy is zero for any line the invSlope for that line will be defined as 0
 	*/
 	GLfloat invSlope[TRIANGLE_EDGES];
-	vector<GLfloat> xIntersections;
+	//vector<GLfloat> xIntersections;
+	vec2 xIntersections;
 	GLfloat barycentricCoeff[TRIANGLE_VERTICES];
 	GLfloat area;
 	calculateInvSlopes(triangle, invSlope);
+	vec3 edgeXTrackers(ILLEGAL_INDEX, ILLEGAL_INDEX, ILLEGAL_INDEX);
 	/**
 	*	the vertices are sorted in decreasing y order so v2 holds the smallest y value in comparison to the others,
 	*	accordingly, v0 holds the maximum y value
 	*/
-	int screenVertices = triangle.screenVertices.size();
+	//int screenVertices = triangle.screenVertices.size();
 
 	//TESTING TIME
 	if (!testedScanTriangle)
@@ -1376,26 +1408,25 @@ void Renderer::scanTriangle(const Poly& triangle)
 	}
 	//
 
-	if (screenVertices < 3)
-	{
-		return;
-	}
-	GLfloat yMin = triangle.screenVertices[screenVertices-1][Y];
+	//if (screenVertices < 3)
+	//{
+	//	return;
+	//}
+	GLfloat yMin = triangle.screenVertices[2][Y];
 	GLfloat yMax = triangle.screenVertices[0][Y];
 	//for every scan line from top to bottom
 	for (int curY = yMax; curY >= yMin; curY--)
 	{
-		xIntersections=calculateXIntersections(triangle, invSlope, curY);
+		xIntersections = calculateXIntersections(triangle, invSlope, curY, edgeXTrackers);
 		//there are no intersections with the current scan line, we continue to the next line
-		if (xIntersections.empty())
+		if (xIntersections[0] == ILLEGAL_INDEX)
 		{
 			continue;
 		}
 		//sort the x values in ascending order
-		sort(xIntersections.begin(), xIntersections.end());
 		GLfloat xMin = xIntersections[0];
-		//there are 2 options for xMax: if there is only 1 intersection xMax=xMin else(there are 2 intersection points) there is an xMax
-		GLfloat xMax = xIntersections.size() > 1 ? xMax = xIntersections[1] : xIntersections[0];
+		GLfloat xMax = xIntersections[1];
+	
 		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
 		//for every pixel in the triangle, calculate and select its color if it should be shown
 
@@ -1409,8 +1440,8 @@ void Renderer::scanTriangle(const Poly& triangle)
 
 		for (int curX = xMin; curX <= xMax; curX++)
 		{
-			vec2 P(curX, curY);
-			setBarycentricCoeff(barycentricCoeff, triangle, area, P);
+			vec2 p(curX, curY);
+			setBarycentricCoeff(barycentricCoeff, triangle, area, p);
 			vector<GLfloat> verticesZ = { triangle.vertices[0][Z], triangle.vertices[1][Z], triangle.vertices[2][Z] };
 			//interpolate z value of the point P using barycentric coordinates
 			GLfloat curZ = barycentricInterpolation<GLfloat>(verticesZ, barycentricCoeff);
@@ -1419,7 +1450,7 @@ void Renderer::scanTriangle(const Poly& triangle)
 			{
 				//set the current z value to the cur x,y position in the z buffer
 				putZ(curX, curY, curZ);
-				vec4 vertexColor = shade(triangle, vec4(vec3(P, curZ)), barycentricCoeff, area);
+				vec4 vertexColor = shade(triangle, vec4(vec3(p, curZ)), barycentricCoeff, area);
 				vec3 screenVertexColor;
 				if (fogEffect)
 				{
