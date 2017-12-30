@@ -967,7 +967,7 @@ void Renderer::createVertexColorList(vector<vec4>& faceVertices, vector<Material
 		//faceCenter = (v0+v1+v2)/3 hence center of mass for the current triangle
 		vec4 faceCenter = (faceVertices[0] + faceVertices[1] + faceVertices[2]) / 3;
 		//calculate the face normal and normalize it, the vector leaves the face's center of mass
-		vec4 curFaceNormal = calculateFaceNormal(faceCenter, geometry.faceNormals[currentFace]);
+		vec4 curFaceNormal = geometry.faceNormals[currentFace];
 		//set the face color
 		Material faceCenterMat;
 		if (faceMaterial.size() == 1)
@@ -1170,10 +1170,13 @@ vec4 Renderer::shade(const Poly& currentPolygon, vec4 P, GLfloat barycentricCoef
 		for (int i = 0; i < TRIANGLE_VERTICES; i++)
 		{
 			vertexNormals.push_back(currentPolygon.vertexNormals[i]);
-			vertexMat.push_back(currentPolygon.vertexMaterial[i]);
+			if (currentPolygon.vertexMaterial.size()>1)
+			{
+				vertexMat.push_back(currentPolygon.vertexMaterial[i]);
+			}
 		}
 		vec4 pNormal=barycentricInterpolation<vec4>(vertexNormals,barycentricCoeff);
-		Material pMat = barycentricInterpolation<Material>(vertexMat, barycentricCoeff);
+		Material pMat = vertexMat.empty() ? currentPolygon.vertexMaterial[0]: barycentricInterpolation<Material>(vertexMat, barycentricCoeff);
 		pointColor = calculateColor(P, pNormal, pMat);
 	}
 	return pointColor;
@@ -1409,6 +1412,11 @@ void Renderer::scanTriangle(const Poly& triangle)
 		{
 			vec2 p(curX, curY);
 			setBarycentricCoeff(barycentricCoeff, triangle, area, p);
+			//point p is out of the triangle
+			if (barycentricCoeff[0] < 0 || barycentricCoeff[0]>1 || barycentricCoeff[1] < 0 || barycentricCoeff[1]>1 || barycentricCoeff[2] < 0 || barycentricCoeff[2]>1)
+			{
+				continue;
+			}
 			vector<GLfloat> verticesZ = { triangle.vertices[0][Z], triangle.vertices[1][Z], triangle.vertices[2][Z] };
 			//interpolate z value of the point P using barycentric coordinates
 			GLfloat curZ = barycentricInterpolation<GLfloat>(verticesZ, barycentricCoeff);

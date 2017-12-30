@@ -457,7 +457,6 @@ void translate(int x, int y, int dy)
 
 void motion(int x, int y)
 {
-	redraw = true;
 	// calc difference in mouse movement
 	int dx=x-last_x;
 	int dy=y-last_y;
@@ -471,14 +470,17 @@ void motion(int x, int y)
 	{
 		case GLUT_ACTIVE_CTRL:
 			scale(dy);
+			redraw = true;
 		break;
 
 		case GLUT_ACTIVE_SHIFT:
 			translate(x, y, dy);
+			redraw = true;
 		break;
 
 		default:
 			rotate(x,y,dy);
+			redraw = true;
 		break;
 	}
 }
@@ -765,6 +767,7 @@ void toolsMenuCallback(int id)
 
 void shadingMenuCallback(int id){
 	scene->setShading(static_cast<shadingMethod>(id));
+	redraw = true;
 }
 
 void toggleMenuCallback(int id)

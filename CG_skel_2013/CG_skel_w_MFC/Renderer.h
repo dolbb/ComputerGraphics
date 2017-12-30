@@ -49,8 +49,8 @@ struct Light
 		diffuseIntensity = color*diffuseIntensityScalar;
 		specularIntensity = color*specularIntensityScalar;
 	}
-	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensityScalar(0.1),
-		diffuseIntensityScalar(0), specularIntensityScalar(0), color(1, 1, 1){
+	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensityScalar(0.25),
+		diffuseIntensityScalar(0.6), specularIntensityScalar(1), color(1, 1, 1){
 		updateIntensity();
 	}
 	Light(const Light & l) : type(l.type), position(l.position), ambientIntensityScalar(l.ambientIntensityScalar),
@@ -111,7 +111,7 @@ struct Material
 	GLfloat	alpha;
 
 	//default Material is polished silver
-	Material() :emissiveColor(0.23125), ambientCoeff(0.23125), diffuseCoeff(0.2775), specularCoeff(0.773911), alpha(89.6){}
+	Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.9), alpha(5){}
 	Material(vec3 chosenEmissive, vec3 chosenAmbient, vec3 chosenDiffuse, vec3 chosenSpecular, GLfloat chosenAlpha)
 	{
 		emissiveColor		= chosenEmissive;
