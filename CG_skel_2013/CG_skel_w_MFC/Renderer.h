@@ -25,25 +25,34 @@ enum {R,G,B};
 
 struct Light
 {
-	lightType type;
-	//position in world coordinates
-	vec4	  position;
-	//	ambientIntensity, diffuseIntensity and specularIntensity represent the intensity (ambient, diffuse and specular) for r,g,b channels.
-	vec3      ambientIntensity;
-	vec3      diffuseIntensity;
-	vec3      specularIntensity;
+	lightType	type;
+	//position and direction in world coordinates:
+	vec4		position;
+	vec4		direction;
+	//ambientIntensity, diffuseIntensity and specularIntensity represent the intensity (ambient, diffuse and specular) for the light's color.
+	GLfloat     ambientIntensity;
+	GLfloat     diffuseIntensity;
+	GLfloat     specularIntensity;
+	//the color is  [0,1] in RGB format:
+	vec3		 color;
 
-	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), ambientIntensity(1, 1, 1),
-		diffuseIntensity(0, 0, 0), specularIntensity(0, 0, 0){}
+	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensity(0.1),
+		diffuseIntensity(0), specularIntensity(0), color(1,1,1){}
 	Light(const Light & l) : type(l.type), position(l.position), ambientIntensity(l.ambientIntensity),
-		diffuseIntensity(l.diffuseIntensity), specularIntensity(l.specularIntensity){}
-	Light(lightType chosenType, vec3 chosenPosition, vec3 chosenambientIntensity, vec3 chosendiffuseIntensity, vec3 chosenspecularIntensity)
+		diffuseIntensity(l.diffuseIntensity), specularIntensity(l.specularIntensity), color(l.color){}
+	Light(lightType chosenType, vec3 chosenPosition, vec3 chosenDirection, GLfloat chosenambientIntensity, GLfloat chosendiffuseIntensity, GLfloat chosenspecularIntensity, vec3 choseColor)
 	{
 		type = chosenType;
 		position = chosenPosition;
+		direction = chosenDirection;
 		ambientIntensity = chosenambientIntensity;
 		diffuseIntensity = chosendiffuseIntensity;
 		specularIntensity = chosenspecularIntensity;
+		color = choseColor;
+	}
+	//get color in RGB [0,255] and save after converting to [0,1]:
+	void changeColor(vec3 c){
+		color = vec3(c[0] / 255, c[1] / 255, c[2] / 255);
 	}
 };
 
