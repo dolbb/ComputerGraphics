@@ -802,8 +802,8 @@ void toggleMenuCallback(int id)
 		CXyzDialog parameterPos("to change to POINT_LIGHT - enter light's position in camera - 3d coords");
 		CXyzDialog parameterDirection("to change to PARALLEL_LIGHT - enter light's direction in camera - 3d coords");
 		if (scene->getLightType() == POINT_LIGHT){
-			if (parameterPos.DoModal() == IDOK){
-				scene->changeLightDirection(parameterPos.GetXYZ());
+			if (parameterDirection.DoModal() == IDOK){
+				scene->changeLightDirection(parameterDirection.GetXYZ());
 			}
 			else{ return; }
 		}

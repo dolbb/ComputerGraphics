@@ -53,7 +53,7 @@ struct Light
 		diffuseIntensityScalar(0.6), specularIntensityScalar(1), color(1, 1, 1){
 		updateIntensity();
 	}
-	Light(const Light & l) : type(l.type), position(l.position), ambientIntensityScalar(l.ambientIntensityScalar),
+	Light(const Light & l) : type(l.type), position(l.position), direction(l.direction), ambientIntensityScalar(l.ambientIntensityScalar),
 		diffuseIntensityScalar(l.diffuseIntensityScalar), specularIntensityScalar(l.specularIntensityScalar), color(l.color){
 		updateIntensity();
 	}
@@ -215,7 +215,7 @@ struct Poly
 			maxIndex = i;
 			for (int j = i; j < screenVerrticesSize; j++)
 			{
-				if (screenVertices[j][Y] >= screenVertices[maxIndex][Y])
+				if (screenVertices[j][Y] > screenVertices[maxIndex][Y])
 				{
 					maxIndex = j;
 				}

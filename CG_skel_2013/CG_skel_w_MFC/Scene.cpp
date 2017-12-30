@@ -325,7 +325,7 @@ void Scene::draw()
 {
 	//check if we have nothing to draw:
 	if (actionFlag == false && models.empty()){ return; }
-	
+	m_renderer->resetZbuffer();
 	m_renderer->setLightSources(lights);
 	m_renderer->setEye(activeCamera->getEye());
 	m_renderer->setFar(activeCamera->getFar());
@@ -568,7 +568,7 @@ void Scene::addDefaultLight(){
 
 void Scene::addLight(Light l){
 	lights.push_back(l);
-	string type = lights[activeLight].type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
+	string type = l.type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
 	cout << "the following light was added: " << endl;
 	cout << "type:       " << type << endl;
 	cout << "positione:  " << "(" << l.position[0] << ", " << l.position[1] << ", " << l.position[2] << ")" << endl;

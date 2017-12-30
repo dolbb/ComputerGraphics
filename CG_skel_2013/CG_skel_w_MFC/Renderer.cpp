@@ -871,16 +871,7 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 		specular = vertexMaterial.specularCoeff * currentLight.specularIntensity * temp;
 		finalColor += ambient;
 		vec3 diffuseAndSpecular = diffuse + specular;
-		if (currentLight.type == PARALLEL_LIGHT)
-		{
-			finalColor += diffuseAndSpecular;
-		}
-		//in case of point light the color is effected by distance from light source
-		else
-		{
-			GLfloat d = length(currentLight.position - vertex);
-			finalColor += diffuseAndSpecular * min(1 / (CONSTANT_ATTENUATION + LINEAR_ATTENUATION*d + QUADRATIC_ATTENUATION*d*d), 1);
-		}
+		finalColor += diffuseAndSpecular;
 	}
 	clamp(finalColor, 0.0, 1.0);
 	return finalColor;
@@ -961,9 +952,27 @@ void Renderer::createMaterialList(vector<Material>& faceMaterial, int firstFaceV
 void Renderer::createVertexColorList(vector<vec4>& faceVertices, vector<Material>& faceMaterial, vector<vec4>& faceVertexNormals,
 									 vector<vec4>& faceVertexColors, vec3& faceColor, int currentFace, int firstFaceVertex)
 {
-	//calculate vertex colors
-	if (shading == FLAT)
-	{
+	//lighting per vertex for non FLAT shading
+	if (geometry.vertexNormals != NULL && shading != FLAT){
+		//for every vertex
+		for (int v = 0; v < TRIANGLE_VERTICES; v++)
+		{
+			faceVertexNormals.push_back(normalTransform * geometry.vertexNormals[firstFaceVertex + v]);
+			//normals are in world coordinate, calculate color for vertices
+			Material vertexMat;
+			if (faceMaterial.size() == 1)
+			{
+				vertexMat = faceMaterial[0];
+			}
+			else
+			{
+				vertexMat = faceMaterial[v];
+			}
+			faceVertexColors.push_back(calculateColor(faceVertices[v], faceVertexNormals[v], vertexMat));
+		}
+	}
+	//calculate color for FLAT shading:
+	else{
 		//faceCenter = (v0+v1+v2)/3 hence center of mass for the current triangle
 		vec4 faceCenter = (faceVertices[0] + faceVertices[1] + faceVertices[2]) / 3;
 		//calculate the face normal and normalize it, the vector leaves the face's center of mass
@@ -980,26 +989,6 @@ void Renderer::createVertexColorList(vector<vec4>& faceVertices, vector<Material
 			faceCenterMat = (faceMaterial[0] + faceMaterial[1] + faceMaterial[2]) / 3;
 		}
 		faceColor = calculateColor(faceCenter, curFaceNormal, faceCenterMat);
-	}
-	//lighting per vertex
-	else if (geometry.vertexNormals != NULL)
-	{
-		//for every vertex
-		for (int v = 0; v < TRIANGLE_VERTICES; v++)
-		{
-			faceVertexNormals.push_back(normalTransform*geometry.vertexNormals[firstFaceVertex + v]);
-			//normals are in world coordinate, calculate color for vertices
-			Material vertexMat;
-			if (faceMaterial.size() == 1)
-			{
-				vertexMat = faceMaterial[0];
-			}
-			else
-			{
-				vertexMat = faceMaterial[v];
-			}
-			faceVertexColors.push_back(calculateColor(faceVertices[v], faceVertexNormals[v], vertexMat));
-		}
 	}
 }
 
@@ -1120,11 +1109,15 @@ void Renderer::putZ(int x, int y, GLfloat z)
 
 GLfloat triangleArea(vec2 v0, vec2 v1, vec2 v2)
 {
+	vec2 e1(v0 - v1);
+	vec2 e2(v2 - v1);
+	return abs(e1[0]*e2[1] - e1[1]*e2[0]) / 2;
+	/*
 	GLfloat edgeLength1 = length(v0 - v1);
 	GLfloat edgeLength2 = length(v0 - v2);
 	GLfloat edgeLength3 = length(v1 - v2);
 	GLfloat semiParameter = 0.5*(edgeLength1 + edgeLength2 + edgeLength3);
-	return sqrt(semiParameter*(semiParameter - edgeLength1)*(semiParameter - edgeLength2)*(semiParameter - edgeLength3));
+	return sqrt(semiParameter*(semiParameter - edgeLength1)*(semiParameter - edgeLength2)*(semiParameter - edgeLength3));*/
 }
 
 template<class T> 
@@ -1670,11 +1663,10 @@ void Renderer::drawPolygons()
 		//nothing to draw
 		return;
 	}
-	resetZbuffer();
 	Poly curTriangle;
 	//for every polygon of the current object
 	int size = polygons.size();
-	for (int curPoly = 0; curPoly < size; curPoly++)
+	for (int curPoly = 0; curPoly < size; ++curPoly)
 	{
 		curTriangle = polygons[curPoly];
 		//sort polygon's vertices in decreasing order by their y values
