@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Scene.h"
 #include "MeshModel.h"
+#include "UnitTest.h"
 #include <string>
 
 using namespace std;
@@ -234,10 +235,8 @@ GLfloat Camera::getFar(){
 }
 
 vec3 Camera::getWorldVector(vec3 in){
-	cout << "entered camera vec:" << in[0] << "," << in[1] << "," << in[2] << endl;
 	vec4 homogenous = in;
 	homogenous = cameraToWorld*homogenous;
-	cout << "entered camera vec:" << homogenous[0] << "," << homogenous[1] << "," << homogenous[2] << "," << homogenous[3] << endl;
 	if (homogenous[3] != 0)
 	{
 		return vec3(homogenous[0] / homogenous[3], homogenous[1] / homogenous[3], homogenous[2] / homogenous[3]);
@@ -359,11 +358,19 @@ void Scene::draw()
 
 void Scene::drawDemo()
 {
-	cout << "light position is:	x=" << lights[activeLight].position[0] << 
-		"	,y=" << lights[activeLight].position[1] <<
-		"	,z=" << lights[activeLight].position[2] << endl;
+	//mainOverallTest();
 	//m_renderer->SetDemoBuffer();
 	//m_renderer->SwapBuffers();
+	string type = lights[activeLight].type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
+
+	cout << "the active light is: " << endl;
+	cout << "type:       " << type << endl;
+	cout << "positione:  " << "(" << lights[activeLight].position[0] << ", " << lights[activeLight].position[1] << ", " << lights[activeLight].position[2] << ")" << endl;
+	cout << "direction:  " << "(" << lights[activeLight].direction[0] << ", " << lights[activeLight].direction[1] << ", " << lights[activeLight].direction[2] << ")" << endl;
+	cout << "ambient:    " << lights[activeLight].ambientIntensityScalar << endl;
+	cout << "diffuse:    " << lights[activeLight].diffuseIntensityScalar << endl;
+	cout << "specular:   " << lights[activeLight].specularIntensityScalar << endl;
+	cout << "color:      " << "(" << lights[activeLight].color[0] << ", " << lights[activeLight].color[1] << ", " << lights[activeLight].color[2] << ")" << endl;
 }
 
 void Scene::selectActiveModel(string name)
@@ -561,6 +568,15 @@ void Scene::addDefaultLight(){
 
 void Scene::addLight(Light l){
 	lights.push_back(l);
+	string type = lights[activeLight].type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
+	cout << "the following light was added: " << endl;
+	cout << "type:       " << type << endl;
+	cout << "positione:  " << "(" << l.position[0] << ", " << l.position[1] << ", " << l.position[2] << ")" << endl;
+	cout << "direction:  " << "(" << l.direction[0] << ", " << l.direction[1] << ", " << l.direction[2] << ")" << endl;
+	cout << "ambient:    " << l.ambientIntensityScalar << endl;
+	cout << "diffuse:    " << l.diffuseIntensityScalar << endl;
+	cout << "specular:   " << l.specularIntensityScalar << endl;
+	cout << "color:      " << "(" << l.color[0] << ", " << l.color[1] << ", " << l.color[2] << ")" << endl;
 }
 
 void Scene::setActiveLight(Light l){

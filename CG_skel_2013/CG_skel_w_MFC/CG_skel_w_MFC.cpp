@@ -539,9 +539,9 @@ void newMenuCallback(int id)
 		}else{ return; }
 		if (parameterIntensity.DoModal() == IDOK){
 			vec3 tmpV = parameterIntensity.GetXYZ();
-			l.ambientIntensity = tmpV[0];
-			l.diffuseIntensity = tmpV[1];
-			l.specularIntensity = tmpV[2];
+			l.ambientIntensityScalar = tmpV[0];
+			l.diffuseIntensityScalar = tmpV[1];
+			l.specularIntensityScalar = tmpV[2];
 		}else{ return; }
 		if (parameterColor.DoModal() == IDOK){
 			l.changeColor(parameterColor.GetXYZ());
@@ -763,6 +763,10 @@ void toolsMenuCallback(int id)
 	}
 }
 
+void shadingMenuCallback(int id){
+	scene->setShading(static_cast<shadingMethod>(id));
+}
+
 void toggleMenuCallback(int id)
 {
 	switch (id)
@@ -821,6 +825,10 @@ void initMenu()
 	glutAddMenuEntry("customized Light source", NEW_CUSTOM_LIGHT);
 	int selectMenu = glutCreateMenu(selectMenuCallback);
 	glutAddMenuEntry("Active model", ACTIVE_MODEL);
+	int shadingMenu = glutCreateMenu(shadingMenuCallback);
+	glutAddMenuEntry("Flat", FLAT);
+	glutAddMenuEntry("Gouraud", GOURAUD);
+	glutAddMenuEntry("Phong", PHONG);
 	int toggleMenu = glutCreateMenu(toggleMenuCallback);
 	glutAddMenuEntry("Face normals", FACE_NORMALS);
 	glutAddMenuEntry("Vertex normals", VERTEX_NORMALS);
@@ -836,6 +844,7 @@ void initMenu()
 	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
 	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
 	glutAddMenuEntry("set intensity for the current light", SET_LIGHT_INTENSITY);
+	glutAddSubMenu("Shading method", shadingMenu);
 	glutAddSubMenu("Toggle", toggleMenu);
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);
