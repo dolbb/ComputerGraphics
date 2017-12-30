@@ -73,6 +73,13 @@ struct Light
 		color = vec3(c[0] / 255, c[1] / 255, c[2] / 255);
 		updateIntensity();
 	}
+	//will determine (ambient,diffuse,specular) intensity:
+	void changeIntensity(vec3 v){
+		ambientIntensityScalar = v[0];
+		diffuseIntensityScalar = v[1];
+		specularIntensityScalar = v[2];
+		updateIntensity();
+	}
 
 	void changeIntensity(LightStat stat, GLfloat factor){
 		switch (stat){
@@ -167,6 +174,10 @@ struct Material
 		{
 			return (*this)*(1 / x);
 		}
+	}
+	void changeColor(vec3 c){
+		emissiveColor = ambientCoeff = 0.15 * c;
+		diffuseCoeff = c;
 	}
 };
 
@@ -367,7 +378,7 @@ private:
 	void projectVertices(vector<vec4>& faceVertices);
 	void clip(Poly& currentPolygon);
 	void addTriangleToPolygons(Poly& currentPolygon);
-	bool Renderer::isFaceVisible(int currentFace, int i);
+	bool isFaceVisible(int currentFace, int i);
 	/*	downSample orders the renderer to average the values of the aliasing buffer to every pixel.
 	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
 	*/

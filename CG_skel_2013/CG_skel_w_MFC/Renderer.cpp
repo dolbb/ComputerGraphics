@@ -5,17 +5,6 @@
 #include "GL\freeglut.h"
 #include <assert.h>
 
-
-//TESTING TIME
-#include <ctime>
-bool testedScanTriangle = false;
-bool testedDrawPolygons = false;
-int calculateCounter = 0;
-#define CALCULATE_ITERATIONS 10
-bool testedClipTriangle = false;
-bool testedClipLine = false;
-//
-
 #define INDEX(width,x,y,c) (x+y*width)*3+c
 #define ILLEGAL_INDEX -1
 #define ZINDEX(width,x,y) (x+y*width)
@@ -132,7 +121,7 @@ void Renderer::SetDemoBuffer()
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 1)] = 0;
 		m_outBuffer[INDEX(m_width, m_width / 2, i, 2)] = 0;
 	}*/
-	vec2 v(256, 256);
+	/*vec2 v(256, 256);
 	vec2 sX(100, 0);
 	vec2 bX(200, 0);
 	vec2 sY(0, 100);
@@ -156,7 +145,16 @@ void Renderer::SetDemoBuffer()
 	drawLine(v, v + bX + bY);
 	drawLine(v, v + bX - bY);
 	drawLine(v, v - bX + bY);
-	drawLine(v, v - bX - bY);
+	drawLine(v, v - bX - bY);*/
+	for (int i = 0; i < m_height; i++){
+		m_outBuffer[INDEX(m_width, i, 0, 0)] = 1;
+		m_outBuffer[INDEX(m_width, i, 1, 0)] = 1;
+		m_outBuffer[INDEX(m_width, i, 2, 0)] = 1;
+
+		m_outBuffer[INDEX(m_width, 0, i, 2)] = 1;
+		m_outBuffer[INDEX(m_width, 1, i, 2)] = 1;
+		m_outBuffer[INDEX(m_width, 2, i, 2)] = 1;
+	}
 }
 
 vec2 Renderer::transformToScreen(vec4 vertex)
@@ -771,12 +769,6 @@ clipResult Renderer::clipTriangle(Poly& polygon)
 
 void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 {
-
-	//TESTING TIME
-	time_t t = clock();
-	//
-
-	
 	if (vertexPositions == NULL) { return; }
 	mat4 objectToClipCoordinates = projection*cameraTransform*objectTransform;
 	vec4 triangleVertices[TRIANGLE_VERTICES];
@@ -828,10 +820,6 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 			}
 		}
 	}
-
-	//TESTING TIME
-	cout << "draw triangles time: " << (float)(clock() - t) / CLOCKS_PER_SEC << " seconds" << endl;
-	//
 }
 
 vec4 Renderer::calculateFaceNormal(vec4 faceCenter, vec3 normal)
@@ -860,27 +848,27 @@ void clamp(vec3& vector, GLfloat lowValue, GLfloat highValue)
 
 vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMaterial)
 {
-	vec3 finalColor = vec3(0, 0, 0);
-	vec4 V = normalize(eye - vertex);
-	vec4 N = normalize(normal);
-	vec4 L,R;
+	vec3 finalColor = vertexMaterial.emissiveColor;
+	vertex = (vertex[3] != 0) ? vertex / vertex[3] : vertex;
+	vec4 v = normalize(eye - vertex);
+	vec4 n = normalize(normal);
+	vec4 l,r;
 	vec3 ambient,diffuse,specular;
-	finalColor += vertexMaterial.emissiveColor;
 	//for every light in the scene
-	int lights = lightSources.size();
-	for (int i = 0; i < lights; i++)
+	int lightsNum = lightSources.size();
+	for (int i = 0; i < lightsNum; i++)
 	{
 		Light currentLight = lightSources[i];
-		L = currentLight.type == PARALLEL_LIGHT ? currentLight.direction : normalize(currentLight.position - vertex);
+		l = currentLight.type == PARALLEL_LIGHT ? -currentLight.direction : normalize(currentLight.position - vertex);
 		//calculate reflection vector
-		R = normalize(2 * (dot(L, N))*(N - L));
+		r = normalize(2 * (dot(l, n))*(n - l));
 		//ambient light contribution
-		ambient = vertexMaterial.ambientCoeff*currentLight.ambientIntensity;
+		ambient = vertexMaterial.ambientCoeff * currentLight.ambientIntensity;
 		//diffuse light contribution
-		diffuse = vertexMaterial.diffuseCoeff*currentLight.diffuseIntensity*(dot(L, N) > 0 ? dot(L, N) : 0);
+		diffuse = vertexMaterial.diffuseCoeff * currentLight.diffuseIntensity * (dot(l, n) > 0 ? dot(l, n) : 0);
 		//specular light contribution
-		GLfloat temp = (pow((dot(R, V) > 0 ? dot(R, V) : 0), vertexMaterial.alpha))*(dot(N, L) > 0);
-		specular = vertexMaterial.specularCoeff*currentLight.specularIntensity*temp;
+		GLfloat temp = (pow((dot(r, v) > 0 ? dot(r, v) : 0), vertexMaterial.alpha)) * (dot(n, l) > 0);
+		specular = vertexMaterial.specularCoeff * currentLight.specularIntensity * temp;
 		finalColor += ambient;
 		vec3 diffuseAndSpecular = diffuse + specular;
 		if (currentLight.type == PARALLEL_LIGHT)
@@ -891,7 +879,7 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 		else
 		{
 			GLfloat d = length(currentLight.position - vertex);
-			finalColor += (diffuseAndSpecular) / (CONSTANT_ATTENUATION + LINEAR_ATTENUATION*d + QUADRATIC_ATTENUATION*d*d);
+			finalColor += diffuseAndSpecular * min(1 / (CONSTANT_ATTENUATION + LINEAR_ATTENUATION*d + QUADRATIC_ATTENUATION*d*d), 1);
 		}
 	}
 	clamp(finalColor, 0.0, 1.0);
@@ -1158,7 +1146,7 @@ void setBarycentricCoeff(GLfloat barycentricCoeff[TRIANGLE_VERTICES], const Poly
 
 vec4 Renderer::shade(const Poly& currentPolygon, vec4 P, GLfloat barycentricCoeff[TRIANGLE_VERTICES], GLfloat faceArea)
 {
-	vec4 pointColor=(0,0,0,0);
+	vec4 pointColor;
 	if (shading == FLAT || currentPolygon.vertexNormals.empty())
 	{
 		//set face color
@@ -1377,11 +1365,6 @@ void calculateInvSlopes(const Poly& triangle, GLfloat invSlope[TRIANGLE_EDGES])
 
 void Renderer::scanTriangle(const Poly& triangle)
 {	
-	//TESTING TIME
-	time_t scanT = clock();
-	//
-
-
 	/**
 	*	invSlope will hold 1/m for m the slope of the i edge as:
 	*	first edge is {v0,v1} second edge is {v1,v2} third edge is {v0,v2}
@@ -1399,14 +1382,6 @@ void Renderer::scanTriangle(const Poly& triangle)
 	*	accordingly, v0 holds the maximum y value
 	*/
 	//int screenVertices = triangle.screenVertices.size();
-
-	//TESTING TIME
-	if (!testedScanTriangle)
-	{
-		cout << "test point 2: " << (float)(clock() - scanT) / CLOCKS_PER_SEC << endl;
-		scanT = clock();
-	}
-	//
 
 	//if (screenVertices < 3)
 	//{
@@ -1429,14 +1404,6 @@ void Renderer::scanTriangle(const Poly& triangle)
 	
 		area = triangleArea(triangle.screenVertices[0], triangle.screenVertices[1], triangle.screenVertices[2]);
 		//for every pixel in the triangle, calculate and select its color if it should be shown
-
-		//TESTING TIME
-		if (!testedScanTriangle && curY==(int)yMax)
-		{
-			cout << "test point 3: " << (float)(clock() - scanT) / CLOCKS_PER_SEC << endl;
-			scanT = clock();
-		}
-		//
 
 		for (int curX = xMin; curX <= xMax; curX++)
 		{
@@ -1471,15 +1438,6 @@ void Renderer::scanTriangle(const Poly& triangle)
 				plotPixel(curX, curY, screenVertexColor);
 			}
 		}
-
-		//TESTING TIME
-		if (!testedScanTriangle && curY == (int)yMax)
-		{
-			cout << "test point 4: " << (float)(clock() - scanT) / CLOCKS_PER_SEC << endl;
-			scanT = clock();
-			testedScanTriangle = true;
-		}
-		//
 	}
 }
 /**
@@ -1697,22 +1655,8 @@ void Renderer::drawPolygons()
 #endif
 void Renderer::drawPolygons()
 {
-
-	//TESTING TIME
-	time_t drawT = clock();
-	//
-
 	//calculate polygons for the current object
 	calculatePolygons();
-
-	//TESTING TIME
-	if (!testedDrawPolygons)
-	{
-		cout << "calculate time: " << (float)(clock() - drawT) / CLOCKS_PER_SEC << " seconds" << endl;
-		drawT = clock();
-	}
-	//
-
 	if (polygons.empty())
 	{
 		//nothing to draw
@@ -1730,15 +1674,6 @@ void Renderer::drawPolygons()
 		//scan triangle and draw the visible parts of it
 		scanTriangle(curTriangle);
 	}
-
-	//TESTING TIME
-	if (!testedDrawPolygons)
-	{
-		cout << "scanning time: " << (float)(clock() - drawT) / CLOCKS_PER_SEC << " seconds" << endl<<endl;
-	}
-	//
-
-
 #if 0
 		Poly originalTriangle = polygons[curPoly];
 		Poly curTriangle;

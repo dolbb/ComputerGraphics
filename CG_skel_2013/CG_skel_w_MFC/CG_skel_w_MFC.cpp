@@ -29,7 +29,7 @@ enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID, NEW_DEFAULT_LIGHT, NEW_CUSTOM_LIGHT };
 enum selectMenuIdentifier{ACTIVE_MODEL};
-enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_COLOR, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION };
+enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_COLOR, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION, SET_LIGHT_INTENSITY };
 enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE };
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
@@ -497,8 +497,6 @@ void newMenuCallback(int id)
 		}
 	}
 	switch (id){
-	case NEW_MODEL:	
-		break;
 	case NEW_CAMERA:
 		scene->createCamera();
 		break;
@@ -513,24 +511,24 @@ void newMenuCallback(int id)
 		string lightTypeString;
 		lightType type;
 		CCmdDialog dialogType("pleaes choose a type of light - paralel or point");
-		CXyzDialog parameterPos("please enter the light's position in the world - 3d coords");
-		CXyzDialog parameterDirection("please enter the light's direction in the world - 3d coords");
-		CXyzDialog parameterIntensity("please enter intensity [0,1]: x = ambient, y = diffuse, z = specular, ");
-		CXyzDialog parameterColor("please enter the light's color in RGB = xyz FORMAT [0,255]");
+		CXyzDialog parameterPos("enter light's position in camera - 3d coords");
+		CXyzDialog parameterDirection("enter light's direction in camera - 3d coords");
+		CXyzDialog parameterIntensity("enter intensity [0,1]: x = ambient, y = diffuse, z = specular, ");
+		CXyzDialog parameterColor("enter the light's color in RGB = xyz FORMAT [0,255]");
 
 		if (dialogType.DoModal() == IDOK){
 			lightTypeString = dialogType.GetCmd();
 			if (lightTypeString == "paralel"){
 				l.type = PARALLEL_LIGHT;
 				if (parameterDirection.DoModal() == IDOK){
-					l.direction = vec4(parameterDirection.GetXYZ());
+					l.direction = scene->cameraCoordsToWorld(parameterDirection.GetXYZ());
 				}
 				else{ return; }
 			}
 			else if (lightTypeString == "point"){
 				l.type = POINT_LIGHT;
 				if (parameterPos.DoModal() == IDOK){
-					l.position = vec4(parameterPos.GetXYZ());
+					l.position = scene->cameraCoordsToWorld(parameterPos.GetXYZ());
 				}
 				else{ return; }
 			}
@@ -551,6 +549,7 @@ void newMenuCallback(int id)
 		scene->addLight(l);
 		break;
 	}
+	redraw = true;
 }
 
 void selectMenuCallback(int id)
@@ -578,6 +577,7 @@ void selectMenuCallback(int id)
 			}
 		}
 		scene->selectActiveModel(chosenName);
+		redraw = true;
 	}
 }
 
@@ -732,7 +732,7 @@ void toolsMenuCallback(int id)
 			}
 		}
 		else{ return; }
-		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c / 255) : scene->changeLightColor(c);
+		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c) : scene->changeLightColor(c);
 		redraw = true;
 	}
 	if (id == SET_LIGHT_DIRECTION){
@@ -741,9 +741,24 @@ void toolsMenuCallback(int id)
 		if (dirMsg.DoModal() == IDOK)
 		{
 			d = dirMsg.GetXYZ();
-		}
-		else{ return; }
+		}else{ return; }
 		scene->changeLightDirection(d);
+		redraw = true;
+	}
+	if (id == SET_LIGHT_INTENSITY){
+		CXyzDialog dirMsg("please enter current light's intensity");
+		if (dirMsg.DoModal() == IDOK)
+		{
+			vec3 v = dirMsg.GetXYZ();
+			if (v[0] < 0 || v[0] > 1 ||
+				v[1] < 0 || v[1] > 1 ||
+				v[2] < 0 || v[2] > 1){
+				cout << "you have entered an invalid intensity" << endl;
+			}
+			else{
+				scene->changeLightIntensity(v);
+			}
+		}else{ return; }
 		redraw = true;
 	}
 }
@@ -820,6 +835,7 @@ void initMenu()
 	glutAddMenuEntry("set a new color for the model", SET_MODEL_COLOR);
 	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
 	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
+	glutAddMenuEntry("set intensity for the current light", SET_LIGHT_INTENSITY);
 	glutAddSubMenu("Toggle", toggleMenu);
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);

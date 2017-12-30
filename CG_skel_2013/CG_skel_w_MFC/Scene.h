@@ -184,11 +184,13 @@ public:
 	void addLight(Light l);
 	void switchActiveLight(int i);
 	lightType getLightType(); 
+	vec3 cameraCoordsToWorld(vec3 v);
 	void toggleActiveLightType();
 	void activeLightIncrementStats(LightStat s);
 	void activeLightDecrementStats(LightStat s);
 	void changeLightColor(vec3 c);
 	void changeLightDirection(vec3 dir);
 	void changeLightPosition(vec3 pos);
+	void changeLightIntensity(vec3 intensity);
 	void changeModelColor(vec3 c);
 };

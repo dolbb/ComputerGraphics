@@ -234,8 +234,10 @@ GLfloat Camera::getFar(){
 }
 
 vec3 Camera::getWorldVector(vec3 in){
+	cout << "entered camera vec:" << in[0] << "," << in[1] << "," << in[2] << endl;
 	vec4 homogenous = in;
 	homogenous = cameraToWorld*homogenous;
+	cout << "entered camera vec:" << homogenous[0] << "," << homogenous[1] << "," << homogenous[2] << "," << homogenous[3] << endl;
 	if (homogenous[3] != 0)
 	{
 		return vec3(homogenous[0] / homogenous[3], homogenous[1] / homogenous[3], homogenous[2] / homogenous[3]);
@@ -357,8 +359,11 @@ void Scene::draw()
 
 void Scene::drawDemo()
 {
-	m_renderer->SetDemoBuffer();
-	m_renderer->SwapBuffers();
+	cout << "light position is:	x=" << lights[activeLight].position[0] << 
+		"	,y=" << lights[activeLight].position[1] <<
+		"	,z=" << lights[activeLight].position[2] << endl;
+	//m_renderer->SetDemoBuffer();
+	//m_renderer->SwapBuffers();
 }
 
 void Scene::selectActiveModel(string name)
@@ -570,6 +575,7 @@ void Scene::switchActiveLight(int index){
 	}
 	else{
 		activeLight = index;
+		cout << "you have chosen light number " << index << ":" << endl;
 	}
 }
 void Scene::toggleActiveLightType(){
@@ -588,6 +594,10 @@ lightType Scene::getLightType(){
 	return lights[activeLight].type;
 }
 
+vec3 Scene::cameraCoordsToWorld(vec3 v){
+	return activeCamera->getWorldVector(v);
+}
+
 void Scene::changeLightColor(vec3 c){
 	lights[activeLight].changeColor(c);
 }
@@ -598,6 +608,10 @@ void Scene::changeLightDirection(vec3 dir){
 
 void Scene::changeLightPosition(vec3 pos){
 	lights[activeLight].position = activeCamera->getWorldVector(pos);
+}
+
+void Scene::changeLightIntensity(vec3 v){
+	lights[activeLight].changeIntensity(v);
 }
 
 void Scene::changeModelColor(vec3 c){
