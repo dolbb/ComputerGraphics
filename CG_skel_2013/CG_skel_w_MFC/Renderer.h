@@ -21,6 +21,7 @@ enum drawType{VERTEX, NORMAL};
 enum clipResult{ OUT_OF_BOUNDS,IN_BOUNDS, ENTER, EXIT, CLIPPED };
 enum shadingMethod{FLAT, GOURAUD, PHONG};
 enum lightType{POINT_LIGHT, PARALLEL_LIGHT};
+enum LightStat{ AMBIENT, DIFFUSE, SPECULAR };
 enum {R,G,B};
 
 struct Light
@@ -30,29 +31,62 @@ struct Light
 	vec4		position;
 	vec4		direction;
 	//ambientIntensity, diffuseIntensity and specularIntensity represent the intensity (ambient, diffuse and specular) for the light's color.
-	GLfloat     ambientIntensity;
-	GLfloat     diffuseIntensity;
-	GLfloat     specularIntensity;
+	GLfloat     ambientIntensityScalar;
+	GLfloat     diffuseIntensityScalar;
+	GLfloat     specularIntensityScalar;
+	vec3		ambientIntensity;
+	vec3		diffuseIntensity;
+	vec3		specularIntensity;
 	//the color is  [0,1] in RGB format:
 	vec3		 color;
 
-	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensity(0.1),
-		diffuseIntensity(0), specularIntensity(0), color(1,1,1){}
-	Light(const Light & l) : type(l.type), position(l.position), ambientIntensity(l.ambientIntensity),
-		diffuseIntensity(l.diffuseIntensity), specularIntensity(l.specularIntensity), color(l.color){}
-	Light(lightType chosenType, vec3 chosenPosition, vec3 chosenDirection, GLfloat chosenambientIntensity, GLfloat chosendiffuseIntensity, GLfloat chosenspecularIntensity, vec3 choseColor)
+	void updateIntensity(){
+		ambientIntensityScalar = (ambientIntensityScalar > 1) ? 1 : ambientIntensityScalar;
+		diffuseIntensityScalar = (diffuseIntensityScalar > 1) ? 1 : diffuseIntensityScalar;
+		specularIntensityScalar = (specularIntensityScalar > 1) ? 1 : specularIntensityScalar;
+
+		ambientIntensity = color*ambientIntensityScalar;
+		diffuseIntensity = color*diffuseIntensityScalar;
+		specularIntensity = color*specularIntensityScalar;
+	}
+	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensityScalar(0.1),
+		diffuseIntensityScalar(0), specularIntensityScalar(0), color(1, 1, 1){
+		updateIntensity();
+	}
+	Light(const Light & l) : type(l.type), position(l.position), ambientIntensityScalar(l.ambientIntensityScalar),
+		diffuseIntensityScalar(l.diffuseIntensityScalar), specularIntensityScalar(l.specularIntensityScalar), color(l.color){
+		updateIntensity();
+	}
+	Light(lightType chosenType, vec3 chosenPosition, vec3 chosenDirection, GLfloat ambientScalar, GLfloat diffuseScalar, GLfloat specularScalar, vec3 choseColor)
 	{
 		type = chosenType;
 		position = chosenPosition;
 		direction = chosenDirection;
-		ambientIntensity = chosenambientIntensity;
-		diffuseIntensity = chosendiffuseIntensity;
-		specularIntensity = chosenspecularIntensity;
+		ambientIntensityScalar = ambientScalar;
+		diffuseIntensityScalar = diffuseScalar;
+		specularIntensityScalar = specularScalar;
 		color = choseColor;
+		updateIntensity();
 	}
 	//get color in RGB [0,255] and save after converting to [0,1]:
 	void changeColor(vec3 c){
 		color = vec3(c[0] / 255, c[1] / 255, c[2] / 255);
+		updateIntensity();
+	}
+
+	void changeIntensity(LightStat stat, GLfloat factor){
+		switch (stat){
+		case AMBIENT:
+			ambientIntensityScalar *= factor;
+			break;
+		case DIFFUSE:
+			diffuseIntensityScalar *= factor;
+			break;
+		case SPECULAR:
+			specularIntensityScalar *= factor;
+			break;
+		}
+		updateIntensity();
 	}
 };
 

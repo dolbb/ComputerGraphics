@@ -576,64 +576,28 @@ void Scene::toggleActiveLightType(){
 	lights[activeLight].type = (lights[activeLight].type == POINT_LIGHT) ? PARALLEL_LIGHT : POINT_LIGHT;
 }
 
-void Scene::activeLightChangePosition(vec3 pos){
-	lights[activeLight].position = vec4(pos);
-}
-
 void Scene::activeLightIncrementStats(LightStat s){
-	float factor = 1.05;
-	switch (s){
-	case AMBIENT:	
-		if (lights[activeLight].ambientIntensity[0] * factor <= 1)
-			lights[activeLight].ambientIntensity[0] *= factor;
-		if (lights[activeLight].ambientIntensity[1] * factor <= 1)
-			lights[activeLight].ambientIntensity[1] *= factor;
-		if (lights[activeLight].ambientIntensity[2] * factor <= 1)
-			lights[activeLight].ambientIntensity[2] *= factor;
-		break;
-	case DIFFUSE:
-		if (lights[activeLight].diffuseIntensity[0] * factor <= 1)
-			lights[activeLight].diffuseIntensity[0] *= factor;
-		if (lights[activeLight].diffuseIntensity[1] * factor <= 1)
-			lights[activeLight].diffuseIntensity[1] *= factor;
-		if (lights[activeLight].diffuseIntensity[2] * factor <= 1)
-			lights[activeLight].diffuseIntensity[2] *= factor;
-		break;
-	case SPECULAR:
-		if (lights[activeLight].specularIntensity[0] * factor <= 1)
-			lights[activeLight].specularIntensity[0] *= factor;
-		if (lights[activeLight].specularIntensity[1] * factor <= 1)
-			lights[activeLight].specularIntensity[1] *= factor;
-		if (lights[activeLight].specularIntensity[2] * factor <= 1)
-			lights[activeLight].specularIntensity[2] *= factor;
-		break;
-	}
+	lights[activeLight].changeIntensity(s,1.05);
 }
 
 void Scene::activeLightDecrementStats(LightStat s){
-	float factor = 0.95;
-	switch (s){
-	case AMBIENT:
-		lights[activeLight].ambientIntensity *= factor;
-		break;
-	case DIFFUSE:
-		lights[activeLight].diffuseIntensity *= factor;
-		break;
-	case SPECULAR:
-		lights[activeLight].specularIntensity *= factor;
-		break;
-	}
+	lights[activeLight].changeIntensity(s,0.95);
+}
+
+lightType Scene::getLightType(){
+	return lights[activeLight].type;
 }
 
 void Scene::changeLightColor(vec3 c){
-	lights[activeLight].ambientIntensity *= c;
-	lights[activeLight].diffuseIntensity *= c;
-	lights[activeLight].specularIntensity *= c;
+	lights[activeLight].changeColor(c);
 }
 
-void Scene::changeLightDirection(vec3 c){
-	//TODO: implement
-	//lights[activeLight].direction = c;
+void Scene::changeLightDirection(vec3 dir){
+	lights[activeLight].direction = activeCamera->getWorldVector(dir);
+}
+
+void Scene::changeLightPosition(vec3 pos){
+	lights[activeLight].position = activeCamera->getWorldVector(pos);
 }
 
 void Scene::changeModelColor(vec3 c){

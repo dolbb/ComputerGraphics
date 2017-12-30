@@ -514,33 +514,39 @@ void newMenuCallback(int id)
 		lightType type;
 		CCmdDialog dialogType("pleaes choose a type of light - paralel or point");
 		CXyzDialog parameterPos("please enter the light's position in the world - 3d coords");
-		CXyzDialog parameterAmbient("please enter ambient INTENSITY(!) in RGB format [0,1] values");
-		CXyzDialog parameterdiffuse("same for diffuse intensity");
-		CXyzDialog parameterSpecular("same for specular intensity");
-		if (parameterPos.DoModal() == IDOK){
+		CXyzDialog parameterDirection("please enter the light's direction in the world - 3d coords");
+		CXyzDialog parameterIntensity("please enter intensity [0,1]: x = ambient, y = diffuse, z = specular, ");
+		CXyzDialog parameterColor("please enter the light's color in RGB = xyz FORMAT [0,255]");
+
+		if (dialogType.DoModal() == IDOK){
 			lightTypeString = dialogType.GetCmd();
 			if (lightTypeString == "paralel"){
 				l.type = PARALLEL_LIGHT;
+				if (parameterDirection.DoModal() == IDOK){
+					l.direction = vec4(parameterDirection.GetXYZ());
+				}
+				else{ return; }
 			}
 			else if (lightTypeString == "point"){
 				l.type = POINT_LIGHT;
+				if (parameterPos.DoModal() == IDOK){
+					l.position = vec4(parameterPos.GetXYZ());
+				}
+				else{ return; }
 			}
 			else{
 				cout << "invalid light type" << endl;
 				return;
 			}
 		}else{ return; }
-		if (parameterPos.DoModal() == IDOK){
-			l.position = vec4(parameterPos.GetXYZ());
+		if (parameterIntensity.DoModal() == IDOK){
+			vec3 tmpV = parameterIntensity.GetXYZ();
+			l.ambientIntensity = tmpV[0];
+			l.diffuseIntensity = tmpV[1];
+			l.specularIntensity = tmpV[2];
 		}else{ return; }
-		if (parameterAmbient.DoModal() == IDOK){
-			l.ambientIntensity = parameterAmbient.GetXYZ();
-		}else{ return; }
-		if (parameterdiffuse.DoModal() == IDOK){
-			l.diffuseIntensity = parameterdiffuse.GetXYZ();
-		}else{ return; }
-		if (parameterSpecular.DoModal() == IDOK){
-			l.specularIntensity = parameterSpecular.GetXYZ();
+		if (parameterColor.DoModal() == IDOK){
+			l.changeColor(parameterColor.GetXYZ());
 		}else{ return; }
 		scene->addLight(l);
 		break;
@@ -726,7 +732,7 @@ void toolsMenuCallback(int id)
 			}
 		}
 		else{ return; }
-		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c / 255) : scene->changeLightColor(c / 255);
+		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c / 255) : scene->changeLightColor(c);
 		redraw = true;
 	}
 	if (id == SET_LIGHT_DIRECTION){
@@ -771,6 +777,20 @@ void toggleMenuCallback(int id)
 		break;
 	
 	case ACTIVE_LIGHT_TYPE:
+		CXyzDialog parameterPos("to change to POINT_LIGHT - enter light's position in camera - 3d coords");
+		CXyzDialog parameterDirection("to change to PARALLEL_LIGHT - enter light's direction in camera - 3d coords");
+		if (scene->getLightType() == POINT_LIGHT){
+			if (parameterPos.DoModal() == IDOK){
+				scene->changeLightDirection(parameterPos.GetXYZ());
+			}
+			else{ return; }
+		}
+		else{
+			if (parameterPos.DoModal() == IDOK){
+				scene->changeLightPosition(parameterPos.GetXYZ());
+			}
+			else{ return; }
+		}
 		scene->toggleActiveLightType();
 		break;
 	}

@@ -871,7 +871,7 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 	for (int i = 0; i < lights; i++)
 	{
 		Light currentLight = lightSources[i];
-		L = normalize(currentLight.position - vertex);
+		L = currentLight.type == PARALLEL_LIGHT ? currentLight.direction : normalize(currentLight.position - vertex);
 		//calculate reflection vector
 		R = normalize(2 * (dot(L, N))*(N - L));
 		//ambient light contribution
