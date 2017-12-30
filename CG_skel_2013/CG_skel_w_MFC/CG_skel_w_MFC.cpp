@@ -75,8 +75,8 @@ scalingAxis currentAxis=uniformT;
 cameraDirection direction = nonElevated;
 ProjectionParams projection;
 
-//	idle flag signalling if a move has been made by the user and a redraw is needed
-bool redraw = true;
+//	idle flags signalling if a move has been made by the user and a redraw is needed
+bool redraw = false;
 
 //----------------------------------------------------------------------------
 // Callbacks
