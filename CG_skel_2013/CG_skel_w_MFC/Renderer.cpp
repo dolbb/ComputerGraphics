@@ -789,6 +789,7 @@ void Renderer::drawTriangles(vec3* vertexPositions, int vertexPositionsSize)
 		 *	the vertices are now in homogenous clip coordinates, clip and draw lines that are partially or fully in the view volume.
 		 *	try to draw lines between the vertices: v0->v1, v0->v1, v1->v2
 		 */
+		
 
 		//for vertices v0, v1
 		for (int start = 0; start < TRIANGLE_VERTICES - 1; start++)
@@ -1728,8 +1729,6 @@ void Renderer::plotPixel(int x, int y, vec3 RGB)
 		m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x, y, G)] = RGB[G];
 		m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x, y, B)] = RGB[B];
 	}
-	
-	
 }
 
 void Renderer::toggleAntiAliasing()
@@ -1791,14 +1790,7 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 		}
 	}
 }
-/**
-*	calculateIndex gets x,y,c,width and factor and calculates the index corresponding to the x,y,c destination in the buffer array
-*	according to the width.
-*/
-int calculateIndex(int x, int y, int c, int factor, int width)
-{
-	return (factor*x + factor*y*width) * 3 + c;
-}
+
 /**
 *	downSampleBuffer gets 2 buffer array, their width and height and a scaling factor.
 *	the source array's size is: targetW*factor * targetH*factor.
@@ -1812,40 +1804,45 @@ void downSampleBuffer(float* target, int targetW, int targetH, float* source, in
 	{
 		for (int y = 0; y<targetH; y++)
 		{
-			//calculate the index of the top left pixel corresponding to the factor*factor enlarged pixel in the source array
-			int iteratorR = calculateIndex(x, y, R, factor, sourceW);
-			int iteratorG = calculateIndex(x, y, G, factor, sourceW);
-			int iteratorB = calculateIndex(x, y, B, factor, sourceW);
+			//calculate the index of the bottom left pixel corresponding to the factor*factor enlarged pixel in the source array
+			int iteratorR = INDEX(sourceW, x*factor, y*factor, R);
+			int iteratorG = iteratorR + 1;
+			int iteratorB = iteratorR + 2;
 			//average color will hold the rgb average value of the corresponding larger square
 			vec3 averageColor;
 			//for every row in the enlarged pixel
-			for (int i = 0; i<factor; i++, iteratorR += sourceW, iteratorG += sourceW, iteratorB += sourceW)
+			for (int i = 0; i<factor; i++)
 			{
 				//for every column in the enlarged pixel
 				for (int j = 0; j<factor; j++)
 				{
-					averageColor[R] += source[iteratorR + j];
-					averageColor[G] += source[iteratorG + j];
-					averageColor[B] += source[iteratorB + j];
+					averageColor[R] += source[iteratorR + j*3];
+					averageColor[G] += source[iteratorG + j*3];
+					averageColor[B] += source[iteratorB + j*3];
 				}
+				iteratorR += sourceW*3;
+				iteratorG += sourceW*3;
+				iteratorB += sourceW*3;
 			}
 			averageColor /= factor*factor;
-			target[calculateIndex(x, y, R, 1, targetW)] = averageColor[R];
-			target[calculateIndex(x, y, G, 1, targetW)] = averageColor[G];
-			target[calculateIndex(x, y, B, 1, targetW)] = averageColor[B];
+			target[INDEX(targetW,x,y,R)] = averageColor[R];
+			target[INDEX(targetW, x, y, G)] = averageColor[G];
+			target[INDEX(targetW, x, y, B)] = averageColor[B];
 		}
 	}
 }
+
 /**
 *	kernelAverageColor gets a buffer, its size and a pixel's index (x,y).
 *	returns the average of colors of all pixels in a 5X5 cube around the given pixel
 */
 vec3 kernelAverageColor(float* buffer, int width, int height, int x, int y)
 {
+	int index = INDEX(width, x, y, R, 1);
 	//starting pixel's rgb values
-	GLfloat pixelR = buffer[calculateIndex(width, x, y, R, 1)];
-	GLfloat pixelG = buffer[calculateIndex(width, x, y, G, 1)];
-	GLfloat pixelB = buffer[calculateIndex(width, x, y, B, 1)];
+	GLfloat pixelR = buffer[index];
+	GLfloat pixelG = buffer[index+1];
+	GLfloat pixelB = buffer[index+2];
 	
 	GLfloat curR, curG, curB;
 	//initialize the average color to the value of the first pixel
@@ -1864,9 +1861,10 @@ vec3 kernelAverageColor(float* buffer, int width, int height, int x, int y)
 			else
 			{
 				neighboursNum++;
-				curR = buffer[calculateIndex(width, x + i, y + j, R, 1)];
-				curG = buffer[calculateIndex(width, x + i, y + j, G, 1)];
-				curB = buffer[calculateIndex(width, x + i, y + j, B, 1)];
+				int curIndex = INDEX(width, x + i, y + j, R, 1);
+				curR = buffer[curIndex];
+				curG = buffer[curIndex+1];
+				curB = buffer[curIndex+2];
 				averageColor[R] += curR;
 				averageColor[G] += curG;
 				averageColor[B] += curB;
@@ -1888,9 +1886,10 @@ void blur(float* buffer, int width, int height)
 		for (int y = 0; y<height; y++)
 		{
 			vec3 averageColor = kernelAverageColor(buffer, width, height, x, y);
-			buffer[calculateIndex(x, y, R, 1, width)] = averageColor[R];
-			buffer[calculateIndex(x, y, G, 1, width)] = averageColor[G];
-			buffer[calculateIndex(x, y, B, 1, width)] = averageColor[B];
+			int index = INDEX(width,x,y,R);
+			buffer[index] = averageColor[R];
+			buffer[index+1] = averageColor[G];
+			buffer[index+2] = averageColor[B];
 		}
 	}
 }
@@ -1989,16 +1988,28 @@ void Renderer::SwapBuffers()
 
 void Renderer::refresh()
 {
-	for (int i = 0; i < m_width; i++)
+	if (supersamplingAA)
 	{
-		for (int j = 0; j < m_height; j++)
+		for (int i = 0; i < m_width*ANTI_ALIASING_FACTOR; i++)
 		{
-			m_outBuffer[INDEX(m_width, i, j, R)] = 0;
-			m_outBuffer[INDEX(m_width, i, j, G)] = 0;
-			m_outBuffer[INDEX(m_width, i, j, B)] = 0;
-			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, R)] = 0;
-			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, G)] = 0;
-			m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, B)] = 0;
+			for (int j = 0; j < m_height*ANTI_ALIASING_FACTOR; j++)
+			{
+				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, R)] = 0;
+				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, G)] = 0;
+				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, B)] = 0;
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < m_width; i++)
+		{
+			for (int j = 0; j < m_height; j++)
+			{
+				m_outBuffer[INDEX(m_width, i, j, R)] = 0;
+				m_outBuffer[INDEX(m_width, i, j, G)] = 0;
+				m_outBuffer[INDEX(m_width, i, j, B)] = 0;
+			}
 		}
 	}
 }
