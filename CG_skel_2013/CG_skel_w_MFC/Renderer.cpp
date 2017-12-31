@@ -1441,7 +1441,7 @@ void Renderer::scanTriangle(const Poly& triangle)
 					if (fogEffect)
 					{
 						//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
-						GLfloat fogFactor = (curZ + 1) / 2;
+						GLfloat fogFactor = 1-((curZ + 1) / 2);
 						vec4 fogVertexColor(fogColor);
 						vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
 						screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
