@@ -14,14 +14,14 @@
 //used for dimming light effect as a function of distance from it
 #define CONSTANT_ATTENUATION 0
 #define LINEAR_ATTENUATION 1
-#define QUADRATIC_ATTENUATION 0
+#define QUADRATIC_ATTENUATION 1
 //gaussian blur 5X5 kernel neighbours number in each direction
 #define NEIGHBOURS 2
 
 enum{w=3};
 enum clipResTable{CLIPPING_PLANE,START_RES, END_RES};
 
-Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), supersamplingAA(false), fogEffect(false), fogColor(0, 0, 0)
+Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), supersamplingAA(false), fogEffect(false), fogColor(0, 0, 0), blurEffect(false)
 {
 	InitOpenGLRendering();
 	CreateBuffers(DEFAULT_SCREEN_X, DEFAULT_SCREEN_Y);
@@ -874,7 +874,23 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 		specular = vertexMaterial.specularCoeff * currentLight.specularIntensity * temp;
 		finalColor += ambient;
 		vec3 diffuseAndSpecular = diffuse + specular;
-		finalColor += diffuseAndSpecular;
+		if (currentLight.type == POINT_LIGHT)
+		{
+			GLfloat d = length(currentLight.position - vertex);
+			if (d < DBL_EPSILON)
+			{
+				finalColor += diffuseAndSpecular;
+			}
+			else
+			{
+				finalColor += diffuseAndSpecular * min((1 / (CONSTANT_ATTENUATION + LINEAR_ATTENUATION*d + QUADRATIC_ATTENUATION*d*d)), 1);
+			}
+			
+		}
+		else
+		{
+			finalColor += diffuseAndSpecular;
+		}
 	}
 	clamp(finalColor, 0.0, 1.0);
 	return finalColor;
@@ -1769,7 +1785,7 @@ void Renderer::toggleBloomMode()
 
 void Renderer::toggleBlurMode()
 {
-	//TODO: IMPLEMENT
+	blurEffect = !blurEffect;
 }
 
 void Renderer::drawLine(const vec2& v0, const vec2& v1)
@@ -1857,7 +1873,7 @@ void downSampleBuffer(float* target, int targetW, int targetH, float* source, in
 */
 vec3 kernelAverageColor(float* buffer, int width, int height, int x, int y)
 {
-	int index = INDEX(width, x, y, R, 1);
+	int index = INDEX(width, x, y, R);
 	//starting pixel's rgb values
 	GLfloat pixelR = buffer[index];
 	GLfloat pixelG = buffer[index+1];
@@ -1880,7 +1896,7 @@ vec3 kernelAverageColor(float* buffer, int width, int height, int x, int y)
 			else
 			{
 				neighboursNum++;
-				int curIndex = INDEX(width, x + i, y + j, R, 1);
+				int curIndex = INDEX(width, (x + i), (y + j), R);
 				curR = buffer[curIndex];
 				curG = buffer[curIndex+1];
 				curB = buffer[curIndex+2];
@@ -1906,7 +1922,7 @@ void blur(float* buffer, int width, int height)
 		{
 			vec3 averageColor = kernelAverageColor(buffer, width, height, x, y);
 			int index = INDEX(width,x,y,R);
-			buffer[index] = averageColor[R];
+			buffer[index]	= averageColor[R];
 			buffer[index+1] = averageColor[G];
 			buffer[index+2] = averageColor[B];
 		}
@@ -1987,6 +2003,10 @@ void Renderer::SwapBuffers()
 	if (supersamplingAA)
 	{
 		downSample();
+	}
+	if (blurEffect)
+	{
+		blur(m_outBuffer, m_width, m_height);
 	}
 	int a = glGetError();
 	glActiveTexture(GL_TEXTURE0);

@@ -125,7 +125,7 @@ struct Material
 	GLfloat	alpha;
 
 	//default Material is polished silver
-	Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.9), alpha(5){}
+	Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.9), alpha(10){}
 	Material(vec3 chosenEmissive, vec3 chosenAmbient, vec3 chosenDiffuse, vec3 chosenSpecular, GLfloat chosenAlpha)
 	{
 		emissiveColor		= chosenEmissive;
@@ -189,10 +189,12 @@ struct Material
 			return (*this)*(1 / x);
 		}
 	}
+	
 	void changeColor(vec3 c){
-		emissiveColor = ambientCoeff = 0.15 * c;
+		emissiveColor = ambientCoeff = 0.05 * c;
 		diffuseCoeff = c;
 	}
+	
 	void changeColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
 		emissiveColor = emissive;
 		ambientCoeff = ambient;
@@ -380,6 +382,7 @@ private:
 	vec3				fogColor;
 	bool				supersamplingAA;
 	bool				fogEffect;
+	bool				blurEffect;
 	
 	/****************************************************************
 						PRIVATE RENDERER FUNCTIONS
