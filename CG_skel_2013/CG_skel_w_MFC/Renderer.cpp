@@ -1416,27 +1416,48 @@ void Renderer::scanTriangle(const Poly& triangle)
 			//the current pixel should be drawn
 			if (curX >= m_width || curY >= m_height || curX < 0 || curY < 0)
 			{
-				continue;
+				if (curX >= m_width*ANTI_ALIASING_FACTOR || curY >= m_height*ANTI_ALIASING_FACTOR || curX < 0 || curY < 0){
+					continue;
+				}
+				else{
+					vec4 vertexColor = shade(triangle, vec4(vec3(p, curZ)), barycentricCoeff, area);
+					vec3 screenVertexColor;
+					if (fogEffect)
+					{
+						//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
+						GLfloat fogFactor = (curZ + 1) / 2;
+						vec4 fogVertexColor(fogColor);
+						vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
+						screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
+					}
+					else
+					{
+						screenVertexColor = vec3(vertexColor[R], vertexColor[G], vertexColor[B]);
+					}
+					plotPixel(curX, curY, screenVertexColor);
+				}
 			}
-			if (curZ > m_zbuffer[ZINDEX(m_width, curX, curY)])
-			{
-				//set the current z value to the cur x,y position in the z buffer
-				putZ(curX, curY, curZ);
-				vec4 vertexColor = shade(triangle, vec4(vec3(p, curZ)), barycentricCoeff, area);
-				vec3 screenVertexColor;
-				if (fogEffect)
+			else{
+				if (curZ > m_zbuffer[ZINDEX(m_width, curX, curY)])
 				{
-					//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
-					GLfloat fogFactor = (curZ + 1) / 2;
-					vec4 fogVertexColor(fogColor);
-					vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
-					screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
+					//set the current z value to the cur x,y position in the z buffer
+					putZ(curX, curY, curZ);
+					vec4 vertexColor = shade(triangle, vec4(vec3(p, curZ)), barycentricCoeff, area);
+					vec3 screenVertexColor;
+					if (fogEffect)
+					{
+						//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
+						GLfloat fogFactor = (curZ + 1) / 2;
+						vec4 fogVertexColor(fogColor);
+						vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
+						screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
+					}
+					else
+					{
+						screenVertexColor = vec3(vertexColor[R], vertexColor[G], vertexColor[B]);
+					}
+					plotPixel(curX, curY, screenVertexColor);
 				}
-				else
-				{
-					screenVertexColor = vec3(vertexColor[R], vertexColor[G], vertexColor[B]);
-				}
-				plotPixel(curX, curY, screenVertexColor);
 			}
 		}
 	}
@@ -1799,30 +1820,28 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 */
 void downSampleBuffer(float* target, int targetW, int targetH, float* source, int sourceW, int sourceH, int factor)
 {
+	//average color will hold the rgb average value of the corresponding larger square
+	vec3 averageColor;
+	int sourceIterator;
+
 	//for every pixel in the target array
 	for (int x = 0; x < targetW; x++)
 	{
 		for (int y = 0; y<targetH; y++)
 		{
 			//calculate the index of the bottom left pixel corresponding to the factor*factor enlarged pixel in the source array
-			int iteratorR = INDEX(sourceW, x*factor, y*factor, R);
-			int iteratorG = iteratorR + 1;
-			int iteratorB = iteratorR + 2;
-			//average color will hold the rgb average value of the corresponding larger square
-			vec3 averageColor;
+			sourceIterator = INDEX(sourceW, x*factor, y*factor, R);
 			//for every row in the enlarged pixel
-			for (int i = 0; i<factor; i++)
+			for (int i = 0; i < factor; i++)
 			{
 				//for every column in the enlarged pixel
 				for (int j = 0; j<factor; j++)
 				{
-					averageColor[R] += source[iteratorR + j*3];
-					averageColor[G] += source[iteratorG + j*3];
-					averageColor[B] += source[iteratorB + j*3];
+					averageColor[R] += source[sourceIterator + j * 3 + R];
+					averageColor[G] += source[sourceIterator + j * 3 + G];
+					averageColor[B] += source[sourceIterator + j * 3 + B];
 				}
-				iteratorR += sourceW*3;
-				iteratorG += sourceW*3;
-				iteratorB += sourceW*3;
+				sourceIterator += sourceW * 3;
 			}
 			averageColor /= factor*factor;
 			target[INDEX(targetW,x,y,R)] = averageColor[R];
