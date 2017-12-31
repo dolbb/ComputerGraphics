@@ -197,4 +197,6 @@ public:
 	void changeLightIntensity(vec3 intensity);
 	void changeModelColor(vec3 c);
 	bool toggleBackFaceFlag();
+	void setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);
+	void printActiveModelMaterial();
 };

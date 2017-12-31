@@ -144,6 +144,8 @@ public:
 	/*setMaterial can be used for uniform materials only*/
 	void setMaterial(Material m);
 	void setUniformColor(vec3 c);
+	void setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);
+	void printUniformMateral();
 	void setDisplayMode(DisplayMode m);
 	DisplayMode getDisplayMode();
 };

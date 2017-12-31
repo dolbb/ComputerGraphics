@@ -644,3 +644,13 @@ bool Scene::toggleBackFaceFlag(){
 	showBackFaceFlag = !showBackFaceFlag;
 	return showBackFaceFlag;
 }
+
+void Scene::setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
+	if (models.empty()){ return; }
+	changeToMeshModel(activeModel)->setUniformColor(emissive, ambient, diffuse, specular);
+}
+
+void Scene::printActiveModelMaterial(){
+	if (models.empty()){ return; }
+	changeToMeshModel(activeModel)->printUniformMateral();
+}

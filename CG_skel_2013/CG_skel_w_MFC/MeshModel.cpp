@@ -414,7 +414,19 @@ void MeshModel::setUniformColor(vec3 c){
 	vec3 color = vec3(c[0] / 255, c[1] / 255, c[2] / 255);
 	for (int i = 0; i < materials.size(); ++i){
 		materials[i].changeColor(color);
-	}	
+	}
+}
+
+void MeshModel::setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
+	for (int i = 0; i < materials.size(); ++i){
+		materials[i].changeColor(emissive, ambient, diffuse, specular);
+	}
+}
+
+void MeshModel::printUniformMateral(){
+	if (materials.size() == 1){
+		materials[0].print();
+	}
 }
 
 void MeshModel::setDisplayMode(DisplayMode m){

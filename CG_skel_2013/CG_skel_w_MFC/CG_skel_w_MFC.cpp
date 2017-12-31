@@ -727,23 +727,27 @@ void setMenuCallback(int id){
 		vec3 emissive;
 		vec3 ambient;
 		vec3 diffuse;
+		vec3 specular;
 
 		CXyzDialog emissiveMsg("please enter [0,1] values for emissive");
 		CXyzDialog ambientMsg("please enter [0,1] values for ambient");
 		CXyzDialog diffuseMsg("please enter [0,1] values for diffuse");
+		CXyzDialog specularMsg("please enter [0,1] values for specular");
 
 		if (emissiveMsg.DoModal() == IDOK){emissive = emissiveMsg.GetXYZ();}else{return;}
 		if (ambientMsg.DoModal() == IDOK){ambient = ambientMsg.GetXYZ();}else{return;}
 		if (diffuseMsg.DoModal() == IDOK){diffuse = diffuseMsg.GetXYZ();}else{return;}
+		if (specularMsg.DoModal() == IDOK){ specular = specularMsg.GetXYZ();}else{return;}
 
 		for (int i = 0; i < 3; ++i){
-			if (emissive[i] < 0 || emissive[i]	> 1){ cout << "invalid arguments" << endl; return; }
-			if (ambient[i]	< 0	|| ambient[i]	> 1){ cout << "invalid arguments" << endl; return; }
-			if (diffuse[i]	< 0	|| diffuse[i]	> 1){ cout << "invalid arguments" << endl; return; }
+			if (emissive[i] < 0 || emissive[i]	> 1){ cout << "invalid emissive arguments  = " << emissive << endl; return; }
+			if (ambient[i]	< 0 || ambient[i]	> 1){ cout << "invalid ambient arguments   = " << ambient << endl; return; }
+			if (diffuse[i]	< 0 || diffuse[i]	> 1){ cout << "invalid diffuse arguments   = " << diffuse << endl; return; }
+			if (specular[i]	< 0 || specular[i]	> 1){ cout << "invalid specular arguments  = " << specular << endl; return; }
 		}
-		//scene->setActiveModelMaterial(emissive, ambient, diffuse);
+		scene->setActiveModelMaterial(emissive, ambient, diffuse, specular);
 		cout << "new uniform material for active model is:" << endl;
-		//scene->printActiveModelMaterial();
+		scene->printActiveModelMaterial();
 	}
 	if (id == SET_MODEL_GENERAL_COLOR || id == SET_LIGHT_COLOR){
 		vec3 c;
@@ -881,18 +885,22 @@ void toggleMenuCallback(int id)
 	case ANTI_ALIASING:
 		scene->toggleAliasingMode();
 		cout << "anti-aliasing toggled" << endl;
+		redraw = true;
 		break;
 	case FOG:
 		scene->toggleFogMode();
 		cout << "fog toggled" << endl;
+		redraw = true;
 		break;
 	case BLOOM:
 		scene->toggleBloomMode();
 		cout << "bloom toggled" << endl;
+		redraw = true;
 		break;
 	case BLUR:
 		scene->toggleBlurMode();
 		cout << "blur toggled" << endl;
+		redraw = true;
 		break;
 	}
 }
