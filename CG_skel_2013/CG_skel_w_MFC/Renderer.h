@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <iostream>
+#include <string>
 #include "CG_skel_w_MFC.h"
 #include "vec.h"
 #include "mat.h"
@@ -49,8 +51,8 @@ struct Light
 		diffuseIntensity = color*diffuseIntensityScalar;
 		specularIntensity = color*specularIntensityScalar;
 	}
-	Light() : type(POINT_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensityScalar(0.25),
-		diffuseIntensityScalar(0.6), specularIntensityScalar(1), color(1, 1, 1){
+	Light() : type(PARALLEL_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensityScalar(0.25),
+		diffuseIntensityScalar(0.5), specularIntensityScalar(0.8), color(1, 1, 1){
 		updateIntensity();
 	}
 	Light(const Light & l) : type(l.type), position(l.position), direction(l.direction), ambientIntensityScalar(l.ambientIntensityScalar),
@@ -80,7 +82,6 @@ struct Light
 		specularIntensityScalar = v[2];
 		updateIntensity();
 	}
-
 	void changeIntensity(LightStat stat, GLfloat factor){
 		switch (stat){
 		case AMBIENT:
@@ -94,6 +95,19 @@ struct Light
 			break;
 		}
 		updateIntensity();
+	}
+	void print()
+	{
+		string sType = type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
+
+		cout << "the active light is: " << endl;
+		cout << "type:       " << sType << endl;
+		cout << "positione:  " << "(" << position[0] << ", " << position[1] << ", " << position[2] << ")" << endl;
+		cout << "direction:  " << "(" << direction[0] << ", " << direction[1] << ", " << direction[2] << ")" << endl;
+		cout << "ambient:    " << ambientIntensityScalar << endl;
+		cout << "diffuse:    " << diffuseIntensityScalar << endl;
+		cout << "specular:   " << specularIntensityScalar << endl;
+		cout << "color:      " << "(" << color[0] << ", " << color[1] << ", " << color[2] << ")" << endl;
 	}
 };
 
@@ -332,6 +346,11 @@ private:
 	float *m_outBuffer; // 3*width*height
 	float *m_zbuffer; // width*height
 	float *m_aliasingBuffer;//3*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR*width*height
+	/*
+	float *m_halfSizedBuffer;//3*0.5*0.5*width*height
+	float *m_quarterSizedBuffer;//3*0.25*0.25*width*height
+	float *m_eigthSizedBuffer;//3*0.125*0.125*width*height
+	*/
 	int m_width, m_height;
 
 	mat4 cameraTransform;

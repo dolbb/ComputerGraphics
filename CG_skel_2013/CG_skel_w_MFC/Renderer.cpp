@@ -15,6 +15,8 @@
 #define CONSTANT_ATTENUATION 0
 #define LINEAR_ATTENUATION 1
 #define QUADRATIC_ATTENUATION 0
+//gaussian blur 5X5 kernel neighbours number in each direction
+#define NEIGHBOURS 2
 
 enum{w=3};
 enum clipResTable{CLIPPING_PLANE,START_RES, END_RES};
@@ -865,9 +867,9 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 		//ambient light contribution
 		ambient = vertexMaterial.ambientCoeff * currentLight.ambientIntensity;
 		//diffuse light contribution
-		diffuse = vertexMaterial.diffuseCoeff * currentLight.diffuseIntensity * (dot(l, n) > 0 ? dot(l, n) : 0);
+		diffuse = vertexMaterial.diffuseCoeff * currentLight.diffuseIntensity * dot(l, n)/*(> 0 ? dot(l, n) : 0)*/;
 		//specular light contribution
-		GLfloat temp = (pow((dot(r, v) > 0 ? dot(r, v) : 0), vertexMaterial.alpha)) * (dot(n, l) > 0);
+		GLfloat temp = (pow((dot(r, v) > 0 ? dot(r, v) : 0), vertexMaterial.alpha)) /* * (dot(n, l) > 0)*/;
 		specular = vertexMaterial.specularCoeff * currentLight.specularIntensity * temp;
 		finalColor += ambient;
 		vec3 diffuseAndSpecular = diffuse + specular;
@@ -1054,14 +1056,12 @@ void Renderer::clip(Poly& currentPolygon)
 
 bool Renderer::isFaceVisible(int currentFace, int i)
 {
-	//back face culling
 	vec3 n = normalTransform3d*geometry.faceNormals[currentFace];
 	vec4 v0 = objectTransform*geometry.vertices[i];
 	vec4 v1 = objectTransform*geometry.vertices[i + 1];
 	vec4 v2 = objectTransform*geometry.vertices[i + 2];
 	vec4 faceCenter = (v0 + v1 + v2) / 3;
 	vec4 v = faceCenter - eye;
-	vec3 vN = vec3(v[X] / v[w], v[Y] / v[w], v[Z] / v[w]);
 	return dot(v, n) >= 0;
 }
 
@@ -1078,7 +1078,7 @@ void Renderer::calculatePolygons()
 	//for each face
 	for (int i = 0, currentFace=0; i < size; i+=TRIANGLE_VERTICES, currentFace++)
 	{
-		
+		//back face culling
 		if (!isFaceVisible(currentFace,i))
 		{
 			continue;
@@ -1782,6 +1782,109 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 		}
 	}
 }
+/**
+*	calculateIndex gets x,y,c,width and factor and calculates the index corresponding to the x,y,c destination in the buffer array
+*	according to the width.
+*/
+int calculateIndex(int x, int y, int c, int factor, int width)
+{
+	return (factor*x + factor*y*width) * 3 + c;
+}
+/**
+*	downSampleBuffer gets 2 buffer array, their width and height and a scaling factor.
+*	the source array's size is: targetW*factor * targetH*factor.
+*	every pixel in the target array corresponds to a factor*factor size pixel in the source array.
+*	the fucntion goes over the source array and averages every factor*factor cube into a pixel in the target array.
+*/
+void downSampleBuffer(float* target, int targetW, int targetH, float* source, int sourceW, int sourceH, int factor)
+{
+	//for every pixel in the target array
+	for (int x = 0; x < targetW; x++)
+	{
+		for (int y = 0; y<targetH; y++)
+		{
+			//calculate the index of the top left pixel corresponding to the factor*factor enlarged pixel in the source array
+			int iteratorR = calculateIndex(x, y, R, factor, sourceW);
+			int iteratorG = calculateIndex(x, y, G, factor, sourceW);
+			int iteratorB = calculateIndex(x, y, B, factor, sourceW);
+			//average color will hold the rgb average value of the corresponding larger square
+			vec3 averageColor;
+			//for every row in the enlarged pixel
+			for (int i = 0; i<factor; i++, iteratorR += sourceW, iteratorG += sourceW, iteratorB += sourceW)
+			{
+				//for every column in the enlarged pixel
+				for (int j = 0; j<factor; j++)
+				{
+					averageColor[R] += source[iteratorR + j];
+					averageColor[G] += source[iteratorG + j];
+					averageColor[B] += source[iteratorB + j];
+				}
+			}
+			averageColor /= factor*factor;
+			target[calculateIndex(x, y, R, 1, targetW)] = averageColor[R];
+			target[calculateIndex(x, y, G, 1, targetW)] = averageColor[G];
+			target[calculateIndex(x, y, B, 1, targetW)] = averageColor[B];
+		}
+	}
+}
+/**
+*	kernelAverageColor gets a buffer, its size and a pixel's index (x,y).
+*	returns the average of colors of all pixels in a 5X5 cube around the given pixel
+*/
+vec3 kernelAverageColor(float* buffer, int width, int height, int x, int y)
+{
+	//starting pixel's rgb values
+	GLfloat pixelR = buffer[calculateIndex(width, x, y, R, 1)];
+	GLfloat pixelG = buffer[calculateIndex(width, x, y, G, 1)];
+	GLfloat pixelB = buffer[calculateIndex(width, x, y, B, 1)];
+	
+	GLfloat curR, curG, curB;
+	//initialize the average color to the value of the first pixel
+	vec3 averageColor(pixelR, pixelG, pixelB);
+	//count the number of neighbours the pixel has
+	int neighboursNum = 0;
+	for (int i = -NEIGHBOURS; i <= NEIGHBOURS; i++)
+	{
+		for (int j = -NEIGHBOURS; j <= NEIGHBOURS; j++)
+		{
+			//either the current spot is out of bounds of the given buffer or it is the starting pixel, we do not count it
+			if ((i == j == 0) || x + i<0 || x + i >= width || y + j<0 || y + j >= height)
+			{
+				continue;
+			}
+			else
+			{
+				neighboursNum++;
+				curR = buffer[calculateIndex(width, x + i, y + j, R, 1)];
+				curG = buffer[calculateIndex(width, x + i, y + j, G, 1)];
+				curB = buffer[calculateIndex(width, x + i, y + j, B, 1)];
+				averageColor[R] += curR;
+				averageColor[G] += curG;
+				averageColor[B] += curB;
+			}
+		}
+	}
+	//neighboursNum+1 is the number of pixels calculated in the average color, +1 for the starting pixel.
+	averageColor /= (neighboursNum + 1);
+	return averageColor;
+}
+/**
+*	blur goes over every pixel in the buffer and averages it with its neighbours (according to a given kernel)
+*/
+void blur(float* buffer, int width, int height)
+{
+	//for every pixel in the buffer
+	for (int x = 0; x<width; x++)
+	{
+		for (int y = 0; y<height; y++)
+		{
+			vec3 averageColor = kernelAverageColor(buffer, width, height, x, y);
+			buffer[calculateIndex(x, y, R, 1, width)] = averageColor[R];
+			buffer[calculateIndex(x, y, G, 1, width)] = averageColor[G];
+			buffer[calculateIndex(x, y, B, 1, width)] = averageColor[B];
+		}
+	}
+}
 
 void Renderer::downSample()
 {
@@ -1789,32 +1892,10 @@ void Renderer::downSample()
 	{
 		return;
 	}
-	vec3 pixelColor = (0, 0, 0);
-	//for every pixel in out buffer
-	for (int x = 0; x < m_width; x++)
-	{
-		for (int y = 0; y < m_height; y++)
-		{
-			//for every pixel in the oversampled array matching the pixel in the out buffer
-			for (int i = 0; i < ANTI_ALIASING_FACTOR; i++)
-			{
-				for (int j = 0; j < ANTI_ALIASING_FACTOR; j++)
-				{
-					//sum up all pixel colors
-					GLfloat rValue = m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x + i, y + j, R)];
-					GLfloat gValue = m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x + i, y + j, G)];
-					GLfloat bValue = m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, x + i, y + j, B)];
-					pixelColor += vec3(rValue, gValue, bValue);
-				}
-			}
-			//devide by the number of sampled pixels
-			pixelColor /= (ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR);
-			//set out buffer value to the average value of sampled pixels
-			m_outBuffer[INDEX(m_width, x, y, R)] = pixelColor[R];
-			m_outBuffer[INDEX(m_width, x, y, R)] = pixelColor[G];
-			m_outBuffer[INDEX(m_width, x, y, R)] = pixelColor[B];
-		}
-	}
+	int aliasingW = m_width*ANTI_ALIASING_FACTOR;
+	int aliasingH = m_height*ANTI_ALIASING_FACTOR;
+	int factor = ANTI_ALIASING_FACTOR;
+	downSampleBuffer(m_outBuffer, m_width, m_height, m_aliasingBuffer, aliasingW, aliasingH, factor);
 }
 
 /////////////////////////////////////////////////////
