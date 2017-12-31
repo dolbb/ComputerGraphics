@@ -999,7 +999,6 @@ void Renderer::projectVertices(vector<vec4>& faceVertices)
 	for (int v = 0; v < TRIANGLE_VERTICES; v++)
 	{
 		faceVertices[v] = projection*cameraTransform*faceVertices[v];
-
 	}
 }
 
@@ -1741,6 +1740,16 @@ void Renderer::toggleAntiAliasing()
 void Renderer::toggleFogEffect()
 {
 	fogEffect = !fogEffect;
+}
+
+void Renderer::toggleBloomMode()
+{
+	//TODO: IMPLEMENT
+}
+
+void Renderer::toggleBlurMode()
+{
+	//TODO: IMPLEMENT
 }
 
 void Renderer::drawLine(const vec2& v0, const vec2& v1)

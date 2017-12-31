@@ -193,6 +193,19 @@ struct Material
 		emissiveColor = ambientCoeff = 0.15 * c;
 		diffuseCoeff = c;
 	}
+	void changeColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
+		emissiveColor = emissive;
+		ambientCoeff = ambient;
+		diffuseCoeff = diffuse;
+		specularCoeff = specular;
+	}
+	void print()
+	{
+		cout << "emissive color: " << emissiveColor << endl;
+		cout << "ambient coeff: " << ambientCoeff << endl;
+		cout << "diffuse coeff: " << diffuseCoeff << endl;
+		cout << "specular coeff: " << specularCoeff << endl;
+	}
 };
 
 struct Poly
@@ -431,6 +444,8 @@ public:
 	void plotPixel(int x, int y, vec3 RGB);
 	void toggleAntiAliasing();
 	void toggleFogEffect();
+	void toggleBloomMode();
+	void toggleBlurMode();
 	void SetCameraTransform(const mat4& chosenCameraTransform);
 	void SetProjection(const mat4& chosenProjection);
 	void SetObjectMatrices(const mat4& chosenObjectTransform, const mat3& chosenNormalTransform);
