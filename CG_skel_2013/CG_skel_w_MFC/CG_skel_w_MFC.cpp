@@ -114,6 +114,10 @@ void CG2keyboard(unsigned char key, int x, int y){
 		int index = key - '0';
 		scene->switchActiveLight(index);
 	}
+	OperateParams p;
+	p.frame = WORLD;
+	p.type = ROTATE;
+
 	switch (key)
 	{
 	//ESC
@@ -121,29 +125,68 @@ void CG2keyboard(unsigned char key, int x, int y){
 		exit(EXIT_SUCCESS);
 		break;
 	//change light spec (inc \ dec) in a specific aspect:
-	case 'e':
+	case 'r':
 		scene->activeLightIncrementStats(AMBIENT);
 		cout << "current light was incremented in its AMBIENT field" << endl;
 		break;
-	case 'd':
+	case 'f':
 		scene->activeLightDecrementStats(AMBIENT);
 		cout << "current light was decremented in its AMBIENT field" << endl;
 		break;
-	case 'r':
+	case 't':
 		scene->activeLightIncrementStats(DIFFUSE);
 		cout << "current light was incremented in its DIFFUSE field" << endl;
 		break;
-	case 'f':
+	case 'g':
 		scene->activeLightDecrementStats(DIFFUSE);
 		cout << "current light was decremented in its DIFFUSE field" << endl;
 		break;
-	case 't':
+	case 'y':
 		scene->activeLightIncrementStats(SPECULAR);
 		cout << "current light was incremented in its SPECULAR field" << endl;
 		break;
-	case 'g':
+	case 'h':
 		scene->activeLightDecrementStats(SPECULAR);
 		cout << "current light was decremented in its SPECULAR field" << endl;
+		break;
+	/*object transform operations:*/
+	case 'w':
+		p.v = vec3(DEFAULT_ANGLE,0,0);
+		scene->operate(p);
+		break;
+	case 's':
+		p.v = vec3(-DEFAULT_ANGLE, 0, 0);
+		scene->operate(p);
+		break;
+	case 'd':
+		p.v = vec3(0, -DEFAULT_ANGLE, 0);
+		scene->operate(p);
+		break;
+	case 'a':
+		p.v = vec3(0, DEFAULT_ANGLE, 0);
+		scene->operate(p);
+		break;
+	case 'e':
+		p.type = TRANSLATE;
+		p.v = vec3(-transformationFactor/100.0, 0, 0);
+		scene->operate(p);
+		break;
+	case 'q':
+		p.type = TRANSLATE;
+		p.v = vec3(transformationFactor / 100.0, 0, 0);
+		scene->operate(p);
+		break;
+	case 'z':
+		p.type = TRANSLATE;
+		p.v = vec3(0, 0, -transformationFactor / 100.0);
+		scene->operate(p);
+		cout << "model sent back" << endl;
+		break;
+	case 'x':
+		p.type = TRANSLATE;
+		p.v = vec3(0, 0, transformationFactor / 100.0);
+		scene->operate(p);
+		cout << "model sent from" << endl;
 		break;
 	}
 }
@@ -223,6 +266,7 @@ void keyboard(unsigned char key, int x, int y){
 		CG2keyboard(key, x, y);
 		break;
 	}
+	redraw = true;
 }
 
 void mouseWheel(int wheel, int direction, int x, int y)

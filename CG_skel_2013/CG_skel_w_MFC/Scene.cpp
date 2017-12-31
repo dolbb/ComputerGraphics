@@ -494,7 +494,7 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	}
 
 	vec4 eye(meshCenter);
-	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
+	eye[2] -= dz*2.5;		//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
 	vec4 up(0, 1, 0, 0);	//up is set to z axis
 
@@ -525,7 +525,6 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	case PERSPECTIVE:	activeCamera->Perspective(p);
 						break;
 	}
-
 }
 
 vector <string> Scene::getModelNames(){
