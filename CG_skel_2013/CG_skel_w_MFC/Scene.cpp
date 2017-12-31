@@ -561,13 +561,11 @@ void Scene::toggleAliasingMode(){
 }
 
 void Scene::toggleBloomMode(){
-	//TODO:
-	//m_renderer->toggleBloomMode();
+	m_renderer->toggleBloomMode();
 }
 
 void Scene::toggleBlurMode(){
-	//TODO:
-	//m_renderer->toggleBlurMode();
+	m_renderer->toggleBlurMode();
 }
 
 void Scene::setShading(shadingMethod s){
@@ -653,4 +651,13 @@ void Scene::setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, ve
 void Scene::printActiveModelMaterial(){
 	if (models.empty()){ return; }
 	changeToMeshModel(activeModel)->printUniformMateral();
+}
+
+void Scene::setNonUniformMaterialForActiveModel(){
+	changeToMeshModel(activeModel)->setNonUniformMaterial();
+}
+
+void Scene::setUniformMaterialForActiveModel(){
+	Material m;
+	changeToMeshModel(activeModel)->setUniformMaterial(m);
 }

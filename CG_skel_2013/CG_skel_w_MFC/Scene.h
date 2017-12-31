@@ -156,7 +156,7 @@ private:
 	vec3 getCameraCoordsBoundaries(vec3 *bBox);
 	void setActiveLight(Light l);
 public:
-	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), 
+	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)),
 		activeModel(NULL), shading(FLAT), activeLight(0), actionFlag(true), showBackFaceFlag(false){
 		cameras.push_back(activeCamera);
 		lights.push_back(Light());
@@ -186,7 +186,7 @@ public:
 	void addDefaultLight();
 	void addLight(Light l);
 	void switchActiveLight(int i);
-	lightType getLightType(); 
+	lightType getLightType();
 	vec3 cameraCoordsToWorld(vec3 v);
 	void toggleActiveLightType();
 	void activeLightIncrementStats(LightStat s);
@@ -199,4 +199,6 @@ public:
 	bool toggleBackFaceFlag();
 	void setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);
 	void printActiveModelMaterial();
+	void setNonUniformMaterialForActiveModel();
+	void setUniformMaterialForActiveModel();
 };

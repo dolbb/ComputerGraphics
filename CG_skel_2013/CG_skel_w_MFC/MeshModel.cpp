@@ -404,10 +404,23 @@ vec3 MeshModel::getVertexBeforeSelf(vec3 &v){
 	return vec3(u[0], u[1], u[2]);
 }
 
-void MeshModel::setMaterial(Material m){
-	if (materials.size() <= 1){
-		materials[0] = m;
+void MeshModel::setNonUniformMaterial(){
+	Material redM, greenM, blueM;
+	redM.changeColor(vec3(1, 0, 0));
+	greenM.changeColor(vec3(0, 1, 0));
+	blueM.changeColor(vec3(0, 0, 1));
+
+	materials.empty();
+	for (int i = 0; i < vertexPositionsSize; ++i){
+		if		(i % 3 == 0) materials.push_back(redM);
+		else if (i % 3 == 1) materials.push_back(greenM);
+		else if (i % 3 == 2) materials.push_back(blueM);
 	}
+}
+
+void MeshModel::setUniformMaterial(Material m){
+	materials.empty();
+	materials.push_back(m);
 }
 
 void MeshModel::setUniformColor(vec3 c){
@@ -418,9 +431,10 @@ void MeshModel::setUniformColor(vec3 c){
 }
 
 void MeshModel::setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
-	for (int i = 0; i < materials.size(); ++i){
-		materials[i].changeColor(emissive, ambient, diffuse, specular);
-	}
+	Material m;
+	m.changeColor(emissive, ambient, diffuse, specular);
+	materials.empty();
+	materials.push_back(m);
 }
 
 void MeshModel::printUniformMateral(){

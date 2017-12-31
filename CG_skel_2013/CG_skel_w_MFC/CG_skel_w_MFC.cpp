@@ -30,7 +30,7 @@ enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID, NEW_DEFAULT_LIGHT, NEW_CUSTOM_LIGHT };
 enum selectMenuIdentifier{ACTIVE_MODEL};
 enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL };
-enum SetMenuIdentifier{ SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_GENERAL_COLOR, SET_MODEL_MATERIAL, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION, SET_LIGHT_INTENSITY };
+enum SetMenuIdentifier{ SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_GENERAL_COLOR, SET_NON_UNIFORM_MODEL_MATERIAL, SET_UNIFORM_MODEL_MATERIAL, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION, SET_LIGHT_INTENSITY };
 enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE, BACK_FACE_DISPLAY, ANTI_ALIASING, FOG, BLOOM,BLUR };
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
@@ -721,9 +721,13 @@ void setMenuCallback(int id){
 		setCameraPerspective();
 		redraw = true;
 		break;
+	case SET_NON_UNIFORM_MODEL_MATERIAL:
+		scene->setNonUniformMaterialForActiveModel();
+		redraw = true;
+		break;
 	}
 
-	if (id == SET_MODEL_MATERIAL){
+	if (id == SET_UNIFORM_MODEL_MATERIAL){
 		vec3 emissive;
 		vec3 ambient;
 		vec3 diffuse;
@@ -748,6 +752,7 @@ void setMenuCallback(int id){
 		scene->setActiveModelMaterial(emissive, ambient, diffuse, specular);
 		cout << "new uniform material for active model is:" << endl;
 		scene->printActiveModelMaterial();
+		redraw = true;
 	}
 	if (id == SET_MODEL_GENERAL_COLOR || id == SET_LIGHT_COLOR){
 		vec3 c;
@@ -921,8 +926,9 @@ void initMenu()
 	glutAddMenuEntry("Phong", PHONG);
 	int setMenu = glutCreateMenu(setMenuCallback);
 	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
-	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
-	glutAddMenuEntry("set a new material for the model", SET_MODEL_MATERIAL);
+	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE); 
+	glutAddMenuEntry("set a NON UNIFORM material for model", SET_NON_UNIFORM_MODEL_MATERIAL);
+	glutAddMenuEntry("set a UNIFORM material for model", SET_UNIFORM_MODEL_MATERIAL);
 	glutAddMenuEntry("set a new general color for the model", SET_MODEL_GENERAL_COLOR);
 	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
 	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
