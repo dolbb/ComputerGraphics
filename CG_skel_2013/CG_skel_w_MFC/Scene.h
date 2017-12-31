@@ -146,6 +146,7 @@ private:
 	int activeLight;
 	shadingMethod shading;
 	bool actionFlag;
+	bool showBackFaceFlag;
 
 	void handleMeshModelFrame(OperateParams &p);
 	//void handleCameraPosFrame(OperateParams &p);
@@ -156,7 +157,7 @@ private:
 	void setActiveLight(Light l);
 public:
 	Scene(Renderer *renderer) : m_renderer(renderer), activeCamera(new Camera(0)), 
-		activeModel(NULL), shading(FLAT), activeLight(0), actionFlag(true){
+		activeModel(NULL), shading(FLAT), activeLight(0), actionFlag(true), showBackFaceFlag(false){
 		cameras.push_back(activeCamera);
 		lights.push_back(Light());
 	}
@@ -193,4 +194,5 @@ public:
 	void changeLightPosition(vec3 pos);
 	void changeLightIntensity(vec3 intensity);
 	void changeModelColor(vec3 c);
+	bool toggleBackFaceFlag();
 };

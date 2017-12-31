@@ -489,6 +489,9 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	GLfloat dx = coords[0];
 	GLfloat dy = coords[1];
 	GLfloat dz = coords[2];
+	if (dx < 0 || dy < 0 || dz < 0){
+		cout << "error with lookAtFunction" << endl;
+	}
 
 	vec4 eye(meshCenter);
 	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
@@ -568,15 +571,7 @@ void Scene::addDefaultLight(){
 
 void Scene::addLight(Light l){
 	lights.push_back(l);
-	string type = l.type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
-	cout << "the following light was added: " << endl;
-	cout << "type:       " << type << endl;
-	cout << "positione:  " << "(" << l.position[0] << ", " << l.position[1] << ", " << l.position[2] << ")" << endl;
-	cout << "direction:  " << "(" << l.direction[0] << ", " << l.direction[1] << ", " << l.direction[2] << ")" << endl;
-	cout << "ambient:    " << l.ambientIntensityScalar << endl;
-	cout << "diffuse:    " << l.diffuseIntensityScalar << endl;
-	cout << "specular:   " << l.specularIntensityScalar << endl;
-	cout << "color:      " << "(" << l.color[0] << ", " << l.color[1] << ", " << l.color[2] << ")" << endl;
+	l.print();
 }
 
 void Scene::setActiveLight(Light l){
@@ -633,4 +628,9 @@ void Scene::changeLightIntensity(vec3 v){
 void Scene::changeModelColor(vec3 c){
 	if (models.empty()){ return; }
 	changeToMeshModel(activeModel)->setUniformColor(c);
+}
+
+bool Scene::toggleBackFaceFlag(){
+	showBackFaceFlag = !showBackFaceFlag;
+	return showBackFaceFlag;
 }

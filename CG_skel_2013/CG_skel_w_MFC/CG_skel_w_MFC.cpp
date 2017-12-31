@@ -30,7 +30,7 @@ enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID, NEW_DEFAULT_LIGHT, NEW_CUSTOM_LIGHT };
 enum selectMenuIdentifier{ACTIVE_MODEL};
 enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_COLOR, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION, SET_LIGHT_INTENSITY };
-enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE };
+enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE, BACK_FACE_DISPLAY };
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
 enum scalingAxis{xT,yT,zT,uniformT};
@@ -54,7 +54,7 @@ int height = DEFAULT_SCREEN_Y;
 
 //	track ball functions parameters
 
-#define DEFAULT_ANGLE 10.0
+#define DEFAULT_ANGLE 22.5
 #define DEFAULT_TRANSLATION 0.5
 vec3 startingPoint;
 vec3 endingPoint;
@@ -349,7 +349,7 @@ void special(int key, int x, int y)
 		//set rotation parameters
 		else
 		{
-			parameters.v = vec3(0, 0, 1)*DEFAULT_ANGLE*transformationFactor;
+			parameters.v = vec3(0, 1, 0)*DEFAULT_ANGLE*transformationFactor;
 		}
 	break;
 
@@ -362,7 +362,7 @@ void special(int key, int x, int y)
 		//set rotation parameters
 		else
 		{
-			parameters.v = vec3(0, 0, -1)*DEFAULT_ANGLE*transformationFactor;
+			parameters.v = vec3(0, -1, 0)*DEFAULT_ANGLE*transformationFactor;
 		}
 	break;
 	}
@@ -512,7 +512,7 @@ void newMenuCallback(int id)
 		Light l;
 		string lightTypeString;
 		lightType type;
-		CCmdDialog dialogType("pleaes choose a type of light - paralel or point");
+		CCmdDialog dialogType("pleaes choose a type of light - parallel(0) or point(1)");
 		CXyzDialog parameterPos("enter light's position in camera - 3d coords");
 		CXyzDialog parameterDirection("enter light's direction in camera - 3d coords");
 		CXyzDialog parameterIntensity("enter intensity [0,1]: x = ambient, y = diffuse, z = specular, ");
@@ -520,19 +520,20 @@ void newMenuCallback(int id)
 
 		if (dialogType.DoModal() == IDOK){
 			lightTypeString = dialogType.GetCmd();
-			if (lightTypeString == "paralel"){
+			if (lightTypeString == "parallel" || lightTypeString == "0"){
 				l.type = PARALLEL_LIGHT;
 				if (parameterDirection.DoModal() == IDOK){
 					l.direction = scene->cameraCoordsToWorld(parameterDirection.GetXYZ());
 				}
-				else{ return; }
 			}
-			else if (lightTypeString == "point"){
+			else if (lightTypeString == "point" || lightTypeString == "1"){
 				l.type = POINT_LIGHT;
 				if (parameterPos.DoModal() == IDOK){
 					l.position = scene->cameraCoordsToWorld(parameterPos.GetXYZ());
 				}
-				else{ return; }
+				else{ 
+					l.position = scene->cameraCoordsToWorld(vec3(0, 2, 1));
+				}
 			}
 			else{
 				cout << "invalid light type" << endl;
@@ -544,10 +545,16 @@ void newMenuCallback(int id)
 			l.ambientIntensityScalar = tmpV[0];
 			l.diffuseIntensityScalar = tmpV[1];
 			l.specularIntensityScalar = tmpV[2];
-		}else{ return; }
+		}else{ 
+			l.ambientIntensityScalar  = 0.1;
+			l.diffuseIntensityScalar  = 0.5;
+			l.specularIntensityScalar = 0.8;
+		}
 		if (parameterColor.DoModal() == IDOK){
 			l.changeColor(parameterColor.GetXYZ());
-		}else{ return; }
+		}else{
+			l.changeColor(vec3(255,255,255));
+		}
 		scene->addLight(l);
 		break;
 	}
@@ -749,9 +756,10 @@ void toolsMenuCallback(int id)
 	}
 	if (id == SET_LIGHT_INTENSITY){
 		CXyzDialog dirMsg("please enter current light's intensity");
+		vec3 v;
 		if (dirMsg.DoModal() == IDOK)
 		{
-			vec3 v = dirMsg.GetXYZ();
+			v = dirMsg.GetXYZ();
 			if (v[0] < 0 || v[0] > 1 ||
 				v[1] < 0 || v[1] > 1 ||
 				v[2] < 0 || v[2] > 1){
@@ -759,6 +767,7 @@ void toolsMenuCallback(int id)
 			}
 			else{
 				scene->changeLightIntensity(v);
+				cout << "light intensity is now: (" << v[0] << "," << v[1] << "," << v[2] << ")" << endl;
 			}
 		}else{ return; }
 		redraw = true;
@@ -767,11 +776,24 @@ void toolsMenuCallback(int id)
 
 void shadingMenuCallback(int id){
 	scene->setShading(static_cast<shadingMethod>(id));
+	switch (id){
+	case FLAT:	   
+		cout << "changed to FLAT mode" << endl;
+		break;
+	case GOURAUD:  
+		cout << "changed to GOURAUD mode" << endl;
+		break;
+	case PHONG:	   
+		cout << "changed to PHONG mode" << endl;
+		break;
+	}
 	redraw = true;
 }
 
 void toggleMenuCallback(int id)
 {
+	CXyzDialog parameterPos("to change to POINT_LIGHT - enter light's position in camera - 3d coords");
+	CXyzDialog parameterDirection("to change to PARALLEL_LIGHT - enter light's direction in camera - 3d coords");
 	switch (id)
 	{
 	case BOUNDING_BOX:
@@ -796,24 +818,34 @@ void toggleMenuCallback(int id)
 	
 	case KEYBOARD_MODE:
 		keyboardMode = (keyboardMode == CG1) ? CG2 : CG1;
+		(keyboardMode == CG1) ? cout << "current keyboard is CG1" << endl : cout << "current keyboard is CG2" << endl;
 		break;
 	
 	case ACTIVE_LIGHT_TYPE:
-		CXyzDialog parameterPos("to change to POINT_LIGHT - enter light's position in camera - 3d coords");
-		CXyzDialog parameterDirection("to change to PARALLEL_LIGHT - enter light's direction in camera - 3d coords");
 		if (scene->getLightType() == POINT_LIGHT){
 			if (parameterDirection.DoModal() == IDOK){
 				scene->changeLightDirection(parameterDirection.GetXYZ());
+				cout << "current light is now PARALLEL type" << endl;
 			}
 			else{ return; }
 		}
 		else{
 			if (parameterPos.DoModal() == IDOK){
 				scene->changeLightPosition(parameterPos.GetXYZ());
+				cout << "current light is now POINT type" << endl;
 			}
 			else{ return; }
 		}
 		scene->toggleActiveLightType();
+		break;
+
+	case BACK_FACE_DISPLAY:
+		if (scene->toggleBackFaceFlag()){
+			cout << "you should now see the hole in the back" << endl;
+		}
+		else{
+			cout << "you should now see the whole mesh" << endl;
+		}
 		break;
 	}
 }
@@ -839,6 +871,7 @@ void initMenu()
 	glutAddMenuEntry("Camera rendering", CAMERA_RENDERING);
 	glutAddMenuEntry("keyboard mode", KEYBOARD_MODE);
 	glutAddMenuEntry("active light type", ACTIVE_LIGHT_TYPE);
+	glutAddMenuEntry("back face display", BACK_FACE_DISPLAY);
 	int toolsMenu = glutCreateMenu(toolsMenuCallback);
 	glutAddMenuEntry("LookAt active model", LOOKAT_ACTIVE_MODEL);
 	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
