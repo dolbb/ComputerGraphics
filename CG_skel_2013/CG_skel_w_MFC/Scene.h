@@ -180,6 +180,8 @@ public:
 	void toggleDisplayMode();
 	void toggleFogMode();
 	void toggleAliasingMode();
+	void toggleBloomMode();
+	void toggleBlurMode();
 	void setShading(shadingMethod s);
 	void addDefaultLight();
 	void addLight(Light l);

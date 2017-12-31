@@ -560,6 +560,16 @@ void Scene::toggleAliasingMode(){
 	m_renderer->toggleAntiAliasing();
 }
 
+void Scene::toggleBloomMode(){
+	//TODO:
+	//m_renderer->toggleBloomMode();
+}
+
+void Scene::toggleBlurMode(){
+	//TODO:
+	//m_renderer->toggleBlurMode();
+}
+
 void Scene::setShading(shadingMethod s){
 	shading = s;
 }

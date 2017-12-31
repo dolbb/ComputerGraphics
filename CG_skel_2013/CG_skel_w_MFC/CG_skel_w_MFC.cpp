@@ -29,8 +29,9 @@ enum DebugMode{ON, OFF};
 enum mainMenuIdentifier{DEMO};
 enum newMenuIdentifier{ NEW_MODEL, NEW_CAMERA, NEW_PYRAMID, NEW_DEFAULT_LIGHT, NEW_CUSTOM_LIGHT };
 enum selectMenuIdentifier{ACTIVE_MODEL};
-enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL, SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_COLOR, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION, SET_LIGHT_INTENSITY };
-enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE, BACK_FACE_DISPLAY };
+enum toolsMenuIdentifier{ LOOKAT_ACTIVE_MODEL };
+enum SetMenuIdentifier{ SET_TRANSFORMATION_STEP, SET_CAMERA_PRESPECTIVE, SET_MODEL_GENERAL_COLOR, SET_MODEL_MATERIAL, SET_LIGHT_COLOR, SET_LIGHT_DIRECTION, SET_LIGHT_INTENSITY };
+enum toggleMenuIdentifier{ FACE_NORMALS, VERTEX_NORMALS, BOUNDING_BOX, CAMERA_RENDERING, KEYBOARD_MODE, ACTIVE_LIGHT_TYPE, BACK_FACE_DISPLAY, ANTI_ALIASING, FOG, BLOOM,BLUR };
 enum defaultStepSize{DEFAULT_DX=1, DEFAULT_DY=1};
 enum numOfFrames{OBJECT_FRAMES=2, CAMERA_FRAMES=2};
 enum scalingAxis{xT,yT,zT,uniformT};
@@ -711,13 +712,8 @@ void mainMenu(int id)
 	}
 }
 
-void toolsMenuCallback(int id)
-{
+void setMenuCallback(int id){
 	switch (id){
-	case LOOKAT_ACTIVE_MODEL:
-		scene->LookAtActiveModel();
-		redraw = true;
-		break;
 	case SET_TRANSFORMATION_STEP:
 		setTransformationStep();
 		break;
@@ -726,7 +722,30 @@ void toolsMenuCallback(int id)
 		redraw = true;
 		break;
 	}
-	if (id == SET_MODEL_COLOR || id == SET_LIGHT_COLOR){
+
+	if (id == SET_MODEL_MATERIAL){
+		vec3 emissive;
+		vec3 ambient;
+		vec3 diffuse;
+
+		CXyzDialog emissiveMsg("please enter [0,1] values for emissive");
+		CXyzDialog ambientMsg("please enter [0,1] values for ambient");
+		CXyzDialog diffuseMsg("please enter [0,1] values for diffuse");
+
+		if (emissiveMsg.DoModal() == IDOK){emissive = emissiveMsg.GetXYZ();}else{return;}
+		if (ambientMsg.DoModal() == IDOK){ambient = ambientMsg.GetXYZ();}else{return;}
+		if (diffuseMsg.DoModal() == IDOK){diffuse = diffuseMsg.GetXYZ();}else{return;}
+
+		for (int i = 0; i < 3; ++i){
+			if (emissive[i] < 0 || emissive[i]	> 1){ cout << "invalid arguments" << endl; return; }
+			if (ambient[i]	< 0	|| ambient[i]	> 1){ cout << "invalid arguments" << endl; return; }
+			if (diffuse[i]	< 0	|| diffuse[i]	> 1){ cout << "invalid arguments" << endl; return; }
+		}
+		//scene->setActiveModelMaterial(emissive, ambient, diffuse);
+		cout << "new uniform material for active model is:" << endl;
+		//scene->printActiveModelMaterial();
+	}
+	if (id == SET_MODEL_GENERAL_COLOR || id == SET_LIGHT_COLOR){
 		vec3 c;
 		CXyzDialog colorMsg("please enter RGB color as [0,255] value per base color");
 		if (colorMsg.DoModal() == IDOK)
@@ -741,7 +760,7 @@ void toolsMenuCallback(int id)
 			}
 		}
 		else{ return; }
-		(id == SET_MODEL_COLOR) ? scene->changeModelColor(c) : scene->changeLightColor(c);
+		(id == SET_MODEL_GENERAL_COLOR) ? scene->changeModelColor(c) : scene->changeLightColor(c);
 		redraw = true;
 	}
 	if (id == SET_LIGHT_DIRECTION){
@@ -750,7 +769,8 @@ void toolsMenuCallback(int id)
 		if (dirMsg.DoModal() == IDOK)
 		{
 			d = dirMsg.GetXYZ();
-		}else{ return; }
+		}
+		else{ return; }
 		scene->changeLightDirection(d);
 		redraw = true;
 	}
@@ -769,8 +789,19 @@ void toolsMenuCallback(int id)
 				scene->changeLightIntensity(v);
 				cout << "light intensity is now: (" << v[0] << "," << v[1] << "," << v[2] << ")" << endl;
 			}
-		}else{ return; }
+		}
+		else{ return; }
 		redraw = true;
+	}
+}
+
+void toolsMenuCallback(int id)
+{
+	switch (id){
+	case LOOKAT_ACTIVE_MODEL:
+		scene->LookAtActiveModel();
+		redraw = true;
+		break;
 	}
 }
 
@@ -847,6 +878,22 @@ void toggleMenuCallback(int id)
 			cout << "you should now see the whole mesh" << endl;
 		}
 		break;
+	case ANTI_ALIASING:
+		scene->toggleAliasingMode();
+		cout << "anti-aliasing toggled" << endl;
+		break;
+	case FOG:
+		scene->toggleFogMode();
+		cout << "fog toggled" << endl;
+		break;
+	case BLOOM:
+		scene->toggleBloomMode();
+		cout << "bloom toggled" << endl;
+		break;
+	case BLUR:
+		scene->toggleBlurMode();
+		cout << "blur toggled" << endl;
+		break;
 	}
 }
 
@@ -864,6 +911,14 @@ void initMenu()
 	glutAddMenuEntry("Flat", FLAT);
 	glutAddMenuEntry("Gouraud", GOURAUD);
 	glutAddMenuEntry("Phong", PHONG);
+	int setMenu = glutCreateMenu(setMenuCallback);
+	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
+	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
+	glutAddMenuEntry("set a new material for the model", SET_MODEL_MATERIAL);
+	glutAddMenuEntry("set a new general color for the model", SET_MODEL_GENERAL_COLOR);
+	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
+	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
+	glutAddMenuEntry("set intensity for the current light", SET_LIGHT_INTENSITY);
 	int toggleMenu = glutCreateMenu(toggleMenuCallback);
 	glutAddMenuEntry("Face normals", FACE_NORMALS);
 	glutAddMenuEntry("Vertex normals", VERTEX_NORMALS);
@@ -872,14 +927,13 @@ void initMenu()
 	glutAddMenuEntry("keyboard mode", KEYBOARD_MODE);
 	glutAddMenuEntry("active light type", ACTIVE_LIGHT_TYPE);
 	glutAddMenuEntry("back face display", BACK_FACE_DISPLAY);
+	glutAddMenuEntry("Anti-Aliasing", ANTI_ALIASING);
+	glutAddMenuEntry("fog", FOG);
+	glutAddMenuEntry("bloom", BLOOM);
+	glutAddMenuEntry("blur", BLUR);
 	int toolsMenu = glutCreateMenu(toolsMenuCallback);
 	glutAddMenuEntry("LookAt active model", LOOKAT_ACTIVE_MODEL);
-	glutAddMenuEntry("Set transformation step", SET_TRANSFORMATION_STEP);
-	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
-	glutAddMenuEntry("set a new color for the model", SET_MODEL_COLOR);
-	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
-	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
-	glutAddMenuEntry("set intensity for the current light", SET_LIGHT_INTENSITY);
+	glutAddSubMenu("set elements", setMenu);
 	glutAddSubMenu("Shading method", shadingMenu);
 	glutAddSubMenu("Toggle", toggleMenu);
 	glutCreateMenu(mainMenu);
