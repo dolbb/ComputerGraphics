@@ -101,8 +101,8 @@ void reshape( int newWidth, int newHeight )
 	GLfloat heightRatioChage = (GLfloat)newHeight / (GLfloat)height;
 	GLfloat widthRatioChange = (GLfloat)newWidth / (GLfloat)width;
 	scene->changeProjectionRatio(widthRatioChange, heightRatioChage);
-	width = newWidth;
-	height = newHeight;
+	width = newWidth % 2 == 0 ? newWidth : newWidth + 1;
+	height = newHeight % 2 == 0 ? newHeight : newHeight + 1;
 	renderer->resizeBuffers(width, height);
 	redraw = true;
 }

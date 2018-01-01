@@ -11,6 +11,7 @@
 #define BOUNDING_BOX_VERTICES 8
 #define CLIPPING_PLANES 6
 #define EDGE_VERTICES 2
+#define COLOR_CHANNELS 3
 //used for dimming light effect as a function of distance from it
 #define CONSTANT_ATTENUATION 0
 #define LINEAR_ATTENUATION 1
@@ -27,7 +28,7 @@ Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), sup
 	CreateBuffers(DEFAULT_SCREEN_X, DEFAULT_SCREEN_Y);
 }
 
-Renderer::Renderer(int width, int height):m_width(NULL), m_height(NULL), supersamplingAA(false), fogEffect(false), fogColor(0,0,0){
+Renderer::Renderer(int width, int height):m_width(NULL), m_height(NULL), supersamplingAA(false), fogEffect(false),bloomEffect(false), fogColor(0,0,0){
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
 }
@@ -55,9 +56,9 @@ void Renderer::CreateBuffers(int width, int height)
 	m_width = width;
 	m_height = height;
 	CreateOpenGLBuffer(); //Do not remove this line.
-	m_outBuffer = new float[3 * m_width*m_height];
+	m_outBuffer = new float[COLOR_CHANNELS * m_width*m_height];
 	m_zbuffer = new float[m_width*m_height];
-	m_aliasingBuffer = new float[3 * m_width*m_height*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR];
+	m_aliasingBuffer = new float[COLOR_CHANNELS * m_width*m_height*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR];
 	refresh();
 }
 
@@ -1441,7 +1442,7 @@ void Renderer::scanTriangle(const Poly& triangle)
 					if (fogEffect)
 					{
 						//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
-						GLfloat fogFactor = 1-((curZ + 1) / 2);
+						GLfloat fogFactor = 1-(curZ + 1) / 2;
 						vec4 fogVertexColor(fogColor);
 						vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
 						screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
@@ -1780,7 +1781,7 @@ void Renderer::toggleFogEffect()
 
 void Renderer::toggleBloomMode()
 {
-	//TODO: IMPLEMENT
+	bloomEffect = !bloomEffect;
 }
 
 void Renderer::toggleBlurMode()
@@ -1824,6 +1825,30 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 		if (error > dx) {
 			y += (y1>y0 ? 1 : -1);
 			error -= dx * 2;
+		}
+	}
+}
+
+void scaleBuffer(float* target, int targetW, int targetH, float* source, int sourceW, int sourceH)
+{
+	if (targetW == sourceW && targetH == sourceH)
+	{
+		return;
+	}
+	GLfloat x_ratio = sourceW / (GLfloat)targetW;
+	GLfloat y_ratio = sourceH / (GLfloat)targetH;
+	GLfloat px, py;
+	for (int y = 0; y < targetH; y++)
+	{
+		for (int x = 0; x < targetW; x++)
+		{
+			px = (int)(x*x_ratio);
+			py = (int)(y*y_ratio);
+			int targetIndex = INDEX(targetW, x, y, R);
+			int sourceIndex = INDEX(sourceW, px, py, R);
+			target[targetIndex] = source[sourceIndex];
+			target[targetIndex+1] = source[sourceIndex+1];
+			target[targetIndex+1] = source[sourceIndex+1];
 		}
 	}
 }
@@ -2008,6 +2033,19 @@ void Renderer::SwapBuffers()
 	{
 		blur(m_outBuffer, m_width, m_height);
 	}
+	if (bloomEffect)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			//factor=1,2,4,8
+			int factor = pow(2, i);
+			refreshScaleBuffer();
+			scaleBuffer(m_scaledDownBuffer, (int)((1 / factor)*m_width), (int)((1 / factor)*m_height), m_outBuffer, m_width, m_height);
+			blur(m_scaledBuffer, (int)((1 / factor)*m_width), (int)((1 / factor)*m_height));
+			scaleBuffer(m_scaledUpBuffer, m_width, m_height, m_scaledDownBuffer, (int)((1 / factor)*m_width), (int)((1 / factor)*m_height));
+			addScaledBufferColor();
+		}
+	}
 	int a = glGetError();
 	glActiveTexture(GL_TEXTURE0);
 	a = glGetError();
@@ -2027,6 +2065,17 @@ void Renderer::SwapBuffers()
 
 void Renderer::refresh()
 {
+	//clear the out buffer
+	for (int i = 0; i < m_width; i++)
+	{
+		for (int j = 0; j < m_height; j++)
+		{
+			m_outBuffer[INDEX(m_width, i, j, R)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, G)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, B)] = 0;
+		}
+	}
+	//in case AA is active clear the aliasing buffer
 	if (supersamplingAA)
 	{
 		for (int i = 0; i < m_width*ANTI_ALIASING_FACTOR; i++)
@@ -2036,18 +2085,6 @@ void Renderer::refresh()
 				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, R)] = 0;
 				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, G)] = 0;
 				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, B)] = 0;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < m_width; i++)
-		{
-			for (int j = 0; j < m_height; j++)
-			{
-				m_outBuffer[INDEX(m_width, i, j, R)] = 0;
-				m_outBuffer[INDEX(m_width, i, j, G)] = 0;
-				m_outBuffer[INDEX(m_width, i, j, B)] = 0;
 			}
 		}
 	}

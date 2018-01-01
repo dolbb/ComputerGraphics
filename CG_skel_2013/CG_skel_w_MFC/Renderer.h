@@ -17,7 +17,7 @@ using namespace std;
 #define DEFAULT_B 1
 #define TRIANGLE_VERTICES 3
 #define TRIANGLE_EDGES 3
-#define ANTI_ALIASING_FACTOR 2
+#define ANTI_ALIASING_FACTOR 3
 
 enum drawType{VERTEX, NORMAL};
 enum clipResult{ OUT_OF_BOUNDS,IN_BOUNDS, ENTER, EXIT, CLIPPED };
@@ -359,12 +359,11 @@ private:
 	****************************************************************/
 
 	float *m_outBuffer; // 3*width*height
+	float *m_scaledDownBuffer; // 3*width*height
+	float *m_scaledUpBuffer; // 3*width*height
 	float *m_zbuffer; // width*height
 	float *m_aliasingBuffer;//3*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR*width*height
-	float *m_halfSizedBuffer;//3*0.5*0.5*width*height
-	float *m_quarterSizedBuffer;//3*0.25*0.25*width*height
-	float *m_eigthSizedBuffer;//3*0.125*0.125*width*height
-	int m_width, m_height;
+	int	   m_width, m_height;
 
 	mat4 cameraTransform;
 	mat4 projection;
@@ -383,6 +382,7 @@ private:
 	bool				supersamplingAA;
 	bool				fogEffect;
 	bool				blurEffect;
+	bool				bloomEffect;
 	
 	/****************************************************************
 						PRIVATE RENDERER FUNCTIONS
