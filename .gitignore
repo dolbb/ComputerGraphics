@@ -15,3 +15,7 @@ CG_skel_HW3_openGL/CG_skel_w_MFC/CG_skel_w_MFC.vcxproj.user
 *.vcxproj
 *.lastbuildstate
 *.tlog
+*.obj
+CG_skel_HW3_openGL/CG_skel_w_MFC/Release/CG_skel_w_MFC.pch
+*.res
+CG_skel_HW3_openGL/CG_skel_w_MFC/Release/vc120.pdb
