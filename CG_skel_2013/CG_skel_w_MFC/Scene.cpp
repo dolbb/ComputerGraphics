@@ -324,7 +324,7 @@ void Scene::createCamera()
 void Scene::draw()
 {
 	//check if we have nothing to draw:
-	if (actionFlag == false && models.empty()){ return; }
+	if (models.empty()){ return; }
 	m_renderer->resetZbuffer();
 	m_renderer->setLightSources(lights);
 	m_renderer->setEye(activeCamera->getEye());
@@ -351,9 +351,6 @@ void Scene::draw()
 	// 3. activate the drawing:
 	m_renderer->SwapBuffers();
 	refreshView();
-
-	//remember nothing had happened after this draw:
-	actionFlag = false;
 }
 
 void Scene::drawDemo()
@@ -362,15 +359,6 @@ void Scene::drawDemo()
 	//m_renderer->SetDemoBuffer();
 	//m_renderer->SwapBuffers();
 	string type = lights[activeLight].type == POINT_LIGHT ? "POINT_LIGHT" : "PARALLEL_LIGHT";
-
-	cout << "the active light is: " << endl;
-	cout << "type:       " << type << endl;
-	cout << "positione:  " << "(" << lights[activeLight].position[0] << ", " << lights[activeLight].position[1] << ", " << lights[activeLight].position[2] << ")" << endl;
-	cout << "direction:  " << "(" << lights[activeLight].direction[0] << ", " << lights[activeLight].direction[1] << ", " << lights[activeLight].direction[2] << ")" << endl;
-	cout << "ambient:    " << lights[activeLight].ambientIntensityScalar << endl;
-	cout << "diffuse:    " << lights[activeLight].diffuseIntensityScalar << endl;
-	cout << "specular:   " << lights[activeLight].specularIntensityScalar << endl;
-	cout << "color:      " << "(" << lights[activeLight].color[0] << ", " << lights[activeLight].color[1] << ", " << lights[activeLight].color[2] << ")" << endl;
 }
 
 void Scene::selectActiveModel(string name)
@@ -420,7 +408,6 @@ void Scene::operate(OperateParams &p){
 	//case CAMERA_POSITION: handleCameraPosFrame(p); break;
 	case CAMERA_VIEW: handleCameraViewFrame(p); break;
 	}
-	actionFlag = true;
 }
 
 void Scene::handleMeshModelFrame(OperateParams &p){
@@ -494,7 +481,7 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	}
 
 	vec4 eye(meshCenter);
-	eye[2] -= dz*2.5;		//set the x value of the eye to be far enough from the box
+	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
 	vec4 up(0, 1, 0, 0);	//up is set to z axis
 
@@ -601,11 +588,11 @@ void Scene::toggleActiveLightType(){
 }
 
 void Scene::activeLightIncrementStats(LightStat s){
-	lights[activeLight].changeIntensity(s,1.05);
+	lights[activeLight].changeIntensity(s,1.1);
 }
 
 void Scene::activeLightDecrementStats(LightStat s){
-	lights[activeLight].changeIntensity(s,0.95);
+	lights[activeLight].changeIntensity(s,0.9);
 }
 
 lightType Scene::getLightType(){
@@ -621,7 +608,12 @@ void Scene::changeLightColor(vec3 c){
 }
 
 void Scene::changeLightDirection(vec3 dir){
-	lights[activeLight].direction = activeCamera->getWorldVector(dir);
+	if (lights[activeLight].type == POINT_LIGHT){
+		lights[activeLight].position = activeCamera->getWorldVector(dir);
+	}
+	else{
+		lights[activeLight].direction = activeCamera->getWorldVector(dir);
+	}
 }
 
 void Scene::changeLightPosition(vec3 pos){
@@ -650,6 +642,10 @@ void Scene::setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, ve
 void Scene::printActiveModelMaterial(){
 	if (models.empty()){ return; }
 	changeToMeshModel(activeModel)->printUniformMateral();
+}
+
+void Scene::printActiveLight(){
+	lights[activeLight].print();
 }
 
 void Scene::setNonUniformMaterialForActiveModel(){

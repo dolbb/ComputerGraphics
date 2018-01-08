@@ -11,6 +11,7 @@
 #define BOUNDING_BOX_VERTICES 8
 #define CLIPPING_PLANES 6
 #define EDGE_VERTICES 2
+#define COLOR_CHANNELS 3
 //used for dimming light effect as a function of distance from it
 #define CONSTANT_ATTENUATION 0
 #define LINEAR_ATTENUATION 1
@@ -21,13 +22,13 @@
 enum{w=3};
 enum clipResTable{CLIPPING_PLANE,START_RES, END_RES};
 
-Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), supersamplingAA(false), fogEffect(false), fogColor(0, 0, 0), blurEffect(false)
+Renderer::Renderer() :m_width(DEFAULT_SCREEN_X), m_height(DEFAULT_SCREEN_Y), supersamplingAA(false), fogEffect(false), fogColor(0, 0, 0), blurEffect(false), bloomEffect(false)
 {
 	InitOpenGLRendering();
 	CreateBuffers(DEFAULT_SCREEN_X, DEFAULT_SCREEN_Y);
 }
 
-Renderer::Renderer(int width, int height):m_width(NULL), m_height(NULL), supersamplingAA(false), fogEffect(false), fogColor(0,0,0){
+Renderer::Renderer(int width, int height):m_width(NULL), m_height(NULL), supersamplingAA(false), fogEffect(false),bloomEffect(false), fogColor(0,0,0){
 	InitOpenGLRendering();
 	CreateBuffers(width,height);
 }
@@ -42,6 +43,9 @@ Renderer::~Renderer(void)
 void Renderer::resizeBuffers(int chosenWidth, int chosenHeight)
 {
 	delete[] m_outBuffer;
+	delete[] m_scaledDownBuffer;
+	delete[] m_scaledUpBuffer;
+	delete[] m_sumBuffer;
 	delete[] m_zbuffer;
 	delete[] m_aliasingBuffer;
 	m_outBuffer = NULL;
@@ -55,9 +59,12 @@ void Renderer::CreateBuffers(int width, int height)
 	m_width = width;
 	m_height = height;
 	CreateOpenGLBuffer(); //Do not remove this line.
-	m_outBuffer = new float[3 * m_width*m_height];
+	m_outBuffer = new float[COLOR_CHANNELS * m_width*m_height];
+	m_scaledDownBuffer = new float[COLOR_CHANNELS * m_width*m_height];
+	m_scaledUpBuffer = new float[COLOR_CHANNELS * m_width*m_height];
+	m_sumBuffer = new float[COLOR_CHANNELS * m_width*m_height];
 	m_zbuffer = new float[m_width*m_height];
-	m_aliasingBuffer = new float[3 * m_width*m_height*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR];
+	m_aliasingBuffer = new float[COLOR_CHANNELS * m_width*m_height*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR];
 	refresh();
 }
 
@@ -853,16 +860,22 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 {
 	vec3 finalColor = vertexMaterial.emissiveColor;
 	vertex = (vertex[3] != 0) ? vertex / vertex[3] : vertex;
-	vec4 v = normalize(eye - vertex);
-	vec4 n = normalize(normal);
-	vec4 l,r;
+	vec4 pos;
+	eye = (eye[3] != 0) ? eye / eye[3] : eye;
+	vec4 tmpVec = eye - vertex; 
+	vec3 v = normalize(vec3(tmpVec[0], tmpVec[1], tmpVec[2]));
+	vec3 n = normalize(vec3(normal[0], normal[1], normal[2]));
+	vec3 l,r;
 	vec3 ambient,diffuse,specular;
 	//for every light in the scene
 	int lightsNum = lightSources.size();
 	for (int i = 0; i < lightsNum; i++)
 	{
 		Light currentLight = lightSources[i];
-		l = currentLight.type == PARALLEL_LIGHT ? -currentLight.direction : normalize(currentLight.position - vertex);
+		pos = currentLight.position;
+		pos = (pos[3] != 0) ? pos / pos[3] : pos;
+		tmpVec = pos - vertex;
+		l = currentLight.type == PARALLEL_LIGHT ? -currentLight.direction : normalize(vec3(tmpVec[0], tmpVec[1], tmpVec[2]));
 		//calculate reflection vector
 		r = normalize(2 * (dot(l, n))*(n - l));
 		//ambient light contribution
@@ -872,25 +885,7 @@ vec3 Renderer::calculateColor(vec4 vertex, vec4 normal, const Material& vertexMa
 		//specular light contribution
 		GLfloat temp = (pow((dot(r, v) > 0 ? dot(r, v) : 0), vertexMaterial.alpha)) /* * (dot(n, l) > 0)*/;
 		specular = vertexMaterial.specularCoeff * currentLight.specularIntensity * temp;
-		finalColor += ambient;
-		vec3 diffuseAndSpecular = diffuse + specular;
-		if (currentLight.type == POINT_LIGHT)
-		{
-			GLfloat d = length(currentLight.position - vertex);
-			if (d < DBL_EPSILON)
-			{
-				finalColor += diffuseAndSpecular;
-			}
-			else
-			{
-				finalColor += diffuseAndSpecular * min((1 / (CONSTANT_ATTENUATION + LINEAR_ATTENUATION*d + QUADRATIC_ATTENUATION*d*d)), 1);
-			}
-			
-		}
-		else
-		{
-			finalColor += diffuseAndSpecular;
-		}
+		finalColor += ambient + diffuse + specular;
 	}
 	clamp(finalColor, 0.0, 1.0);
 	return finalColor;
@@ -995,7 +990,7 @@ void Renderer::createVertexColorList(vector<vec4>& faceVertices, vector<Material
 		//faceCenter = (v0+v1+v2)/3 hence center of mass for the current triangle
 		vec4 faceCenter = (faceVertices[0] + faceVertices[1] + faceVertices[2]) / 3;
 		//calculate the face normal and normalize it, the vector leaves the face's center of mass
-		vec4 curFaceNormal = geometry.faceNormals[currentFace];
+		vec3 curFaceNormal = normalTransform3d * geometry.faceNormals[currentFace];
 		//set the face color
 		Material faceCenterMat;
 		if (faceMaterial.size() == 1)
@@ -1441,7 +1436,7 @@ void Renderer::scanTriangle(const Poly& triangle)
 					if (fogEffect)
 					{
 						//zNear is represented as -1 and zFar as 1 so for (curZ-zStart)/(zEnd-zStart) we get:
-						GLfloat fogFactor = 1-((curZ + 1) / 2);
+						GLfloat fogFactor = 1-(curZ + 1) / 2;
 						vec4 fogVertexColor(fogColor);
 						vec4 foggedColor = interpolate<vec4>(vertexColor, fogVertexColor, fogFactor);
 						screenVertexColor = vec3(foggedColor[R], foggedColor[G], foggedColor[B]);
@@ -1780,7 +1775,7 @@ void Renderer::toggleFogEffect()
 
 void Renderer::toggleBloomMode()
 {
-	//TODO: IMPLEMENT
+	bloomEffect = !bloomEffect;
 }
 
 void Renderer::toggleBlurMode()
@@ -1824,6 +1819,26 @@ void Renderer::drawLine(const vec2& v0, const vec2& v1)
 		if (error > dx) {
 			y += (y1>y0 ? 1 : -1);
 			error -= dx * 2;
+		}
+	}
+}
+
+void upSampleBuffer(float* target, int targetW, int targetH, float* source, int sourceW, int sourceH)
+{
+	GLfloat x_ratio = sourceW / (GLfloat)targetW;
+	GLfloat y_ratio = sourceH / (GLfloat)targetH;
+	GLfloat px, py;
+	for (int y = 0; y < targetH; y++)
+	{
+		for (int x = 0; x < targetW; x++)
+		{
+			px = (int)(x*x_ratio);
+			py = (int)(y*y_ratio);
+			int targetIndex = INDEX(targetW, x, y, R);
+			int sourceIndex = INDEX(sourceW, px, py, R);
+			target[targetIndex] = source[sourceIndex];
+			target[targetIndex+1] = source[sourceIndex+1];
+			target[targetIndex+2] = source[sourceIndex+2];
 		}
 	}
 }
@@ -1929,6 +1944,72 @@ void blur(float* buffer, int width, int height)
 	}
 }
 
+void addBuffers(float* target, int width, int height, float* source, float factor=1)
+{
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int index = INDEX(width, x, y, R);
+			target[index] += source[index] *factor;
+			target[index + 1] += source[index + 1] * factor;
+			target[index + 2] += source[index + 2] * factor;
+		}
+	}
+}
+
+void resetBuffer(float* buffer, int width, int height)
+{
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int index = INDEX(width, x, y, R);
+			buffer[index] = 0;
+			buffer[index + 1] = 0;
+			buffer[index + 2] = 0;
+		}
+	}
+}
+
+void factorizeBuffer(float* buffer, int width, int height, float factor)
+{
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int index = INDEX(width, x, y, R);
+			buffer[index] = buffer[index] * factor > 1 ? 1 : buffer[index] * factor;
+			buffer[index + 1] = buffer[index + 1] * factor > 1 ? 1 : buffer[index + 1] * factor;
+			buffer[index + 2] = buffer[index + 2] * factor > 1 ? 1 : buffer[index + 2] * factor;
+		}
+	}
+}
+
+void Renderer::bloom()
+{
+	resetBuffer(m_sumBuffer, m_width, m_height);
+	addBuffers(m_sumBuffer, m_width, m_height, m_outBuffer);
+	blur(m_sumBuffer, m_width, m_height);
+	factorizeBuffer(m_sumBuffer, m_width, m_height, 0.2);
+
+	for (int i = 1; i < 4; i++)
+	{
+		//factor=2,4,8
+		int factor = pow(2, i);
+		int scaledDownW = static_cast<int>((1 / static_cast<float>(factor))*m_width);
+		int scaledDownH = static_cast<int>((1 / static_cast<float>(factor))*m_height);
+		resetBuffer(m_scaledDownBuffer, scaledDownW, scaledDownH);
+		resetBuffer(m_scaledUpBuffer, m_width, m_height);
+		downSampleBuffer(m_scaledDownBuffer, scaledDownW, scaledDownH, m_outBuffer, m_width, m_height,factor);
+		blur(m_scaledDownBuffer, scaledDownW, scaledDownH);
+		upSampleBuffer(m_scaledUpBuffer, m_width, m_height, m_scaledDownBuffer, scaledDownW, scaledDownH);
+		addBuffers(m_sumBuffer, m_width, m_height, m_scaledUpBuffer, 0.2);
+	}
+	factorizeBuffer(m_outBuffer, m_width, m_height, 0.2);
+	addBuffers(m_outBuffer, m_width, m_height, m_sumBuffer);
+}
+
 void Renderer::downSample()
 {
 	if (!supersamplingAA)
@@ -2004,9 +2085,13 @@ void Renderer::SwapBuffers()
 	{
 		downSample();
 	}
-	if (blurEffect)
+	else if (blurEffect)
 	{
 		blur(m_outBuffer, m_width, m_height);
+	}
+	else if (bloomEffect)
+	{
+		bloom();
 	}
 	int a = glGetError();
 	glActiveTexture(GL_TEXTURE0);
@@ -2027,6 +2112,17 @@ void Renderer::SwapBuffers()
 
 void Renderer::refresh()
 {
+	//clear the out buffer
+	for (int i = 0; i < m_width; i++)
+	{
+		for (int j = 0; j < m_height; j++)
+		{
+			m_outBuffer[INDEX(m_width, i, j, R)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, G)] = 0;
+			m_outBuffer[INDEX(m_width, i, j, B)] = 0;
+		}
+	}
+	//in case AA is active clear the aliasing buffer
 	if (supersamplingAA)
 	{
 		for (int i = 0; i < m_width*ANTI_ALIASING_FACTOR; i++)
@@ -2036,18 +2132,6 @@ void Renderer::refresh()
 				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, R)] = 0;
 				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, G)] = 0;
 				m_aliasingBuffer[INDEX(m_width*ANTI_ALIASING_FACTOR, i, j, B)] = 0;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < m_width; i++)
-		{
-			for (int j = 0; j < m_height; j++)
-			{
-				m_outBuffer[INDEX(m_width, i, j, R)] = 0;
-				m_outBuffer[INDEX(m_width, i, j, G)] = 0;
-				m_outBuffer[INDEX(m_width, i, j, B)] = 0;
 			}
 		}
 	}

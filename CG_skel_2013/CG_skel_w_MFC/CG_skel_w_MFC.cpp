@@ -186,7 +186,10 @@ void CG2keyboard(unsigned char key, int x, int y){
 		p.type = TRANSLATE;
 		p.v = vec3(0, 0, transformationFactor / 100.0);
 		scene->operate(p);
-		cout << "model sent from" << endl;
+		cout << "model sent front" << endl;
+		break;
+	case 'l':
+		scene->printActiveLight();
 		break;
 	}
 }
@@ -818,13 +821,14 @@ void setMenuCallback(int id){
 	}
 	if (id == SET_LIGHT_DIRECTION){
 		vec3 d;
-		CXyzDialog dirMsg("please enter current light direction");
+		CXyzDialog dirMsg("please enter current light direction//position");
 		if (dirMsg.DoModal() == IDOK)
 		{
 			d = dirMsg.GetXYZ();
 		}
 		else{ return; }
 		scene->changeLightDirection(d);
+		cout << "your light direction//position was changed" << endl;
 		redraw = true;
 	}
 	if (id == SET_LIGHT_INTENSITY){
@@ -921,6 +925,7 @@ void toggleMenuCallback(int id)
 			else{ return; }
 		}
 		scene->toggleActiveLightType();
+		redraw = true;
 		break;
 
 	case BACK_FACE_DISPLAY:
@@ -975,7 +980,7 @@ void initMenu()
 	glutAddMenuEntry("set a UNIFORM material for model", SET_UNIFORM_MODEL_MATERIAL);
 	glutAddMenuEntry("set a new general color for the model", SET_MODEL_GENERAL_COLOR);
 	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
-	glutAddMenuEntry("set a direction for the current light", SET_LIGHT_DIRECTION);
+	glutAddMenuEntry("set a direction\position for the current light", SET_LIGHT_DIRECTION);
 	glutAddMenuEntry("set intensity for the current light", SET_LIGHT_INTENSITY);
 	int toggleMenu = glutCreateMenu(toggleMenuCallback);
 	glutAddMenuEntry("Face normals", FACE_NORMALS);

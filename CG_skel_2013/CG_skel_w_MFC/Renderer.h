@@ -17,7 +17,7 @@ using namespace std;
 #define DEFAULT_B 1
 #define TRIANGLE_VERTICES 3
 #define TRIANGLE_EDGES 3
-#define ANTI_ALIASING_FACTOR 2
+#define ANTI_ALIASING_FACTOR 3
 
 enum drawType{VERTEX, NORMAL};
 enum clipResult{ OUT_OF_BOUNDS,IN_BOUNDS, ENTER, EXIT, CLIPPED };
@@ -31,7 +31,7 @@ struct Light
 	lightType	type;
 	//position and direction in world coordinates:
 	vec4		position;
-	vec4		direction;
+	vec3		direction;
 	//ambientIntensity, diffuseIntensity and specularIntensity represent the intensity (ambient, diffuse and specular) for the light's color.
 	GLfloat     ambientIntensityScalar;
 	GLfloat     diffuseIntensityScalar;
@@ -51,8 +51,8 @@ struct Light
 		diffuseIntensity = color*diffuseIntensityScalar;
 		specularIntensity = color*specularIntensityScalar;
 	}
-	Light() : type(PARALLEL_LIGHT), position(0, 1, 0, 1), direction(0, -1, 0, -1), ambientIntensityScalar(0.25),
-		diffuseIntensityScalar(0.5), specularIntensityScalar(0.8), color(1, 1, 1){
+	Light() : type(PARALLEL_LIGHT), position(0, 1, 0, 1), direction(0.577, -0.577, -0.577), ambientIntensityScalar(0.25),
+		diffuseIntensityScalar(0.5), specularIntensityScalar(0.7), color(1, 1, 1){
 		updateIntensity();
 	}
 	Light(const Light & l) : type(l.type), position(l.position), direction(l.direction), ambientIntensityScalar(l.ambientIntensityScalar),
@@ -125,7 +125,7 @@ struct Material
 	GLfloat	alpha;
 
 	//default Material is polished silver
-	Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.9), alpha(10){}
+	Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.99), alpha(5){}
 	Material(vec3 chosenEmissive, vec3 chosenAmbient, vec3 chosenDiffuse, vec3 chosenSpecular, GLfloat chosenAlpha)
 	{
 		emissiveColor		= chosenEmissive;
@@ -359,12 +359,12 @@ private:
 	****************************************************************/
 
 	float *m_outBuffer; // 3*width*height
+	float *m_scaledDownBuffer; // 3*width*height
+	float *m_scaledUpBuffer; // 3*width*height
+	float *m_sumBuffer;// 3*width*height
 	float *m_zbuffer; // width*height
 	float *m_aliasingBuffer;//3*ANTI_ALIASING_FACTOR*ANTI_ALIASING_FACTOR*width*height
-	float *m_halfSizedBuffer;//3*0.5*0.5*width*height
-	float *m_quarterSizedBuffer;//3*0.25*0.25*width*height
-	float *m_eigthSizedBuffer;//3*0.125*0.125*width*height
-	int m_width, m_height;
+	int	   m_width, m_height;
 
 	mat4 cameraTransform;
 	mat4 projection;
@@ -383,6 +383,7 @@ private:
 	bool				supersamplingAA;
 	bool				fogEffect;
 	bool				blurEffect;
+	bool				bloomEffect;
 	
 	/****************************************************************
 						PRIVATE RENDERER FUNCTIONS
@@ -416,7 +417,7 @@ private:
 	*	downSample should always be called when anti aliasing is allowed in order to draw to the screen, just before swapBuffers call
 	*/
 	void downSample();
-
+	void bloom();
 	//////////////////////////////
 	// openGL stuff. Don't touch.
 
