@@ -1,14 +1,2 @@
-CG_skel_2013/freeglut/*
-CG_skel_2013/glew/*
-CG_skel_2013/Release/*
-freeglut/
-glew/
-Release/
-*.opensdf
-*.suo
-*.pdb
-*.obj
-*.obj
-*.log
-CG_skel_2013/Debug/CG_skel_w_MFC.exe
-*.ilk
+CG_skel_2013/*
+CG_skel_2017/*
