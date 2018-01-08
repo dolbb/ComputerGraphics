@@ -1,26 +1,5 @@
-﻿Build started 09-Dec-17 7:36:34 PM.
-     1>Project "D:\software\gitProjects\ComputerGraphics\CG_skel_2013\glew\glew.vcxproj" on node 3 (Rebuild target(s)).
-     1>ClCompile:
-         D:\software\visual studio 2013\VC\bin\CL.exe /c /Iinclude/ /ZI /nologo /W3 /WX- /Od /Oy- /D GLEW_STATIC /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:prompt src\glew.c src\glewinfo.c src\visualinfo.c
-         visualinfo.c
-     1>d:\software\gitprojects\computergraphics\cg_skel_2013\glew\src\visualinfo.c(149): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 d:\software\visual studio 2013\vc\include\stdio.h(211) : see declaration of 'fopen'
-     1>d:\software\gitprojects\computergraphics\cg_skel_2013\glew\src\visualinfo.c(234): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 d:\software\visual studio 2013\vc\include\string.h(112) : see declaration of 'strcpy'
-         glewinfo.c
-     1>d:\software\gitprojects\computergraphics\cg_skel_2013\glew\src\glewinfo.c(9133): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 d:\software\visual studio 2013\vc\include\stdio.h(211) : see declaration of 'fopen'
-         glew.c
-         Generating Code...
-     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1361,5): warning MSB8012: TargetPath(D:\software\gitProjects\ComputerGraphics\CG_skel_2013\Debug\glew.lib) does not match the Library's OutputFile property value (D:\software\gitProjects\ComputerGraphics\CG_skel_2013\glew\lib\glew.lib). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
-       Lib:
-         D:\software\visual studio 2013\VC\bin\Lib.exe /OUT:"lib\glew.lib" /NOLOGO Debug\glew.obj
-         Debug\glewinfo.obj
-         Debug\visualinfo.obj
-     1>glewinfo.obj : warning LNK4006: _main already defined in visualinfo.obj; second definition ignored
-         glew.vcxproj -> D:\software\gitProjects\ComputerGraphics\CG_skel_2013\Debug\glew.lib
-     1>Done Building Project "D:\software\gitProjects\ComputerGraphics\CG_skel_2013\glew\glew.vcxproj" (Rebuild target(s)).
+﻿Build started 08-Jan-18 2:02:17 PM.
 
 Build succeeded.
 
-Time Elapsed 00:00:01.30
+Time Elapsed 00:00:00.01
