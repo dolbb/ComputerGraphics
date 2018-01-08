@@ -1,2 +1,17 @@
 CG_skel_2013/*
 CG_skel_2017/*
+CG_skel_HW3_openGL/Debug
+CG_skel_HW3_openGL/freeglut
+CG_skel_HW3_openGL/glew
+CG_skel_HW3_openGL/ipch
+CG_skel_HW3_openGL/Release
+CG_skel_HW3_openGL/*.*
+*.aps
+CG_skel_HW3_openGL/CG_skel_w_MFC/CG_skel_w_MFC.rc
+*.vcproj
+*.filters
+CG_skel_HW3_openGL/CG_skel_w_MFC/CG_skel_w_MFC.vcxproj.user
+*.log
+*.vcxproj
+*.lastbuildstate
+*.tlog
