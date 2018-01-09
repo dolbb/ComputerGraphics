@@ -36,6 +36,8 @@ Scene *scene;
 Renderer *renderer;
 
 int last_x,last_y;
+int width = DEFAULT_WIDTH;
+int height = DEFAULT_HEIGHT;
 bool lb_down = false;
 bool rb_down = false;
 bool mb_down = false;
@@ -45,28 +47,51 @@ TrackBall trackBall(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 //----------------------------------------------------------------------------
 // Callbacks
 
-void display( void )
+static void updateOrientation()
 {
 	vec3 translationVec;
 	vec3 rotationAxis;
+	vec3 zeroVec(0.0);
+	vec3 scalingVector;
 	float angle;
+	switch (modifier)
+	{
+	case GLUT_ACTIVE_SHIFT:
+		//translation
+		translationVec = trackBall.getTranslation();
+		if (!(translationVec == zeroVec))
+		{
+			//TODO: OPERATE WITH SCENE
+		}
+		break;
+
+	case GLUT_ACTIVE_CTRL:
+		//non uniform scaling
+		scalingVector = trackBall.getNonUniformScaling();
+		break;
+
+	case GLUT_ACTIVE_ALT:
+		//uniform scaling
+		scalingVector = trackBall.getUniformScaling();
+		break;
+
+	default:
+		//rotation
+		rotationAxis = trackBall.getRotationAxis();
+		angle = trackBall.getRotationAngle();
+		if (!isnan(angle))
+		{
+			//TODO: OPERATE WITH SCENE
+		}
+		break;
+	}
+}
+
+void display( void )
+{
 	if (lb_down)
 	{
-		switch (modifier)
-		{
-		case GLUT_ACTIVE_SHIFT:
-			//translation
-			 translationVec = trackBall.getTranslation();
-			//TODO: OPERATE WITH SCENE
-			break;
-
-		default:
-			//rotation
-			 rotationAxis = trackBall.getRotationAxis();
-			 angle = trackBall.getRotationAngle();
-			//TODO: OPERATE WITH SCENE
-			break;
-		}
+		updateOrientation();
 		trackBall.setStart(last_x, last_y);
 	}
 	scene->draw();
@@ -77,9 +102,15 @@ void idle()
 	glutPostRedisplay();
 }
 
-void reshape( int width, int height )
+void reshape( int newWidth, int newHeight )
 {
-//update the renderer's buffers
+	//TODO: OPERATE WITH SCENE AND RENDERER
+	GLfloat heightRatioChage = (GLfloat)newHeight / (GLfloat)height;
+	GLfloat widthRatioChange = (GLfloat)newWidth / (GLfloat)width;
+	//scene->changeProjectionRatio(widthRatioChange, heightRatioChage);
+	width = newWidth;
+	height = newHeight;
+	//renderer->resizeBuffers(width, height);
 	trackBall.setViewport(width, height);
 }
 

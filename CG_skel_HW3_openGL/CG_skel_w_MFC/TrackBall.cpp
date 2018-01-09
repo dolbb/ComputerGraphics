@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "TrackBall.h"
 
-float TrackBall::defaultTranslationStep = 5.0;
+float TrackBall::translationFactor = 5.0;
+float TrackBall::scalingFactor = 5.0;
 
 TrackBall::TrackBall(int width, int height) :width(width), height(height), startingPoint(0, 0), endingPoint(0.0)	{}
 
@@ -29,7 +30,28 @@ float TrackBall::getRotationAngle()
 
 vec3 TrackBall::getTranslation()
 {
-	return normalize(endingPoint - startingPoint)*defaultTranslationStep;
+	return normalize(endingPoint - startingPoint)*translationFactor;
+}
+
+vec3 TrackBall::getNonUniformScaling()
+{
+	float dx = endingPoint[0] - startingPoint[0];
+	float dy = endingPoint[1] - startingPoint[1];
+	if (dx > dy)
+	{
+		return vec3(dx, 0, 0)*scalingFactor;
+	}
+	else
+	{
+		return vec3(0, dy, 0)*scalingFactor;
+	}
+}
+
+vec3 TrackBall::getUniformScaling()
+{
+	float dy = endingPoint[1] - startingPoint[1];
+	float scale = length(endingPoint - startingPoint);
+	return vec3(scale)*dy*scalingFactor;
 }
 
 void TrackBall::resetPoints()

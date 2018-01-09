@@ -16,6 +16,8 @@ public:
 	vec3 getRotationAxis();
 	float getRotationAngle();
 	vec3 getTranslation();
+	vec3 getNonUniformScaling();
+	vec3 getUniformScaling();
 	void resetPoints();
 	void setViewport(int chosenWidth, int chosenHeight);
 
@@ -33,7 +35,8 @@ private:
 	int width;
 	int	height;
 
-	static float defaultTranslationStep;
+	static float translationFactor;
+	static float scalingFactor;
 
 	/**
 	*	PRIVATE TRACK BALL FUNCTIONS
