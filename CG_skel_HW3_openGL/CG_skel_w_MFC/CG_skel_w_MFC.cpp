@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "CG_skel_w_MFC.h"
+#include "TrackBall.h"
 
 
 #ifdef _DEBUG
@@ -28,23 +29,58 @@
 #define MAIN_DEMO 1
 #define MAIN_ABOUT 2
 
+#define DEFAULT_WIDTH 512
+#define DEFAULT_HEIGHT 512
+
 Scene *scene;
 Renderer *renderer;
 
 int last_x,last_y;
-bool lb_down,rb_down,mb_down;
+bool lb_down = false;
+bool rb_down = false;
+bool mb_down = false;
+int modifier;
 
+TrackBall trackBall(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 //----------------------------------------------------------------------------
 // Callbacks
 
 void display( void )
 {
-//Call the scene and ask it to draw itself
+	vec3 translationVec;
+	vec3 rotationAxis;
+	float angle;
+	if (lb_down)
+	{
+		switch (modifier)
+		{
+		case GLUT_ACTIVE_SHIFT:
+			//translation
+			 translationVec = trackBall.getTranslation();
+			//TODO: OPERATE WITH SCENE
+			break;
+
+		default:
+			//rotation
+			 rotationAxis = trackBall.getRotationAxis();
+			 angle = trackBall.getRotationAngle();
+			//TODO: OPERATE WITH SCENE
+			break;
+		}
+		trackBall.setStart(last_x, last_y);
+	}
+	scene->draw();
+}
+
+void idle()
+{
+	glutPostRedisplay();
 }
 
 void reshape( int width, int height )
 {
 //update the renderer's buffers
+	trackBall.setViewport(width, height);
 }
 
 void keyboard( unsigned char key, int x, int y )
@@ -60,6 +96,7 @@ void mouse(int button, int state, int x, int y)
 {
 	//button = {GLUT_LEFT_BUTTON, GLUT_MIDDLE_BUTTON, GLUT_RIGHT_BUTTON}
 	//state = {GLUT_DOWN,GLUT_UP}
+	modifier = glutGetModifiers();
 	
 	//set down flags
 	switch(button) {
@@ -74,7 +111,14 @@ void mouse(int button, int state, int x, int y)
 			break;
 	}
 
-	// add your code
+	if (lb_down)
+	{
+		trackBall.setStart(x, y);
+	}
+	if (!lb_down)
+	{
+		trackBall.resetPoints();
+	}
 }
 
 void motion(int x, int y)
@@ -82,6 +126,11 @@ void motion(int x, int y)
 	// calc difference in mouse movement
 	int dx=x-last_x;
 	int dy=y-last_y;
+	//update ending point for the trackball to calculate transformation
+	if (dx || dy)
+	{
+		trackBall.setEnd(x, y);
+	}
 	// update last x,y
 	last_x=x;
 	last_y=y;
@@ -136,7 +185,7 @@ int my_main( int argc, char **argv )
 	// Initialize window
 	glutInit( &argc, argv );
 	glutInitDisplayMode( GLUT_RGBA| GLUT_DOUBLE);
-	glutInitWindowSize( 512, 512 );
+	glutInitWindowSize( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 	glutInitContextVersion( 3, 2 );
 	glutInitContextProfile( GLUT_CORE_PROFILE );
 	glutCreateWindow( "CG" );
@@ -153,7 +202,7 @@ int my_main( int argc, char **argv )
 
 	
 	
-	renderer = new Renderer(512,512);
+	renderer = new Renderer(DEFAULT_WIDTH,DEFAULT_HEIGHT);
 	scene = new Scene(renderer);
 	//----------------------------------------------------------------------------
 	// Initialize Callbacks
@@ -164,7 +213,6 @@ int my_main( int argc, char **argv )
 	glutMotionFunc ( motion );
 	glutReshapeFunc( reshape );
 	initMenu();
-	
 
 	glutMainLoop();
 	delete scene;
