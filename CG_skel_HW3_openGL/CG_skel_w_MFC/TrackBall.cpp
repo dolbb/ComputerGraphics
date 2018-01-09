@@ -37,13 +37,34 @@ vec3 TrackBall::getNonUniformScaling()
 {
 	float dx = endingPoint[0] - startingPoint[0];
 	float dy = endingPoint[1] - startingPoint[1];
+	//scaling along the x axis
 	if (dx > dy)
 	{
-		return vec3(dx, 0, 0)*scalingFactor;
+		//scaling up
+		if (dx > 0)
+		{
+			return vec3(dx, 0, 0)*scalingFactor;
+		}
+		//scaling down
+		else if (dx!=0)
+		{
+			return vec3(1/dx, 0, 0)/scalingFactor;
+		}
+		
 	}
+	//scaling along the y axis
 	else
 	{
-		return vec3(0, dy, 0)*scalingFactor;
+		//scaling up
+		if (dy > 0)
+		{
+			return vec3(0, dy, 0)*scalingFactor;
+		}
+		//scaling down
+		else if (dy != 0)
+		{
+			return vec3(0, 1/dy, 0)/scalingFactor;
+		}
 	}
 }
 
@@ -51,7 +72,20 @@ vec3 TrackBall::getUniformScaling()
 {
 	float dy = endingPoint[1] - startingPoint[1];
 	float scale = length(endingPoint - startingPoint);
-	return vec3(scale)*dy*scalingFactor;
+	if (scale == 0)
+	{
+		return vec3(1, 1, 1);
+	}
+	//scaling up
+	if (dy > 0)
+	{
+		return vec3(scale)*scalingFactor;
+	}
+	//scaling down
+	else
+	{
+		return vec3(1/scale)/scalingFactor;
+	}
 }
 
 void TrackBall::resetPoints()
