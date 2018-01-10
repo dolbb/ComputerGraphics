@@ -60,8 +60,8 @@ void Scene::drawDemo(){
 	glEnableVertexAttribArray(loc);
 	glEnableVertexAttribArray(loc2);
 
-	glVertexAttribPointer(loc, 4, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(loc2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(loc,4,GL_FLOAT,GL_FALSE,7*sizeof(float),0);
+	glVertexAttribPointer(loc2, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(4*sizeof(float)));
 
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 
@@ -72,14 +72,10 @@ void Scene::drawDemo(){
 	
 	glDisableVertexAttribArray(loc);
 	glDisableVertexAttribArray(loc2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
-
-
-
-
-
-
-
 
 void Scene::drawDemo2()
 {

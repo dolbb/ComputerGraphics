@@ -1,4 +1,5 @@
 #pragma once
+#include "Vertex.h"
 #include "scene.h"
 #include "vec.h"
 #include "mat.h"
