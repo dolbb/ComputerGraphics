@@ -48,6 +48,7 @@ public:
 	void loadOBJModel(string fileName);
 	void draw();
 	void drawDemo();
+	void drawDemo2();
 	
 	int activeModel;
 	int activeLight;
