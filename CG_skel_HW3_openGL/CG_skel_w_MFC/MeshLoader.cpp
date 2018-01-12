@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 
+enum { VAO_POSITIONS_BUFFER, VAO_FACE_NORMALS_BUFFER, VAO_VERTEX_NORMALS_BUFFER, VAO_TEXTURE_BUFFER };
 /*	private:		*/
 struct MeshLoader::FaceIdcs
 {
@@ -110,8 +111,10 @@ void MeshLoader::init(){
 void MeshLoader::initBuffers(){
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numberOfVertices * 3, rawVertices, GL_STATIC_DRAW);//TODO: ADD NORMALS AND TEXTURES
 	//TODO: ADD MORE PROGS:
 	//glEnableVertexAttribArray(SHADER_POSITIONS);
+	glVertexAttribPointer(VAO_POSITIONS_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	//TODO: notice different size for texture\normals(2 instead of 4 in the second arg)
