@@ -1,26 +1,27 @@
 #pragma once
-#include "Vertex.h"
 #include "scene.h"
 #include "vec.h"
 #include "mat.h"
 #include <string>
 
+enum axis{ X_AXIS, Y_AXIS, Z_AXIS };
+enum DisplayMode{ SKELETON, COLORED };
+
 using namespace std;
 
 class MeshModel : public Model
 {
-protected :
-	MeshModel() {}
-	vec3 *vertex_positions;
-	//add more attributes
-	mat4 _world_transform;
-	mat3 _normal_transform;
+	int vao;					//vertices object
+	int vertexNum;	
+	bool normalsPresent;		//are vertex normals in the DB
+	bool texturesPresent;		//are texture coords in the DB
+
+	bool vertexNormalsDisplay;	//does the user want to show vertex normals
+	bool faceNormalsDisplay;	//does the user want to show face normals
+	bool boundingBoxDisplay;	//does the user want to show bounding box
 
 public:
-
 	MeshModel(string fileName);
 	~MeshModel(void);
-	void loadFile(string fileName);
 	void draw();
-	
 };

@@ -19,10 +19,26 @@ void Scene::draw()
 	// 1. Send the renderer the current camera transform and the projection
 	// 2. Tell all models to draw themselves
 
-	m_renderer->SwapBuffers();
+	//m_renderer->SwapBuffers();
 }
-
 void Scene::drawDemo(){
+	glClearColor(0.0, 1.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);	
+
+	static_cast<MeshModel*>(models[0])->draw();
+
+	//MeshModel *mesh = static_cast<MeshModel*>(models[0]);
+	//GLuint program = InitShader("minimal_vshader.glsl","minimal_fshader.glsl");
+	//glUseProgram(program);
+	//glClearColor(0.0, 0.0, 0.0, 1.0);
+	//glClear(GL_COLOR_BUFFER_BIT);
+	//
+	//static_cast<MeshModel*>(models[0])->draw();
+	//
+	//glFlush();
+	glutSwapBuffers();
+}
+void Scene::drawDemo3(){
 	const int vNum = 3;
 	vec4 v1(-0.1, -0.1f, 0.0f, 1.0f);
 	vec4 v2(0.1f, -0.1f, 0.0f, 1.0f);

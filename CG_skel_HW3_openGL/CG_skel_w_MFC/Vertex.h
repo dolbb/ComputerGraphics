@@ -4,7 +4,6 @@
 #include "GL\freeglut.h"
 #include <string>
 
-
 using namespace std;
 
 class Vertex
@@ -31,4 +30,3 @@ public:
 	/*	utilities			*/
 	void putInBuffer(GLfloat *buffer, int index);
 };
-

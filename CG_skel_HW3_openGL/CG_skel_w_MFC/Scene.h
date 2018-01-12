@@ -49,6 +49,7 @@ public:
 	void draw();
 	void drawDemo();
 	void drawDemo2();
+	void drawDemo3();
 	
 	int activeModel;
 	int activeLight;
