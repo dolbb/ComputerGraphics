@@ -1,18 +1,14 @@
 // CG_skel_w_MFC.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
-#include "CG_skel_w_MFC.h"
-#include "TrackBall.h"
-
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-
-// The one and only application object
-
+#include "stdafx.h"
+#include "CG_skel_w_MFC.h"
+#include "TrackBall.h"
 #include "GL/glew.h"
 #include "GL/freeglut.h"
 #include "GL/freeglut_ext.h"
@@ -22,6 +18,7 @@
 #include "Scene.h"
 #include "Renderer.h"
 #include <string>
+#include "InputDialog.h"
 
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
@@ -33,8 +30,8 @@
 #define DEFAULT_HEIGHT 512
 
 Scene *scene;
-Renderer *renderer;
 
+/*	our current state parameters:		*/
 int last_x,last_y;
 int width = DEFAULT_WIDTH;
 int height = DEFAULT_HEIGHT;
@@ -42,6 +39,9 @@ bool lb_down = false;
 bool rb_down = false;
 bool mb_down = false;
 int modifier;
+bool redraw = false;
+OperateParams operationParams;
+
 
 TrackBall trackBall(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 //----------------------------------------------------------------------------
@@ -104,13 +104,13 @@ void idle()
 
 void reshape( int newWidth, int newHeight )
 {
-	//TODO: OPERATE WITH SCENE AND RENDERER
 	GLfloat heightRatioChage = (GLfloat)newHeight / (GLfloat)height;
 	GLfloat widthRatioChange = (GLfloat)newWidth / (GLfloat)width;
-	//scene->changeProjectionRatio(widthRatioChange, heightRatioChage);
 	width = newWidth;
 	height = newHeight;
-	//renderer->resizeBuffers(width, height);
+	glViewport(0, 0, width, height);
+	//TODO:update projection spec for display:
+	//scene->changeProjectionRatio(widthRatioChange, heightRatioChage);
 	trackBall.setViewport(width, height);
 }
 
@@ -166,6 +166,86 @@ void motion(int x, int y)
 	last_x=x;
 	last_y=y;
 }
+/*void special(int key, int x, int y)
+{
+	int modifier = glutGetModifiers();
+	operationParams.type = ROTATE;
+	if (modifier == GLUT_ACTIVE_SHIFT)
+	{
+		parameters.type = TRANSLATE;
+	}
+	parameters.frame = currentCameraFrame;
+	switch (key)
+	{
+	case GLUT_KEY_UP:
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			if (direction == elevated)
+			{
+				parameters.v = vec3(0, 1, 0)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+			else
+			{
+				parameters.v = vec3(0, 0, -1)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(1, 0, 0)*DEFAULT_ANGLE*transformationFactor;
+		}
+		break;
+
+	case GLUT_KEY_DOWN:
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			if (direction == elevated)
+			{
+				parameters.v = vec3(0, -1, 0)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+			else
+			{
+				parameters.v = vec3(0, 0, 1)*DEFAULT_TRANSLATION*transformationFactor;
+			}
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(-1, 0, 0)*DEFAULT_ANGLE*transformationFactor;
+		}
+		break;
+
+	case GLUT_KEY_LEFT:
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			parameters.v = vec3(-1, 0, 0)*DEFAULT_TRANSLATION*transformationFactor;
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(0, 1, 0)*DEFAULT_ANGLE*transformationFactor;
+		}
+		break;
+
+	case GLUT_KEY_RIGHT:
+		//set translation parameters
+		if (parameters.type == TRANSLATE)
+		{
+			parameters.v = vec3(1, 0, 0)*DEFAULT_TRANSLATION*transformationFactor;
+		}
+		//set rotation parameters
+		else
+		{
+			parameters.v = vec3(0, -1, 0)*DEFAULT_ANGLE*transformationFactor;
+		}
+		break;
+	}
+	scene->operate(parameters);
+	redraw = true;
+}*/
 
 void fileMenu(int id)
 {
@@ -219,7 +299,7 @@ int my_main( int argc, char **argv )
 	glutInitWindowSize( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 	glutInitContextVersion( 3, 2 );
 	glutInitContextProfile( GLUT_CORE_PROFILE );
-	glutCreateWindow( "CG" );
+	glutCreateWindow( "Computer Graphics - HW3" );
 	glewExperimental = GL_TRUE;
 	glewInit();
 	GLenum err = glewInit();
@@ -231,23 +311,25 @@ int my_main( int argc, char **argv )
 	}
 	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 
-	
-	
-	renderer = new Renderer(DEFAULT_WIDTH,DEFAULT_HEIGHT);
-	scene = new Scene(renderer);
+	scene = new Scene;
 	//----------------------------------------------------------------------------
 	// Initialize Callbacks
 
 	glutDisplayFunc( display );
+	glutIdleFunc(idle); 
 	glutKeyboardFunc( keyboard );
 	glutMouseFunc( mouse );
 	glutMotionFunc ( motion );
 	glutReshapeFunc( reshape );
+	
+	/*added: *///TODO: ADD THE ADDED
+	//glutSpecialFunc(special);
+	//glutMouseWheelFunc(mouseWheel);
+	
 	initMenu();
 
 	glutMainLoop();
 	delete scene;
-	delete renderer;
 	return 0;
 }
 

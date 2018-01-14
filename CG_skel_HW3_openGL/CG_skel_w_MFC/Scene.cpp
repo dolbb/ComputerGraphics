@@ -8,24 +8,106 @@
 
 using namespace std;
 
+/*===============================================================
+				static aux functions:
+===============================================================*/
+static MeshModel* changeToMeshModel(Model* m){
+	return static_cast<MeshModel*>(m);
+}
+static void initState(){
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+}
+
+/*===============================================================
+				scene private functions:
+===============================================================*/
+void Scene::initPrograms(){
+	//must push the data in accordance with Programs enumeration.
+	programs.push_back(InitShader("minimal_vshader.glsl", "minimal_fshader.glsl"));
+}
+
+/*===============================================================
+				scene public functions:
+===============================================================*/
+Scene::Scene(){
+	initPrograms();
+	initState();
+}
 void Scene::loadOBJModel(string fileName)
 {
 	MeshModel *model = new MeshModel(fileName);
 	models.push_back(model);
+	activeModel = models.size() - 1;
 }
-
 void Scene::draw()
 {
-	// 1. Send the renderer the current camera transform and the projection
-	// 2. Tell all models to draw themselves
-
-	//m_renderer->SwapBuffers();
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+	int modelNumber = models.size();
+	for (int i = 0; i < modelNumber; ++i){
+		changeToMeshModel(models[i])->draw(programs);
+	}
+	glutSwapBuffers();
 }
+
+void Scene::setActiveModel(int i){
+	if (models.size() > i){
+		activeModel = i;
+	}
+	else{
+		cout << "you've entered invalid model index, only " << models.size() << "models ";
+		cout << "are in the system" << endl;
+		cout << "please enter int value in the range [0, " << models.size() - 1 << "]" << endl;
+	}
+}
+void Scene::setActiveLight(int i){
+	if (lights.size() > i){
+		activeLight = i;
+	}
+	else{
+		cout << "you've entered invalid light index, only " << lights.size() << "lights ";
+		cout << "are in the system" << endl;
+		cout << "please enter int value in the range [0, " << lights.size() - 1 << "]" << endl;
+	}
+}
+void Scene::setActiveCamera(int i){
+	if (cameras.size() > i){
+		activeCamera = i;
+	}
+	else{
+		cout << "you've entered invalid camera index, only " << cameras.size() << "cameras ";
+		cout << "are in the system" << endl;
+		cout << "please enter int value in the range [0, " << cameras.size() - 1 << "]" << endl;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*===============================================================
+							demos:
+===============================================================*/
 void Scene::drawDemo(){
 	glClearColor(0.0, 1.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);	
 
-	static_cast<MeshModel*>(models[0])->draw();
+	GLuint program = InitShader("minimal_vshader.glsl",
+		"minimal_fshader.glsl");
+
+	glUseProgram(program);
+//	static_cast<MeshModel*>(models[0])->draw();
 
 	//MeshModel *mesh = static_cast<MeshModel*>(models[0]);
 	//GLuint program = InitShader("minimal_vshader.glsl","minimal_fshader.glsl");
@@ -37,6 +119,8 @@ void Scene::drawDemo(){
 	//
 	//glFlush();
 	glutSwapBuffers();
+	int x;
+	cin >> x;
 }
 void Scene::drawDemo3(){
 	const int vNum = 3;

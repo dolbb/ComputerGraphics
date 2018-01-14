@@ -4,19 +4,35 @@
 #include <string>
 #include <vector>
 
-using namespace std;
+enum {
+	POSITIONS_BUFFER,
+	VERTEX_NORMALS_BUFFER,
+	TEXTURE_BUFFER,
+	FACE_CENTER_BUFFER,
+	FACE_NORMALS_BUFFER,
+	NUMBER_OF_BUFFERS
+};
 
+enum {
+	SHADER_ATTRIB_0,
+	SHADER_ATTRIB_1,
+	SHADER_ATTRIB_2,
+	SHADER_ATTRIB_3
+};
+
+using namespace std;
 //should return vao handle:
 class MeshLoader{
 	struct FaceIdcs;
 	GLuint vao;
-	GLuint vbo; //TODO: ADD MORE BUFFERS
+	GLuint vbo[NUMBER_OF_BUFFERS];
 	int numberOfVertices;
 
 	vec3* rawVertices;
 	vec3* rawVNormals;
+	vec3* rawFCenters;
 	vec3* rawFNormals;
-	vec3* rawTextures;
+	vec2* rawTextures;
 
 	vector<vec3> vertices;
 	vector<vec3> normals;

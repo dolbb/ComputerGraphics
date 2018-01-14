@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 
-enum { VAO_POSITIONS_BUFFER, VAO_FACE_NORMALS_BUFFER, VAO_VERTEX_NORMALS_BUFFER, VAO_TEXTURE_BUFFER };
+
 /*	private:		*/
 struct MeshLoader::FaceIdcs
 {
@@ -60,7 +60,11 @@ MeshLoader::MeshLoader(string fileName){
 	init();
 }
 MeshLoader::~MeshLoader(){
-	//TODO: DELETE ALL RAW DATA ARRAYS
+	delete[] rawVertices;
+	delete[] rawVNormals;
+	delete[] rawFNormals;
+	delete[] rawFCenters;
+	delete[] rawTextures;
 }
 void MeshLoader::loadOBJFile(string &fileName){
 	ifstream ifile(fileName.c_str());
@@ -109,16 +113,31 @@ void MeshLoader::init(){
 	texture.clear();
 }
 void MeshLoader::initBuffers(){
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numberOfVertices * 3, rawVertices, GL_STATIC_DRAW);//TODO: ADD NORMALS AND TEXTURES
-	//TODO: ADD MORE PROGS:
-	//glEnableVertexAttribArray(SHADER_POSITIONS);
-	glVertexAttribPointer(VAO_POSITIONS_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	
+	glGenBuffers(NUMBER_OF_BUFFERS, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[POSITIONS_BUFFER]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numberOfVertices * 3, rawVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(POSITIONS_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//TODO: notice different size for texture\normals(2 instead of 4 in the second arg)
-	//TODO: add normals and texture.
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[VERTEX_NORMALS_BUFFER]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numberOfVertices * 3, rawVNormals, GL_STATIC_DRAW);
+	glVertexAttribPointer(VERTEX_NORMALS_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[TEXTURE_BUFFER]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numberOfVertices * 2, rawTextures, GL_STATIC_DRAW);
+	glVertexAttribPointer(TEXTURE_BUFFER, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[FACE_CENTER_BUFFER]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * faces.size() * 3, rawFCenters, GL_STATIC_DRAW);
+	glVertexAttribPointer(FACE_CENTER_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[FACE_NORMALS_BUFFER]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * faces.size() * 3, rawFNormals, GL_STATIC_DRAW);
+	glVertexAttribPointer(FACE_NORMALS_BUFFER, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 void MeshLoader::convertFacesDataToRaw(){
 	initVertexPositions();
@@ -143,10 +162,8 @@ void MeshLoader::initVertexNormals()
 	if (!getNormalPresent()){ return;}
 	rawVNormals = new vec3[numberOfVertices];
 	int currentFace = 0;
-	int currentNormal = 0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++){
 		for (int i = 0; i < 3; i++){
-			currentNormal = it->vn[i];
 			rawVNormals[(currentFace * 3) + i] = normals[(it->vn[i]) - 1];
 		}
 	}
@@ -154,16 +171,25 @@ void MeshLoader::initVertexNormals()
 void MeshLoader::initFaceNormals()
 {
 	rawFNormals = new vec3[faces.size()];
+	rawFCenters = new vec3[faces.size()];
 	int currentFace = 0;
 	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++){
 		vec3 v0 = vertices[(it->v[0]) - 1];
 		vec3 v1 = vertices[(it->v[1]) - 1];
 		vec3 v2 = vertices[(it->v[2]) - 1];
 		rawFNormals[currentFace] = normalize(cross((v0 - v2), (v1 - v2)));
+		rawFCenters[currentFace] = (v0 + v1 + v2) / 3;
 	}
 }
 void MeshLoader::initTextures(){
-	//TODO: ADD IMPLEMENTATION.
+	if (!getTexturePresent()){ return; }
+	rawTextures = new vec2[numberOfVertices];
+	int currentFace = 0;
+	for (vector<FaceIdcs>::iterator it = faces.begin(); it != faces.end(); ++it, currentFace++){
+		for (int i = 0; i < 3; i++){
+			rawTextures[(currentFace * 3) + i] = texture[(it->vt[i]) - 1];
+		}
+	}
 }
 /*	public:			*/		
 int MeshLoader::getHandle(){
