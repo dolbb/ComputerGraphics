@@ -1,6 +1,5 @@
 #version 150
 
-
 in  vec3 vPosition;
 
 void main()
