@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Material.h"
 
 Material::Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.99),isUniform(true), alpha(5){}

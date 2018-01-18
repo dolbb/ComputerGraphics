@@ -4,35 +4,74 @@
 #include <string>
 #include <vector>
 
-enum {
-	POSITIONS_BUFFER,
-	VERTEX_NORMALS_BUFFER,
-	TEXTURE_BUFFER,
-	FACE_CENTER_BUFFER,
-	FACE_NORMALS_BUFFER,
-	NUMBER_OF_BUFFERS
-};
+#define MAX_NUMBER_OF_BUFFERS 3
+#define BOUNDING_BOX_NUM_OF_VERTEX 8
+#define BOUNDING_BOX_NUM_OF_EDGES 12
 
+enum VaoTypes{
+	RB_VAO,		//regular buffers
+	FNB_VAO,	//face normals buffers
+	VNB_VAO,	//vertex normals buffers
+	BB_VAO,
+	NUMBER_OF_VAOS
+};
+enum RegularBuffers{
+	RB_POSITIONS_BUFFER,
+	RB_VERTEX_NORMALS_BUFFER,
+	RB_TEXTURE_BUFFER,
+	RB_NUMBER_OF_BUFFERS
+};
+enum FaceNormalsBuffers{
+	FNB_FACE_CENTER_BUFFER,
+	FNB_FACE_NORMALS_BUFFER,
+	FNB_NUMBER_OF_BUFFERS
+};
+enum VertexNormalsBuffers{
+	VNB_POSITIONS_BUFFER,
+	VNB_VERTEX_NORMALS_BUFFER,
+	VNB_NUMBER_OF_BUFFERS
+};
+enum BoundingBoxBuffers{
+	BB_EDGES_BUFFER,
+	BB_NUMBER_OF_BUFFERS
+};
 enum {
 	SHADER_ATTRIB_0,
 	SHADER_ATTRIB_1,
-	SHADER_ATTRIB_2,
-	SHADER_ATTRIB_3
+	SHADER_ATTRIB_2
 };
-
+enum axis{
+	X_AXIS,
+	Y_AXIS,
+	Z_AXIS
+};
+enum axisExtremumValues{ 
+	X_MIN, 
+	X_MAX, 
+	Y_MIN, 
+	Y_MAX, 
+	Z_MIN, 
+	Z_MAX 
+};
 using namespace std;
 //should return vao handle:
 class MeshLoader{
 	struct FaceIdcs;
-	GLuint vao;
-	GLuint vbo[NUMBER_OF_BUFFERS];
+	GLuint vaos[NUMBER_OF_VAOS];
+	GLuint vboR[RB_NUMBER_OF_BUFFERS];
+	GLuint vboFN[FNB_NUMBER_OF_BUFFERS];
+	GLuint vboVN[VNB_NUMBER_OF_BUFFERS];
+	GLuint vboBB[BB_NUMBER_OF_BUFFERS];
 	int numberOfVertices;
+	vec3 centerOfMass;
+	vec3 axisDelta;
 
 	vec3* rawVertices;
 	vec3* rawVNormals;
 	vec3* rawFCenters;
 	vec3* rawFNormals;
 	vec2* rawTextures;
+	vec3* rawBoundingBox;
 
 	vector<vec3> vertices;
 	vector<vec3> normals;
@@ -40,20 +79,31 @@ class MeshLoader{
 	vector<FaceIdcs> faces;
 
 	void	loadOBJFile(string &fileName);
+	/*	VAOs & VBOs					*/
 	void	init();
-	void	initBuffers();
+	void	initRegularBuffers();
+	void	initFaceNormalsBuffers();
+	void	initVertexNormalsBuffers();
+	void	initBBoxBuffers();
+	/*	raw data manipulations:		*/	
 	void	convertFacesDataToRaw();
 	void	initVertexPositions();
 	void	initVertexNormals();
 	void	initTextures();
 	void	initFaceNormals();
+	void	initBoundingBox();
+	void	calculateAxisExtremum(GLfloat* axisExtremum);
+	bool	isBoundingBoxEdge(int i, int j);
+
 public:
-	/*	constructor:		*/
+	/*	constructor:				*/
 	MeshLoader(string fileName);
 	~MeshLoader(void);
-	/*	getters:			*/	
-	int  getHandle();
+	/*	getters:					*/	
+	void  getHandles(GLuint* vaoArray);
 	int  getVNumber();
 	bool getNormalPresent();
 	bool getTexturePresent();
+	vec3 getCenterOfMass();
+	vec3 getAxisDeltas();
 };

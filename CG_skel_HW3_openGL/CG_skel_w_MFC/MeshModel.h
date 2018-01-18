@@ -1,42 +1,72 @@
 #pragma once
-#include "scene.h"
+#include "Scene.h"
+#include "Material.h"
 #include "vec.h"
 #include "mat.h"
+#include "MeshLoader.h"
 #include <string>
 
-enum axis{ 
-	X_AXIS, 
-	Y_AXIS, 
-	Z_AXIS 
-};
-enum DisplayMode{
-	DM_FILLED_SILHOUETTE,
-	DM_WIRE_FRAME,
-	DM_FLAT,
-	DM_GOURAUD,
-	DM_PHONG,
-	DM_VERTEX_NORMALS,
-	DM_FACES_NORMALS,
-	DM_BOUNDING_BOX,
-	DM_NUMBER_OF_DISPLAY_MODES
+enum ActionType{ 
+	OBJECT_ACTION, 
+	WORLD_ACTION 
 };
 
 using namespace std;
 
 class MeshModel : public Model
 {
-	int vao;					//vertices object
-	int vertexNum;	
+	/*	raw MehsModel data			*/
+	GLuint vaos[NUMBER_OF_VAOS];	//vertices object
+	int vertexNum;
+	vec3 centerOfMass;
+	vec3 axisDeltas;			//dx dy dz of the model
 	bool normalsPresent;		//are vertex normals in the DB
 	bool texturesPresent;		//are texture coords in the DB
+	Material material;
 
+	/*	vertices transformations:	*/	
+	mat4 worldVertexTransform;
+	mat4 worldInvertedVertexTransform;
+	mat4 selfVertexTransform;
+	mat4 selfInvertedVertexTransform;
+
+	/*	normals transformations:	*/
+	mat3 worldNormalTransform;
+	mat3 worldNormalInvertedTransform;
+	mat3 selfNormalTransform;
+	mat3 selfNormalInvertedTransform;
+
+	/*	preferences data:			*/
 	bool displayPreferences[DM_NUMBER_OF_DISPLAY_MODES];
-	Program displayedPrograms[DM_NUMBER_OF_DISPLAY_MODES];
+	ActionType actionType;
 
 	/*	private function		*/
-	void drawAux(vector<GLuint> &programs, DisplayMode mode);
+	void drawAux(vector<ShaderProgram> &programs, DisplayMode mode);
+	void vertexTransformation(mat4& mat, mat4& invMat);
+	void normalTransformation(mat4& m4, mat4& a4);
 public:
 	MeshModel(string fileName);
 	~MeshModel(void);
-	void draw(vector<GLuint> &programs);
+	void draw(vector<ShaderProgram> &programs);
+	void setDisplayMode(DisplayMode mode);
+	void frameActionSet(ActionType a);
+	void rotateXYZ(vec3 vec);
+	void scale(vec3 vec);
+	void uniformicScale(GLfloat a);
+	void translate(vec3 vec);
+	void resetTransformations();
+	vec3 getVertexBeforeWorld(vec3 &v);
+	vec3 getVertexBeforeSelf(vec3 &v);
+	vec3 getNormalBeforeWorld(vec3&);
+	vec3 getNormalBeforeSelf(vec3&);
+	vec3 getCenterOfMass();
+	void featuresStateToggle(ActivationToggleElement e);
+	vec3 getVolume();
+
+	/*setMaterial can be used for uniform materials only*/
+	void setNonUniformMaterial();
+	void setUniformMaterial(Material m);	
+	void setUniformColor(vec3 c);	
+	void setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);	
+	void printUniformMateral();
 };
