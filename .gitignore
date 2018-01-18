@@ -22,4 +22,4 @@ CG_skel_HW3_openGL/CG_skel_w_MFC/Release/vc120.pdb
 CG_skel_HW3_openGL/CG_skel_w_MFC/Debug/CG_skel_w_MFC.pch
 *.idb
 *.pdb
-CG_skel_HW3_openGL/glm/*
+CG_skel_HW3_openGL/CG_skel_w_MFC/glm/*
