@@ -88,6 +88,9 @@ Scene::~Scene(){
 		delete(cameras[i]);
 		cameras[i] = NULL;
 	}
+	for (int i = 0; i < programs.size(); ++i){
+		programs[i].deleteProgram();
+	}
 }
 void Scene::loadOBJModel(string fileName)
 {
@@ -98,6 +101,7 @@ void Scene::draw()
 {
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+	cameras[activeCamera]->updatePrograms(programs);
 	int modelNumber = models.size();
 	for (int i = 0; i < modelNumber; ++i){
 		changeToMeshModel(models[i])->draw(programs);
@@ -171,12 +175,10 @@ void Scene::LookAtActiveModel(){
 	LookAtActiveModel(ORTHO);
 }
 void Scene::LookAtActiveModel(ProjectionType pType){
-	//TODO: USE GL LOOK AT ??
-	/*
 	if (activeModel == NULL || activeCamera == NULL){ return; }
 	MeshModel* m = changeToMeshModel(models[activeModel]);
 	vec3 meshCenter = m->getCenterOfMass();
-	vec3 coords = getCameraCoordsBoundaries(m->getVolume());
+	vec3 coords = m->getVolume();
 	GLfloat dx = coords[0];
 	GLfloat dy = coords[1];
 	GLfloat dz = coords[2];
@@ -217,7 +219,7 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	case PERSPECTIVE:	
 		cameras[activeCamera]->Perspective(p);
 		break;
-	}*/
+	}
 }
 void Scene::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
 	cameras[activeCamera]->changeProjectionRatio(widthRatioChange, heightRatioChage);

@@ -91,7 +91,6 @@ class Scene {
 	void initData();
 	void handleMeshModelFrame(OperateParams &p);
 	void handleCameraFrame(OperateParams &p);
-	vec3 getCameraCoordsBoundaries(vec3 *bBox);
 	void setActiveLight(Light l);
 public:
 	Scene();

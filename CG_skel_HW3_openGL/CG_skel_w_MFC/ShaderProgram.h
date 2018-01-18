@@ -16,6 +16,7 @@ public:
 	~ShaderProgram();
 	void activate();
 	void deactivate();
+	void deleteProgram();
 	void setUniform(const string& uniformName, bool uniformVal);
 	void setUniform(const string& uniformName, int uniformVal);
 	void setUniform(const string& uniformName, float uniformVal);

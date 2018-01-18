@@ -117,6 +117,7 @@ void Camera::Ortho(const ProjectionParams& param){
 }
 //TODO: rethink in accordance with CG HW3.
 void Camera::Frustum(const ProjectionParams& param){
+	projectionParameters = param;
 	pType = FRUSTUM;
 	float left = param.left;
 	float right = param.right;
@@ -186,9 +187,24 @@ void Camera::changeRelativePosition(vec3 &v){
 }
 void Camera::zoom(GLfloat scale){
 	//TODO: change to projection params change
+	ProjectionParams p = projectionParameters;
+	p.zoom(scale);
+	switch (pType){
+	case ORTHO:	
+		Ortho(p);
+		break;
+	case FRUSTUM:		 
+		Frustum(p);
+		break;
+	case PERSPECTIVE:	 
+		Perspective(p);
+		break;
+	}
+	/*
 	if (scale > 0){
 		projection = Scale(scale, scale, scale) * projection;
 	}
+	*/
 }
 void Camera::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
 	projectionParameters.left *= widthRatioChange;
@@ -200,6 +216,14 @@ void Camera::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatio
 	}
 	else{
 		Frustum(projectionParameters);
+	}
+}
+void Camera::updatePrograms(vector<ShaderProgram> &programs){
+	int size = programs.size();
+	for (int i = 0; i < size; ++i){
+		programs[i].setUniform("view"		, cTransform);
+		//programs[i].setUniform("eye"		, cEye);
+		programs[i].setUniform("projection"	, projection);
 	}
 }
 mat4 Camera::getCameraProjection()

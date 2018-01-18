@@ -86,6 +86,7 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 	case DM_FILLED_SILHOUETTE:
 		glBindVertexArray(vaos[RB_VAO]);			//bind vao
 		glEnableVertexAttribArray(0);				//enable attributes
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
 		programs[PROGRAM_MINIMAL].activate();
 		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
 		break;

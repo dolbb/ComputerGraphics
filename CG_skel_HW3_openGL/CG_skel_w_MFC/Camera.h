@@ -3,7 +3,10 @@
 #include <vector>
 #include "mat.h"
 #include "vec.h"
+#include "ShaderProgram.h"
 #include <string>
+#include "glm/glm/glm.hpp"
+
 
 using namespace std;
 /*===============================================================
@@ -46,6 +49,9 @@ struct ProjectionParams{
 		fovy = 45.0;
 		aspect = 1;
 	}
+	void zoom(GLfloat scale){
+		
+	}
 };
 /*===============================================================
 				Camera class:
@@ -84,6 +90,7 @@ public:
 	void toggleRenderMe();
 	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
 	void print();//TODO: implement me.
+	void updatePrograms(vector<ShaderProgram> &programs);
 
 	//getters:
 	mat4 getCameraTransformation();
