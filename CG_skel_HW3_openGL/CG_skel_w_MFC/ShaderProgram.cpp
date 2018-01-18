@@ -73,3 +73,34 @@ void ShaderProgram::setUniform(const string& uniformName, const mat4& uniformVal
 {
 	//TODO : IMPLEMENT WITH GLM
 }
+/*
+	void ShaderProgram::setUniform(Light light)
+	{
+		if (light.type == PARALLEL_LIGHT)
+		{
+			setUniform("directionalLight.direction", light.direction);
+			setUniform("directionalLight.ambient", light.ambientIntensity);
+			setUniform("directionalLight.diffuse", light.diffuseIntensity);
+			setUniform("directionalLight.specular", light.specularIntensity);
+		}
+		else
+		{
+			setUniform("pointLight.position", light.direction);
+			setUniform("pointLight.ambient", light.ambientIntensity);
+			setUniform("pointLight.diffuse", light.diffuseIntensity);
+			setUniform("pointLight.specular", light.specularIntensity);
+			setUniform("pointLight.constant", CONSTANT_ATTENUATION);
+			setUniform("pointLight.linear", LINEAR_ATTENUATION);
+			setUniform("pointLight.quadratic", QUADRATIC_ATTENUATION);
+		}
+	
+	}
+	void ShaderProgram::setUniform(Material material)
+	{
+	setUniform("material.emissive", material.emissiveColor);
+	setUniform("material.ambient", material.ambientCoeff);
+	setUniform("material.diffuse", material.diffuseCoeff);
+	setUniform("material.specular", material.specularCoeff);
+	setUniform("material.shininess", material.alpha);
+	}
+*/
