@@ -29,7 +29,7 @@ void Scene::initPrograms(){
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_WIRE_FRAME
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_NORMAL
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_BOUNDING_BOX
-	programs.push_back(ShaderProgram("phongShader.vs", "phongShader.fs"));				//PROGRAM_PHONG
+	//programs.push_back(ShaderProgram("phongShader.vs", "phongShader.fs"));				//PROGRAM_PHONG
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_GOURAUD
 	//TODO: add more shaders' programs.
 }
@@ -71,7 +71,13 @@ void Scene::handleCameraFrame(OperateParams &p){
 	}
 	cameras[activeCamera]->setTransformation(A, invA);
 }
-
+void Scene::updateLights(){
+	int size = programs.size();
+	for (int i = 0; i < size; ++i){
+		//TODO: CHANGE TO CALL ALL LIGHTS:
+		programs[i].setUniform(*lights[0]);
+	}
+}
 /*===============================================================
 				scene public functions:
 ===============================================================*/
@@ -103,11 +109,11 @@ void Scene::loadOBJModel(string fileName)
 	activeModel = models.size() - 1;
 	LookAtActiveModel();
 }
-void Scene::draw()
-{
+void Scene::draw(){
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	cameras[activeCamera]->updatePrograms(programs);
+	updateLights();
 	int modelNumber = models.size();
 	for (int i = 0; i < modelNumber; ++i){
 		changeToMeshModel(models[i])->draw(programs);

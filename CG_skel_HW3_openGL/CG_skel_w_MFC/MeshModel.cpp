@@ -106,8 +106,9 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 		glBindVertexArray(vaos[RB_VAO]);			//bind vao
 		glEnableVertexAttribArray(0);				//enable attributes
 		glEnableVertexAttribArray(1);				//enable attributes
-		programs[PROGRAM_MINIMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
-		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_PHONG].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_PHONG].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_PHONG].setUniform(material);
 		programs[PROGRAM_PHONG].activate();
 		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
 		glDisableVertexAttribArray(0);				//disble attributes

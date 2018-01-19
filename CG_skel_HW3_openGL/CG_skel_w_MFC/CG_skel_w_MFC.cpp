@@ -150,8 +150,7 @@ void reshape( int newWidth, int newHeight )
 	width = newWidth;
 	height = newHeight;
 	glViewport(0, 0, width, height);
-	//TODO:update projection spec for display:
-	//scene->changeProjectionRatio(widthRatioChange, heightRatioChage);
+	scene->changeProjectionRatio(widthRatioChange, heightRatioChage);
 	trackBall.setViewport(width, height);
 }
 void keyboard(unsigned char key, int x, int y){

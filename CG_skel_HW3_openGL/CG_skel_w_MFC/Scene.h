@@ -93,6 +93,8 @@ class Scene {
 	void handleMeshModelFrame(OperateParams &p);
 	void handleCameraFrame(OperateParams &p);
 	void setActiveLight(Light l);
+	void updateLights();
+
 public:
 	Scene();
 	~Scene();
