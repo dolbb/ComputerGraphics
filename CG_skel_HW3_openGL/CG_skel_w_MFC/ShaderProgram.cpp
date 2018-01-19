@@ -78,7 +78,7 @@ void ShaderProgram::setUniform(const string& uniformName, const mat3& uniformVal
 	activate();
 	GLint location = glGetUniformLocation(id, uniformName.c_str());
 	if (location == INVALID_UNIFORM_LOCATION){ return; }
-	glUniformMatrix3fv(location, 1, GL_TRUE, static_cast<const GLfloat *> (uniformVal));
+	glUniformMatrix3fv(location, 1, GL_FALSE, static_cast<const GLfloat *> (uniformVal));
 	deactivate();
 }
 void ShaderProgram::setUniform(const string& uniformName, const mat4& uniformVal)
@@ -86,7 +86,7 @@ void ShaderProgram::setUniform(const string& uniformName, const mat4& uniformVal
 	activate();
 	GLint location = glGetUniformLocation(id, uniformName.c_str());
 	if (location == INVALID_UNIFORM_LOCATION){ return; }
-	glUniformMatrix4fv(location, 1, GL_TRUE, static_cast<const GLfloat *> (uniformVal));
+	glUniformMatrix4fv(location, 1, GL_FALSE, static_cast<const GLfloat *> (uniformVal));
 	deactivate();
 }
 /*
