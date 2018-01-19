@@ -25,7 +25,12 @@ static void initState(){
 ===============================================================*/
 void Scene::initPrograms(){
 	//must push the data in accordance with Programs enumeration.
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_MINIMAL
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_WIRE_FRAME
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_NORMAL
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_BOUNDING_BOX
+	programs.push_back(ShaderProgram("phongShader.vs", "phongShader.fs"));				//PROGRAM_PHONG
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_GOURAUD
 	//TODO: add more shaders' programs.
 }
 void Scene::initData(){
@@ -96,6 +101,7 @@ void Scene::loadOBJModel(string fileName)
 {
 	models.push_back(new MeshModel(fileName));
 	activeModel = models.size() - 1;
+	LookAtActiveModel();
 }
 void Scene::draw()
 {
@@ -175,7 +181,7 @@ void Scene::LookAtActiveModel(){
 	LookAtActiveModel(ORTHO);
 }
 void Scene::LookAtActiveModel(ProjectionType pType){
-	if (activeModel == NULL || activeCamera == NULL){ return; }
+	if (activeModel == INVALID_INDEX || activeCamera == NULL){ return; }
 	MeshModel* m = changeToMeshModel(models[activeModel]);
 	vec3 meshCenter = m->getCenterOfMass();
 	vec3 coords = m->getVolume();
@@ -184,10 +190,11 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	GLfloat dz = coords[2];
 	if (dx < 0 || dy < 0 || dz < 0){
 		cout << "error with lookAtFunction" << endl;
+		return;
 	}
 
 	vec4 eye(meshCenter);
-	eye[2] += dz*2.5;		//set the x value of the eye to be far enough from the box
+	eye[2] += dz*2.5 + 1;		//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
 	vec4 up(0, 1, 0, 0);	//up is set to z axis
 

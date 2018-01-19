@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include "GL\freeglut.h"
+#include "glm/glm/ext.hpp"
 
 using namespace std;
 
@@ -132,6 +133,7 @@ void Camera::Frustum(const ProjectionParams& param){
 		cout << "Frustum denied - non volume values" << endl;
 		return;
 	}
+
 	mat4 p;
 	p[0][0] = 2 * zNear / (right - left);
 	p[0][2] = (right + left) / (right - left);
@@ -186,25 +188,19 @@ void Camera::changeRelativePosition(vec3 &v){
 	changePosition(v + vec3(cEye[0], cEye[1], cEye[2]));
 }
 void Camera::zoom(GLfloat scale){
-	//TODO: change to projection params change
+	/*
 	ProjectionParams p = projectionParameters;
 	p.zoom(scale);
-	switch (pType){
-	case ORTHO:	
+	if (ORTHO){
 		Ortho(p);
-		break;
-	case FRUSTUM:		 
-		Frustum(p);
-		break;
-	case PERSPECTIVE:	 
-		Perspective(p);
-		break;
 	}
-	/*
-	if (scale > 0){
-		projection = Scale(scale, scale, scale) * projection;
+	else{
+		Frustum(p);
 	}
 	*/
+	if (scale > 0){
+		projection = Scale(scale, scale, 1) * projection;
+	}
 }
 void Camera::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
 	projectionParameters.left *= widthRatioChange;
@@ -222,7 +218,7 @@ void Camera::updatePrograms(vector<ShaderProgram> &programs){
 	int size = programs.size();
 	for (int i = 0; i < size; ++i){
 		programs[i].setUniform("view"		, cTransform);
-		//programs[i].setUniform("eye"		, cEye);
+		programs[i].setUniform("eye"		, cEye);
 		programs[i].setUniform("projection"	, projection);
 	}
 }

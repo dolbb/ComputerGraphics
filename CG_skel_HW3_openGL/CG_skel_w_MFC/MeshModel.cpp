@@ -50,10 +50,10 @@ MeshModel::MeshModel(string fileName){
 	texturesPresent = loader.getTexturePresent();
 	centerOfMass	= loader.getCenterOfMass();
 	axisDeltas		= loader.getAxisDeltas();
-	displayPreferences[DM_FILLED_SILHOUETTE] = true;
-	for (int i = 1; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
+	for (int i = 0; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
 		displayPreferences[i] = false;
 	}
+	displayPreferences[DM_FILLED_SILHOUETTE] = true;
 }
 MeshModel::~MeshModel(){
 	GLint maxIndex;
@@ -89,18 +89,29 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
 		programs[PROGRAM_MINIMAL].activate();
 		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
 		break;
 	case DM_WIRE_FRAME:
 		glBindVertexArray(vaos[RB_VAO]);			//bind vao
 		glEnableVertexAttribArray(0);				//enable attributes
-		programs[PROGRAM_MINIMAL].activate();
+		programs[PROGRAM_WIRE_FRAME].activate();
 		glDrawArrays(GL_LINE_STRIP, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
 		break;
 	case DM_FLAT:
 		break;
 	case DM_GOURAUD:
 		break;
 	case DM_PHONG:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_MINIMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_PHONG].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
 		break;
 	case DM_VERTEX_NORMALS:
 		break;
@@ -109,7 +120,6 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 	case DM_BOUNDING_BOX:
 		break;
 	}
-		glDisableVertexAttribArray(0);				//disble attributes
 		glBindVertexArray(0);						//unbind vao
 }
 void MeshModel::setDisplayMode(DisplayMode mode){

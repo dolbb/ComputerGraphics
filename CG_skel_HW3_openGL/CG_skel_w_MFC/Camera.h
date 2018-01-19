@@ -50,7 +50,19 @@ struct ProjectionParams{
 		aspect = 1;
 	}
 	void zoom(GLfloat scale){
-		
+		if (scale < 0){ return; }
+		/*	set data :						*/		
+		float dx = right - left;
+		float dy = top - bottom;
+		float centerX = (right + left) / 2;
+		float centerY = (top + bottom) / 2;
+
+		dx *= scale / 2; //times 0.5 since we move only one side at a shift.
+		dy *= scale / 2;
+		left = centerX - dx;
+		right = centerX + dx;
+		bottom = centerY - dy;
+		top = centerY + dy;
 	}
 };
 /*===============================================================
