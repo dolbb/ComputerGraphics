@@ -29,7 +29,7 @@ void Scene::initPrograms(){
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_WIRE_FRAME
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_NORMAL
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_BOUNDING_BOX
-	//programs.push_back(ShaderProgram("phongShader.vs", "phongShader.fs"));				//PROGRAM_PHONG
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_PHONG
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_GOURAUD
 	//TODO: add more shaders' programs.
 }
@@ -187,20 +187,20 @@ void Scene::LookAtActiveModel(){
 	LookAtActiveModel(ORTHO);
 }
 void Scene::LookAtActiveModel(ProjectionType pType){
-	if (activeModel == INVALID_INDEX || activeCamera == NULL){ return; }
+	if (activeModel == INVALID_INDEX){ return; }
 	MeshModel* m = changeToMeshModel(models[activeModel]);
 	vec3 meshCenter = m->getCenterOfMass();
-	vec3 coords = m->getVolume();
-	GLfloat dx = coords[0];
-	GLfloat dy = coords[1];
-	GLfloat dz = coords[2];
+	vec3 deltas = m->getVolume();
+	GLfloat dx = deltas[0];
+	GLfloat dy = deltas[1];
+	GLfloat dz = deltas[2];
 	if (dx < 0 || dy < 0 || dz < 0){
-		cout << "error with lookAtFunction" << endl;
+		cout << "error with LookAtActiveModel" << endl;
 		return;
 	}
-
+	GLfloat dMax = (dx < dy) ? (dy < dz ? dz : dy) : (dx < dz ? dz : dx);
 	vec4 eye(meshCenter);
-	eye[2] += dz*2.5 + 1;		//set the x value of the eye to be far enough from the box
+	eye[2] += 5 * dMax;	//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
 	vec4 up(0, 1, 0, 0);	//up is set to z axis
 
@@ -208,17 +208,25 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 
 	//set needed projection params:
 	ProjectionParams p;
-	if (pType != PERSPECTIVE){
-		p.left = -dx * 2 / 3;
-		p.right = dx * 2 / 3;
-		p.bottom = -dy * 2 / 3;
-		p.top = dy * 2 / 3;
-		p.zNear = dz * 2;
-		p.zFar = dz * 3;
+	if (pType == ORTHO){
+		p.left = -(dMax * 2) / 3;
+		p.right = (dMax * 2) / 3;
+		p.bottom = -(dMax * 2) / 3;
+		p.top = (dMax * 2) / 3;
+		p.zNear = dMax * 4;
+		p.zFar = dMax * 6;
+	}
+	else if (pType == FRUSTUM){
+		p.left = -(dMax * 2) / 3;
+		p.right = (dMax * 2) / 3;
+		p.bottom = -(dMax * 2) / 3;
+		p.top = (dMax * 2) / 3;
+		p.zNear = dMax * 4;
+		p.zFar = dMax * 6;
 	}else{
-		p.zNear = dz * 2;
-		p.zFar = dz * 3;
-		p.fovy = 40;
+		p.zNear = dMax * 4;
+		p.zFar = dMax * 6;
+		p.fovy = 15;
 		p.aspect = 1;
 	}
 
@@ -298,13 +306,11 @@ void Scene::changeLightIntensity(vec3 v){
 }
 void Scene::changeModelColor(vec3 c){
 	if (models.empty()){ return; }
-	//changeToMeshModel(activeModel)->setUniformColor(c);
-	//TODO: change in accordance with HW3.
+	changeToMeshModel(models[activeModel])->setUniformColor(c);
 }
 void Scene::setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
 	if (models.empty()){ return; }
-	//changeToMeshModel(models[activeModel])->setUniformColor(emissive, ambient, diffuse, specular);
-	//TODO: check how to implement.
+	changeToMeshModel(models[activeModel])->setUniformColor(emissive, ambient, diffuse, specular);
 }
 void Scene::printActiveModelMaterial(){
 	if (models.empty()){ return; }

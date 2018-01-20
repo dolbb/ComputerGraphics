@@ -295,21 +295,10 @@ void MeshLoader::calculateAxisExtremum(GLfloat* axisExtremum)
 	int current = 0;
 	for (int axis = X_AXIS; axis <= Z_AXIS; axis++)
 	{
-		for (int mode = MIN_MODE; mode <= MAX_MODE; mode++, current++)
-		{
-			switch (mode)
-			{
-			case MIN_MODE:
-				axisMinVector = *min_element(vertices.begin(), vertices.end(), findExtremumInAxis(axis));
-				axisExtremum[current] = axisMinVector[axis];
-				break;
-
-			case MAX_MODE:
-				axisMaxVector = *max_element(vertices.begin(), vertices.end(), findExtremumInAxis(axis));
-				axisExtremum[current] = axisMaxVector[axis];
-				break;
-			}
-		}
+		axisMinVector = *min_element(vertices.begin(), vertices.end(), findExtremumInAxis(axis));
+		axisExtremum[current++] = axisMinVector[axis];
+		axisMaxVector = *max_element(vertices.begin(), vertices.end(), findExtremumInAxis(axis));
+		axisExtremum[current++] = axisMaxVector[axis];
 	}
 }
 bool MeshLoader::isBoundingBoxEdge(int i, int j)

@@ -1,5 +1,7 @@
 #pragma once
 #include "vec.h"
+#include "glm/glm/ext.hpp"
+#include <iostream>
 
 #define Error( str ) do { std::cerr << "[" __FILE__ ":" << __LINE__ << "] " \
 				    << str << std::endl; } while(0)
@@ -502,6 +504,14 @@ class mat4 {
 
     operator GLfloat* ()
 	{ return static_cast<GLfloat*>( &_m[0].x ); }
+
+	void convertFrommat4x4(glm::mat4x4 &mat){
+		for (int i = 0; i < 4; ++i){
+			for (int j = 0; j < 4; ++j){
+				_m[i][j] = mat[j][i];
+			}
+		}
+	}
 };
 
 //
@@ -613,10 +623,15 @@ mat4 RotateVec(vec3 p1, vec3 p2, GLfloat theta)
 inline
 mat4 Translate( const GLfloat x, const GLfloat y, const GLfloat z )
 {
-    mat4 c;
-    c[0][3] = x;
-    c[1][3] = y;
-    c[2][3] = z;
+	mat4 c;
+
+	glm::vec3 tmp(x,y,z);
+	glm::mat4x4 A = glm::translate(tmp);
+
+	c.convertFrommat4x4(A);
+    //c[0][3] = x;
+    //c[1][3] = y;
+    //c[2][3] = z;
     return c;
 }
 
@@ -653,4 +668,3 @@ mat4 Scale( const vec3& v )
     return Scale( v.x, v.y, v.z );
 }
 
-//----------------------------------------------------------------------------

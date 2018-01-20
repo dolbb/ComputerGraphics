@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 #include "GL\freeglut.h"
-#include "glm/glm/ext.hpp"
+
 
 using namespace std;
 
@@ -65,6 +65,18 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	cEye = eye;
 	cAt = at;
 	cUp = up;
+
+	glm::vec3 glEye = glm::vec3(eye[0], eye[1], eye[2]);
+	glm::vec3 glAt = glm::vec3(at[0], at[1], at[2]);
+	glm::vec3 glUp = glm::vec3(up[0], up[1], up[2]);
+	glm:: mat4x4 tmp = glm::lookAt(glEye,glAt,glUp);
+	cTransform.convertFrommat4x4(tmp);
+	cameraToWorld.convertFrommat4x4(inverse(tmp));
+
+	/*// our lookAt():
+	cEye = eye;
+	cAt = at;
+	cUp = up;
 	//forward
 	vec4 n = normalize(eye - at);
 	//right
@@ -82,7 +94,8 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 	cTransform = c * Translate(-eye);
 	//remember the opposite matrix to be used to draw the camera in space and to
 	cameraToWorld = Translate(eye) * transpose(c);
-	
+	*///end of our lookAt()
+
 	//TODO: RETHINK IF MODEL PYRAMIDmESH needed:
 	//set the camera's pyramid in the world:
 	//PrimMeshModel* m = static_cast<PrimMeshModel*>(cameraPyramid);
@@ -93,33 +106,37 @@ void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
 void Camera::Ortho(const ProjectionParams& param){
 	pType = ORTHO;
 	projectionParameters = param;
-	float left = projectionParameters.left;
-	float right = projectionParameters.right;
-	float bottom = projectionParameters.bottom;
-	float top = projectionParameters.top;
-	float zNear = projectionParameters.zNear;
-	float zFar = projectionParameters.zFar;
+	float left = param.left;
+	float right = param.right;
+	float bottom = param.bottom;
+	float top = param.top;
+	float zNear = param.zNear;
+	float zFar = param.zFar;
 	//prevent divide by 0:
 	if (right == left || top == bottom || zFar == zNear)
 	{
 		cout << "Ortho denied - non volume values" << endl;
 		return;
 	}
+	
+	/*
 	//reset to identity
 	projection = mat4();
-
 	//build projection matrix
 	projection[0][0] = 2 / (right - left);
 	projection[1][1] = 2 / (top - bottom);
 	projection[2][2] = -2 / (zFar - zNear);
 	projection[0][3] = -((left + right) / (right - left));
 	projection[1][3] = -((top + bottom) / (top - bottom));
-	projection[2][3] = -((zFar + zNear) / (zFar - zNear));
+	projection[2][3] = -((zFar + zNear) / (zFar - zNear));*/
+
+	glm::mat4x4 proj = glm::ortho((float)left, (float)right, (float)bottom, (float)top, (float)zNear, (float)zFar);
+	projection.convertFrommat4x4(proj);
 }
 //TODO: rethink in accordance with CG HW3.
 void Camera::Frustum(const ProjectionParams& param){
-	projectionParameters = param;
 	pType = FRUSTUM;
+	projectionParameters = param;
 	float left = param.left;
 	float right = param.right;
 	float bottom = param.bottom;
@@ -133,7 +150,9 @@ void Camera::Frustum(const ProjectionParams& param){
 		cout << "Frustum denied - non volume values" << endl;
 		return;
 	}
-
+	glm::mat4x4 proj = glm::frustum((float)left, (float)right, (float)bottom, (float)top, (float)zNear, (float)zFar);
+	projection.convertFrommat4x4(proj);
+	/*
 	mat4 p;
 	p[0][0] = 2 * zNear / (right - left);
 	p[0][2] = (right + left) / (right - left);
@@ -144,7 +163,7 @@ void Camera::Frustum(const ProjectionParams& param){
 	p[3][2] = -1;
 	p[3][3] = 0;
 	projection = p;
-
+	*/
 	//create H = a sheering mat to symmetrize the frustrum:
 	//	mat4 H;
 	//	H[0][2] = (left + right) / (-2 * zNear);

@@ -31,6 +31,8 @@
 #define DEFAULT_ANGLE 30.0
 #define DEFAULT_ZOOM_FACTOR 1.05
 
+#define DEFAULT_SCALE 1.05
+
 enum DebugMode{ 
 	ON, 
 	OFF 
@@ -81,7 +83,7 @@ bool rb_down = false;
 bool mb_down = false;
 int modifier;
 bool redraw = false;
-float translationStep = 1.0;
+float translationStep = 50.0;
 Frames currentObjectFrame = WORLD;
 OperateParams operationParams;
 ProjectionParams projection;
@@ -243,6 +245,30 @@ void keyboard(unsigned char key, int x, int y){
 		break;
 	case 'l':
 		scene->printActiveLight();
+		break;
+	case 'c':
+		p.type = SCALE;
+		p.v = vec3(DEFAULT_SCALE, 1, 1);
+		scene->operate(p);
+		cout << "model x axis streched out" << endl;
+		break;
+	case 'v':
+		p.type = SCALE;
+		p.v = vec3(1 / DEFAULT_SCALE, 1, 1);
+		scene->operate(p);
+		cout << "model x axis streched in" << endl;
+		break;
+	case 'b':
+		p.type = SCALE;
+		p.v = vec3(1, DEFAULT_SCALE, 1);
+		scene->operate(p);
+		cout << "model y axis streched out" << endl;
+		break;
+	case 'n':
+		p.type = SCALE;
+		p.v = vec3(1, 1 / DEFAULT_SCALE, 1);
+		scene->operate(p);
+		cout << "model y axis streched in" << endl;
 		break;
 	case 'm':
 		cout << "current object transformation frame: ";
@@ -728,15 +754,12 @@ void toggleMenuCallback(int id){
 		break;
 	}
 }
-void toolsMenuCallback(int id)
+void lookAtMenuCallback(int id)
 {
-	switch (id){
-	case LOOKAT_ACTIVE_MODEL:
-		scene->LookAtActiveModel();
-		redraw = true;
-		break;
-	}
+	scene->LookAtActiveModel((ProjectionType)id);
+	redraw = true;
 }
+void toolsMenuCallback(int id){}
 void initMenu()
 {
 	int newMenu = glutCreateMenu(newMenuCallback);
@@ -749,6 +772,10 @@ void initMenu()
 	glutAddMenuEntry("Flat", FLAT);
 	glutAddMenuEntry("Gouraud", GOURAUD);
 	glutAddMenuEntry("Phong", PHONG);
+	int lookAtActiveModleMenu = glutCreateMenu(lookAtMenuCallback);
+	glutAddMenuEntry("ORTHO", ORTHO);
+	glutAddMenuEntry("FRUSTUM", FRUSTUM);
+	glutAddMenuEntry("PERSPECTIVE", PERSPECTIVE);
 	int setMenu = glutCreateMenu(setMenuCallback);
 	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
 	glutAddMenuEntry("set a NON UNIFORM material for model", SET_NON_UNIFORM_MODEL_MATERIAL);
@@ -768,7 +795,7 @@ void initMenu()
 	glutAddMenuEntry("bloom", BLOOM);
 	glutAddMenuEntry("blur", BLUR);
 	int toolsMenu = glutCreateMenu(toolsMenuCallback);
-	glutAddMenuEntry("LookAt active model", LOOKAT_ACTIVE_MODEL);
+	glutAddSubMenu("LookAt active model", lookAtActiveModleMenu);
 	glutAddSubMenu("set elements", setMenu);
 	glutAddSubMenu("Shading method", shadingMenu);
 	glutAddSubMenu("Toggle", toggleMenu);

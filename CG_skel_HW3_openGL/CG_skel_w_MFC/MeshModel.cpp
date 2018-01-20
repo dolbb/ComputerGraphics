@@ -53,7 +53,8 @@ MeshModel::MeshModel(string fileName){
 	for (int i = 0; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
 		displayPreferences[i] = false;
 	}
-	displayPreferences[DM_FILLED_SILHOUETTE] = true;
+	displayPreferences[DM_WIRE_FRAME] = true;
+	displayPreferences[DM_BOUNDING_BOX] = true;
 }
 MeshModel::~MeshModel(){
 	GLint maxIndex;
@@ -94,7 +95,8 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 	case DM_WIRE_FRAME:
 		glBindVertexArray(vaos[RB_VAO]);			//bind vao
 		glEnableVertexAttribArray(0);				//enable attributes
-		programs[PROGRAM_WIRE_FRAME].activate();
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_MINIMAL].activate();
 		glDrawArrays(GL_LINE_STRIP, 0, vertexNum);	//draw the stored data
 		glDisableVertexAttribArray(0);				//disble attributes
 		break;
@@ -119,6 +121,12 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 	case DM_FACES_NORMALS:
 		break;
 	case DM_BOUNDING_BOX:
+		glBindVertexArray(vaos[BB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_MINIMAL].activate();
+		glDrawArrays(GL_LINES, 0, vertexNum);		//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
 		break;
 	}
 		glBindVertexArray(0);						//unbind vao
