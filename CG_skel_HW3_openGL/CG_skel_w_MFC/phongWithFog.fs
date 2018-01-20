@@ -1,7 +1,8 @@
-#version 150
+#version 330
 
-in vec3 vPosition;
-in vec3 vNormal;
+in vec3 fragNormal;
+in vec3 fragPos;
+in float visibility;
 
 struct Material
 {
@@ -36,33 +37,27 @@ struct PointLight
 
 uniform int activePointLights;
 uniform vec3 eye;
-uniform mat3 normalTransform;
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
 uniform Material material;
 uniform DirectionalLight directionalLight;
 uniform PointLight[NUMBER_OF_POINT_LIGHTS] pointLights;
 
-out vec4 vColor;
+out vec4 fragColor;
 
 vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, vec3 viewDirection, Material material);
-vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 vertexPosition, vec3 viewDirection, Material material);
+vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDirection, Material material);
 
 void main()
 {
-	vec3 normal = normalize(normalTransform * vNormal);
-	vec3 worldPos = model * vPosition;
-	vec3 viewDirection = normalize(eye-worldPos);
+	vec3 normal = normalize(fragNormal);
+	vec3 viewDirection = normalize(eye - fragPos);
 	vec3 outColor = vec3(0.0);
 	outColor += calculateDirectionalLight(directionalLight, normal, viewDirection, material);
 	for(int i=0; i<activePointLights; i++)
 	{
-		outColor += calculatePointLight(pointLights[i], normal, viewDirection,vPosition, material);
+		outColor += calculatePointLight(pointLights[i], normal, viewDirection,fragPos, material);
 	}
-	vColor = vec4(outColor,1.0);
-	vColor = clamp(vColor, 0.0, 1.0);
-	gl_position=projection*view * model * vec4(vPosition,1.0);
+	fragColor = mix(vec4(outColor,1.0),vec4(0.0),visibility);
+	fragColor = clamp(fragColor, 0.0, 1.0);
 }
 
 vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, vec3 viewDirection, Material material)
@@ -88,13 +83,13 @@ vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, v
 	return emissive + ambient + diffuse + specular;
 }
 
-vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 vertexPosition, vec3 viewDirection, Material material)
+vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDirection, Material material)
 {
 	//light direction
-	vec3 nLightDirection = normalize(pointLight.position - vertexPosition);
+	vec3 nLightDirection = normalize(pointLight.position - fragPos);
 
 	//light attenuation
-	float d = length(pointLight.position - vertexPosition);
+	float d = length(pointLight.position - fragPos);
 	float attenuation = 1 / (pointLight.constant + pointLight.linear * d + pointLight.quadratic * d * d);
 
 	//ambient

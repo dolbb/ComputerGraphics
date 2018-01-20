@@ -2,6 +2,7 @@
 #include "ShaderProgram.h"
 
 #define INVALID_UNIFORM_LOCATION -1
+#define NUMBER_OF_POINT_LIGHTS 4
 
 ShaderProgram::ShaderProgram(const string& vShader,const string& fShader)
 {
@@ -78,7 +79,6 @@ void ShaderProgram::setUniform(const string& uniformName, const mat3& uniformVal
 	activate();
 	GLint location = glGetUniformLocation(id, uniformName.c_str());
 	if (location == INVALID_UNIFORM_LOCATION){ return; }
-	glUniformMatrix3fv(location, 1, GL_FALSE, static_cast<const GLfloat *> (uniformVal));
 	deactivate();
 }
 void ShaderProgram::setUniform(const string& uniformName, const mat4& uniformVal)
@@ -86,37 +86,64 @@ void ShaderProgram::setUniform(const string& uniformName, const mat4& uniformVal
 	activate();
 	GLint location = glGetUniformLocation(id, uniformName.c_str());
 	if (location == INVALID_UNIFORM_LOCATION){ return; }
-	glUniformMatrix4fv(location, 1, GL_FALSE, static_cast<const GLfloat *> (uniformVal));
 	deactivate();
 }
-/*
-	void ShaderProgram::setUniform(Light light)
+void ShaderProgram::setUniform(const Light& light)
+{
+	if (light.type == PARALLEL_LIGHT)
 	{
-		if (light.type == PARALLEL_LIGHT)
-		{
-			setUniform("directionalLight.direction", light.direction);
-			setUniform("directionalLight.ambient", light.ambientIntensity);
-			setUniform("directionalLight.diffuse", light.diffuseIntensity);
-			setUniform("directionalLight.specular", light.specularIntensity);
-		}
-		else
-		{
-			setUniform("pointLight.position", light.direction);
-			setUniform("pointLight.ambient", light.ambientIntensity);
-			setUniform("pointLight.diffuse", light.diffuseIntensity);
-			setUniform("pointLight.specular", light.specularIntensity);
-			setUniform("pointLight.constant", CONSTANT_ATTENUATION);
-			setUniform("pointLight.linear", LINEAR_ATTENUATION);
-			setUniform("pointLight.quadratic", QUADRATIC_ATTENUATION);
-		}
-	
+		setUniform("directionalLight.direction", light.direction);
+		setUniform("directionalLight.ambient", light.ambientIntensity);
+		setUniform("directionalLight.diffuse", light.diffuseIntensity);
+		setUniform("directionalLight.specular", light.specularIntensity);
 	}
-	void ShaderProgram::setUniform(Material material)
+	else
 	{
+		setUniform("pointLight.position", light.position);
+		setUniform("pointLight.ambient", light.ambientIntensity);
+		setUniform("pointLight.diffuse", light.diffuseIntensity);
+		setUniform("pointLight.specular", light.specularIntensity);
+		setUniform("pointLight.constant", (float)CONSTANT_ATTENUATION);
+		setUniform("pointLight.linear", (float)LINEAR_ATTENUATION);
+		setUniform("pointLight.quadratic", (float)QUADRATIC_ATTENUATION);
+	}
+	
+}
+void ShaderProgram::setUniform(const Material& material)
+{
 	setUniform("material.emissive", material.emissiveColor);
 	setUniform("material.ambient", material.ambientCoeff);
 	setUniform("material.diffuse", material.diffuseCoeff);
 	setUniform("material.specular", material.specularCoeff);
 	setUniform("material.shininess", material.alpha);
+}
+
+void ShaderProgram::setUniform(const vector<Light>& lights)
+{
+	int numOfLights = lights.size();
+	int numOfPointLights = 0;
+	for (int i = 0; i < numOfLights; ++i)
+	{
+		//point light
+		if (lights[i].type == POINT_LIGHT)
+		{
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".position", lights[i].position);
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".ambient", lights[i].ambientIntensity);
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".diffuse", lights[i].diffuseIntensity);
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".specular", lights[i].specularIntensity);
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".constant", (float)CONSTANT_ATTENUATION);
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".linear", (float)LINEAR_ATTENUATION);
+			setUniform("pointLight[" + to_string(numOfPointLights) + "]" + ".quadratic", (float)QUADRATIC_ATTENUATION);
+			numOfPointLights++;
+		}
+		//directional light
+		else
+		{
+			setUniform("directionalLight.direction", lights[i].direction);
+			setUniform("directionalLight.ambient", lights[i].ambientIntensity);
+			setUniform("directionalLight.diffuse", lights[i].diffuseIntensity);
+			setUniform("directionalLight.specular", lights[i].specularIntensity);
+		}
 	}
-*/
+	setUniform("activePointLights", numOfPointLights);
+}

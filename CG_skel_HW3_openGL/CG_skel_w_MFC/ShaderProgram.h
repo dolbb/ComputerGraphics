@@ -2,7 +2,13 @@
 #include "GL/glew.h"
 #include "initShader.h"
 #include "mat.h"
+#include "Light.h"
+#include "Material.h"
 #include <string>
+
+#define CONSTANT_ATTENUATION 1
+#define LINEAR_ATTENUATION 0.14
+#define QUADRATIC_ATTENUATION 0.07
 
 using std::string;
 
@@ -25,7 +31,8 @@ public:
 	void setUniform(const string& uniformName, const vec4& uniformVal);
 	void setUniform(const string& uniformName, const mat3& uniformVal);
 	void setUniform(const string& uniformName, const mat4& uniformVal);
-	//void setUniform(Light light);
-	//void setUniform(Material material);
+	void setUniform(const Light& light);
+	void setUniform(const Material& material);
+	void setUniform(const vector<Light>& pointLights);
 };
 

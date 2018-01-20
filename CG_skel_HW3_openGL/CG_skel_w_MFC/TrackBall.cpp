@@ -2,7 +2,7 @@
 #include "TrackBall.h"
 
 float TrackBall::translationFactor = 5.0;
-float TrackBall::scalingFactor = 5.0;
+float TrackBall::scalingFactor = 1.5;
 
 TrackBall::TrackBall(int width, int height) :width(width), height(height), startingPoint(0, 0), endingPoint(0.0)	{}
 
@@ -43,12 +43,12 @@ vec3 TrackBall::getNonUniformScaling()
 		//scaling up
 		if (dx > 0)
 		{
-			return vec3(dx, 0, 0)*scalingFactor;
+			return vec3(scalingFactor, 1, 1);
 		}
 		//scaling down
 		else if (dx!=0)
 		{
-			return vec3(1/dx, 0, 0)/scalingFactor;
+			return vec3(1 / scalingFactor, 1, 1);
 		}
 		
 	}
@@ -58,12 +58,12 @@ vec3 TrackBall::getNonUniformScaling()
 		//scaling up
 		if (dy > 0)
 		{
-			return vec3(0, dy, 0)*scalingFactor;
+			return vec3(1, scalingFactor, 1);
 		}
 		//scaling down
 		else if (dy != 0)
 		{
-			return vec3(0, 1/dy, 0)/scalingFactor;
+			return vec3(1, 1 / scalingFactor, 1);
 		}
 	}
 }
@@ -79,12 +79,12 @@ vec3 TrackBall::getUniformScaling()
 	//scaling up
 	if (dy > 0)
 	{
-		return vec3(scale)*scalingFactor;
+		return vec3(1.0)*scalingFactor;
 	}
 	//scaling down
 	else
 	{
-		return vec3(1/scale)/scalingFactor;
+		return vec3(1.0)/scalingFactor;
 	}
 }
 
