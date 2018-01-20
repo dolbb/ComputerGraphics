@@ -56,7 +56,7 @@ void main()
 	{
 		outColor += calculatePointLight(pointLights[i], normal, viewDirection,fragPos, material);
 	}
-	fragColor = mix(vec4(outColor,1.0),vec4(0.0),visibility);
+	fragColor = mix(vec4(0.0),vec4(outColor,1.0),visibility);
 	fragColor = clamp(fragColor, 0.0, 1.0);
 }
 

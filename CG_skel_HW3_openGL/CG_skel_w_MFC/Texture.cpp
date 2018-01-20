@@ -17,8 +17,9 @@ Texture::Texture(const string& texturePath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height, channels;
 	//load texture image to an array, width and height will hold its width and height and channels will hold the number of color channels
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* textureData = stbi_load(texturePath.c_str(), &width, &height, &channels, 0);
-
+	stbi_set_flip_vertically_on_load(false);
 	if (textureData)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
