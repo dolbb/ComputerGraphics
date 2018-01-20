@@ -33,6 +33,14 @@ public:
 	}
 };
 /*	private:		*/
+void MeshLoader::nullifyRawData(){
+	rawVertices = NULL;
+	rawVNormals = NULL;
+	rawFCenters = NULL;
+	rawFNormals = NULL;
+	rawTextures = NULL;
+	rawBoundingBox = NULL;
+}
 struct MeshLoader::FaceIdcs
 {
 	int v[4];
@@ -76,26 +84,6 @@ vec2 vec2fFromStream(std::istream & aStream)
 	float x, y;
 	aStream >> x >> std::ws >> y;
 	return vec2(x, y);
-}
-MeshLoader::MeshLoader(string fileName){
-	rawVertices = NULL;
-	rawVNormals = NULL;
-	rawFCenters = NULL;
-	rawFNormals = NULL;
-	rawTextures = NULL;
-	rawBoundingBox = NULL;
-	loadOBJFile(fileName);
-	numberOfVertices = faces.size() * 3;
-	convertFacesDataToRaw();
-	init();
-}
-MeshLoader::~MeshLoader(){
-	delete[] rawVertices;
-	delete[] rawVNormals;
-	delete[] rawFNormals;
-	delete[] rawFCenters;
-	delete[] rawTextures;
-	delete[] rawBoundingBox;
 }
 void MeshLoader::loadOBJFile(string &fileName){
 	ifstream ifile(fileName.c_str());
@@ -320,7 +308,38 @@ bool MeshLoader::isBoundingBoxEdge(int i, int j)
 	return showFlag;
 }
 
-/*	public:			*/		
+/*	public - constructors:			*/		
+MeshLoader::MeshLoader(string fileName){
+	nullifyRawData();
+	loadOBJFile(fileName);
+	numberOfVertices = faces.size() * 3;
+	convertFacesDataToRaw();
+	init();
+}
+MeshLoader::MeshLoader(vec3* data, int size){
+	nullifyRawData();
+	rawVertices = new vec3[size];
+	numberOfVertices = size;
+	centerOfMass = vec3(0, 0, -0.5);
+	axisDelta = vec3(2,2,1);
+	for (int i = 0; i < size; ++i){
+		rawVertices[i] = data[i];
+	}
+	glGenVertexArrays(NUMBER_OF_VAOS, vaos);
+	/*init regular buffers:*/
+	glBindVertexArray(vaos[RB_VAO]);
+	initRegularBuffers();
+	glBindVertexArray(0);
+}
+MeshLoader::~MeshLoader(){
+	delete[] rawVertices;
+	delete[] rawVNormals;
+	delete[] rawFNormals;
+	delete[] rawFCenters;
+	delete[] rawTextures;
+	delete[] rawBoundingBox;
+}
+/*	public - getters:				*/
 void MeshLoader::getHandles(GLuint* vaoArray){
 	for (int i = 0; i < NUMBER_OF_VAOS; ++i){
 		vaoArray[i] = vaos[i];

@@ -26,20 +26,20 @@ static void initState(){
 void Scene::initPrograms(){
 	//must push the data in accordance with Programs enumeration.
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_MINIMAL
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_WIRE_FRAME
 	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_NORMAL
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_BOUNDING_BOX
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_PHONG
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_GOURAUD
+	programs.push_back(ShaderProgram("phongShader.vs", "phongShader.fs"));				//PROGRAM_PHONG
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));			//PROGRAM_GOURAUD
 	//TODO: add more shaders' programs.
 }
 void Scene::initData(){
 	lights.push_back(new Light());
 	cameras.push_back(new Camera(0));
+	camerasModels.push_back(new PrimMeshModel());
 	activeModel = INVALID_INDEX;
 	activeLight = 0;
 	activeCamera = 0;
 	shading = FLAT;
+	renderCamerasFlag = false;
 }
 void Scene::handleMeshModelFrame(OperateParams &p){
 	if (activeModel == INVALID_INDEX){ return; }
@@ -114,19 +114,29 @@ void Scene::draw(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	cameras[activeCamera]->updatePrograms(programs);
 	updateLights();
-	int modelNumber = models.size();
-	for (int i = 0; i < modelNumber; ++i){
+	for (int i = 0; i < models.size(); ++i){
 		changeToMeshModel(models[i])->draw(programs);
+	}
+	if (renderCamerasFlag){
+		for (int i = 0; i < camerasModels.size(); ++i){
+			Model *m = camerasModels[i];
+			static_cast<PrimMeshModel*>(m)->setWorldTransform(cameras[i]->getCameraToWorld());
+			if (i != activeCamera){
+				m->draw(programs);
+			}
+		}
 	}
 	glutSwapBuffers();
 }
 void Scene::createCamera(){
 	cameras.push_back(new Camera(cameras.size()));
-	activeCamera = cameras.size() - 1;
+	camerasModels.push_back(new PrimMeshModel);
+	LookAtCameraPyramid(ORTHO, cameras.size() - 1);
 }
 void Scene::setActiveModel(int i){
 	if (models.size() > i){
 		activeModel = i;
+		cout << "object num " << i << " was chosen" << endl;
 	}
 	else{
 		cout << "you've entered invalid model index, only " << models.size() << "models ";
@@ -163,7 +173,7 @@ void Scene::operate(OperateParams &p){
 }
 void Scene::featuresStateSelection(ActivationToggleElement e){
 	if (e == TOGGLE_CAMERA_RENDERING){
-		cameras[activeCamera]->toggleRenderMe();
+		renderCamerasFlag = renderCamerasFlag ? false : true;
 	}
 	else{
 		if (activeModel != INVALID_INDEX){
@@ -172,9 +182,9 @@ void Scene::featuresStateSelection(ActivationToggleElement e){
 	}
 }
 void Scene::addPyramidMesh(){
-	//TODO: primMeshModel
-	//models.push_back(new PrimMeshModel());
-	//activeModel = models.size() - 1;
+	models.push_back(new PrimMeshModel());
+	activeModel = models.size() - 1;
+	LookAtActiveModel();
 }
 void Scene::setProjection(ProjectionType &type, ProjectionParams &p){
 	switch (type){
@@ -238,6 +248,63 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 		cameras[activeCamera]->Frustum(p);
 		break;
 	case PERSPECTIVE:	
+		cameras[activeCamera]->Perspective(p);
+		break;
+	}
+}
+void Scene::LookAtCameraPyramid(ProjectionType pType, int cameraIndex){
+	if (cameraIndex < 0 || cameraIndex >= camerasModels.size()){ return; }
+	PrimMeshModel* m = static_cast<PrimMeshModel*>(camerasModels[cameraIndex]);
+	vec3 meshCenter = m->getCenterOfMass();
+	vec3 deltas = m->getVolume();
+	GLfloat dx = deltas[0];
+	GLfloat dy = deltas[1];
+	GLfloat dz = deltas[2];
+	if (dx < 0 || dy < 0 || dz < 0){
+		cout << "error with LookAtActiveCamera" << endl;
+		return;
+	}
+	GLfloat dMax = (dx < dy) ? (dy < dz ? dz : dy) : (dx < dz ? dz : dx);
+	vec4 eye(meshCenter);
+	eye[2] += 5 * dMax;	//set the x value of the eye to be far enough from the box
+	vec4 at(meshCenter);	//look at center of mesh
+	vec4 up(0, 1, 0, 0);	//up is set to z axis
+
+	cameras[activeCamera]->LookAt(eye, at, up);
+
+	//set needed projection params:
+	ProjectionParams p;
+	if (pType == ORTHO){
+		p.left = -dMax * 2;
+		p.right = dMax * 2;
+		p.bottom = -dMax * 2;
+		p.top = dMax * 2;
+		p.zNear = dMax * 1;
+		p.zFar = dMax * 10;
+	}
+	else if (pType == FRUSTUM){
+		p.left = -(dMax * 2) / 3;
+		p.right = (dMax * 2) / 3;
+		p.bottom = -(dMax * 2) / 3;
+		p.top = (dMax * 2) / 3;
+		p.zNear = dMax * 4;
+		p.zFar = dMax * 6;
+	}
+	else{
+		p.zNear = dMax * 4;
+		p.zFar = dMax * 6;
+		p.fovy = 15;
+		p.aspect = 1;
+	}
+
+	switch (pType){
+	case ORTHO:
+		cameras[activeCamera]->Ortho(p);
+		break;
+	case FRUSTUM:
+		cameras[activeCamera]->Frustum(p);
+		break;
+	case PERSPECTIVE:
 		cameras[activeCamera]->Perspective(p);
 		break;
 	}

@@ -78,6 +78,7 @@ class MeshLoader{
 	vector<vec2> texture;
 	vector<FaceIdcs> faces;
 
+	void	nullifyRawData();
 	void	loadOBJFile(string &fileName);
 	/*	VAOs & VBOs					*/
 	void	init();
@@ -96,8 +97,9 @@ class MeshLoader{
 	bool	isBoundingBoxEdge(int i, int j);
 
 public:
-	/*	constructor:				*/
+	/*	constructors:				*/
 	MeshLoader(string fileName);
+	MeshLoader(vec3* data, int size);
 	~MeshLoader(void);
 	/*	getters:					*/	
 	void  getHandles(GLuint* vaoArray);

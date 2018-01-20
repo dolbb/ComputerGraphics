@@ -10,11 +10,17 @@ enum ActionType{
 	OBJECT_ACTION, 
 	WORLD_ACTION 
 };
+enum MeshModelType{
+	MESH_MODEL,
+	PYRAMID_WIREFRAME,
+	PYRAMID_COLORED
+};
 
 using namespace std;
 
 class MeshModel : public Model
 {
+protected:
 	/*	raw MehsModel data			*/
 	GLuint vaos[NUMBER_OF_VAOS];	//vertices object
 	int vertexNum;
@@ -23,6 +29,7 @@ class MeshModel : public Model
 	bool normalsPresent;		//are vertex normals in the DB
 	bool texturesPresent;		//are texture coords in the DB
 	Material material;
+	MeshModelType modelType;
 
 	/*	vertices transformations:	*/	
 	mat4 worldVertexTransform;
@@ -45,6 +52,7 @@ class MeshModel : public Model
 	void vertexTransformation(mat4& mat, mat4& invMat);
 	void normalTransformation(mat4& m4, mat4& a4);
 public:
+	MeshModel(){}
 	MeshModel(string fileName);
 	~MeshModel(void);
 	void draw(vector<ShaderProgram> &programs);
@@ -69,4 +77,12 @@ public:
 	void setUniformColor(vec3 c);	
 	void setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);	
 	void printUniformMateral();
+};
+
+class PrimMeshModel : public MeshModel
+{
+	
+public:
+	PrimMeshModel();
+	void setWorldTransform(mat4 trans);
 };

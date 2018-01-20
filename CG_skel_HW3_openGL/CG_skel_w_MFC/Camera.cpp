@@ -197,9 +197,6 @@ void Camera::Perspective(ProjectionParams& p){
 	p.left = -p.right;
 	Frustum(p);
 }
-//TODO: rethink in accordance with CG HW3.
-void Camera::draw(){
-}
 void Camera::changePosition(vec3 &v){
 	LookAt(vec4(v), cAt, cUp);
 }
@@ -207,18 +204,13 @@ void Camera::changeRelativePosition(vec3 &v){
 	changePosition(v + vec3(cEye[0], cEye[1], cEye[2]));
 }
 void Camera::zoom(GLfloat scale){
-	/*
 	ProjectionParams p = projectionParameters;
 	p.zoom(scale);
-	if (ORTHO){
+	if (pType == ORTHO){
 		Ortho(p);
 	}
 	else{
 		Frustum(p);
-	}
-	*/
-	if (scale > 0){
-		projection = Scale(scale, scale, 1) * projection;
 	}
 }
 void Camera::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage){
@@ -272,6 +264,9 @@ vec3 Camera::getWorldVector(vec3 in){
 	{
 		return vec3(homogenous[0], homogenous[1], homogenous[2]);
 	}
+}
+mat4 Camera::getCameraToWorld(){
+	return cameraToWorld;
 }
 int Camera::getId(){
 	return id;

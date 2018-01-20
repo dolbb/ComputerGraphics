@@ -83,7 +83,7 @@ bool rb_down = false;
 bool mb_down = false;
 int modifier;
 bool redraw = false;
-float translationStep = 50.0;
+float translationStep = 5.0;
 Frames currentObjectFrame = WORLD;
 OperateParams operationParams;
 ProjectionParams projection;
@@ -180,27 +180,27 @@ void keyboard(unsigned char key, int x, int y){
 		exit(EXIT_SUCCESS);
 		break;
 		//change light spec (inc \ dec) in a specific aspect:
-	case 'r':
+	case 'R':
 		scene->activeLightIncrementStats(AMBIENT);
 		cout << "current light was incremented in its AMBIENT field" << endl;
 		break;
-	case 'f':
+	case 'F':
 		scene->activeLightDecrementStats(AMBIENT);
 		cout << "current light was decremented in its AMBIENT field" << endl;
 		break;
-	case 't':
+	case 'T':
 		scene->activeLightIncrementStats(DIFFUSE);
 		cout << "current light was incremented in its DIFFUSE field" << endl;
 		break;
-	case 'g':
+	case 'G':
 		scene->activeLightDecrementStats(DIFFUSE);
 		cout << "current light was decremented in its DIFFUSE field" << endl;
 		break;
-	case 'y':
+	case 'Y':
 		scene->activeLightIncrementStats(SPECULAR);
 		cout << "current light was incremented in its SPECULAR field" << endl;
 		break;
-	case 'h':
+	case 'H':
 		scene->activeLightDecrementStats(SPECULAR);
 		cout << "current light was decremented in its SPECULAR field" << endl;
 		break;
@@ -340,7 +340,7 @@ void special(int key, int x, int y)
 	case GLUT_KEY_UP:
 		//set translation parameters
 		if (operationParams.type == TRANSLATE){
-			operationParams.v = vec3(0, 1, 0) * translationStep;
+			operationParams.v = vec3(0, 1, 0) * translationStep / 100;
 		}
 		//set rotation parameters
 		else{
@@ -351,7 +351,7 @@ void special(int key, int x, int y)
 	case GLUT_KEY_DOWN:
 		//set translation parameters
 		if (operationParams.type == TRANSLATE){
-			operationParams.v = vec3(0, -1, 0)*translationStep;
+			operationParams.v = vec3(0, -1, 0) * translationStep / 100;
 		}
 		//set rotation parameters
 		else{
@@ -362,7 +362,7 @@ void special(int key, int x, int y)
 	case GLUT_KEY_LEFT:
 		//set translation parameters
 		if (operationParams.type == TRANSLATE){
-			operationParams.v = vec3(-1, 0, 0)*translationStep;
+			operationParams.v = vec3(-1, 0, 0) * translationStep / 100;
 		}
 		//set rotation parameters
 		else{
@@ -373,7 +373,7 @@ void special(int key, int x, int y)
 	case GLUT_KEY_RIGHT:
 		//set translation parameters
 		if (operationParams.type == TRANSLATE){
-			operationParams.v = vec3(1, 0, 0)*translationStep;
+			operationParams.v = vec3(1, 0, 0) * translationStep / 100;
 		}
 		//set rotation parameters
 		else{

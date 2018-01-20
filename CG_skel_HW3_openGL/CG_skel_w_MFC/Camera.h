@@ -51,7 +51,11 @@ struct ProjectionParams{
 	}
 	void zoom(GLfloat scale){
 		if (scale < 0){ return; }
-		/*	set data :						*/		
+		left *= scale;
+		right *= scale;
+		bottom *= scale;
+		top *= scale;		
+		/*	set data :								
 		float dx = right - left;
 		float dy = top - bottom;
 		float centerX = (right + left) / 2;
@@ -62,7 +66,7 @@ struct ProjectionParams{
 		left = centerX - dx;
 		right = centerX + dx;
 		bottom = centerY - dy;
-		top = centerY + dy;
+		top = centerY + dy;*/
 	}
 };
 /*===============================================================
@@ -72,8 +76,6 @@ class Camera{
 	mat4 cTransform;
 	mat4 cameraToWorld;
 	mat4 projection;
-
-	//Model* cameraPyramid; todo: add meshPyramid
 
 	vec4 cEye;
 	vec4 cAt;
@@ -95,13 +97,11 @@ public:
 	void Ortho(const ProjectionParams& params);
 	void Frustum(const ProjectionParams& params);
 	void Perspective(ProjectionParams& p);
-	void draw();
 	void changePosition(vec3 &v);
 	void changeRelativePosition(vec3& v);
 	void zoom(GLfloat scale);
 	void toggleRenderMe();
 	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
-	void print();//TODO: implement me.
 	void updatePrograms(vector<ShaderProgram> &programs);
 
 	//getters:
@@ -112,5 +112,6 @@ public:
 	vec4 getUp();
 	GLfloat getFar();
 	vec3 getWorldVector(vec3 in);
+	mat4 getCameraToWorld();
 	int getId();
 };

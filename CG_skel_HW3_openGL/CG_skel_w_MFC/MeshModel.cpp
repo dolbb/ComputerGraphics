@@ -5,6 +5,9 @@
 #include <fstream>
 #include <sstream>
 
+#define FACES_NUM_IN_PYRAMID 6
+#define VERTEX_NUM_IN_FACE 3
+
 /*===============================================================
 scene private functions:
 ===============================================================*/
@@ -53,8 +56,9 @@ MeshModel::MeshModel(string fileName){
 	for (int i = 0; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
 		displayPreferences[i] = false;
 	}
-	displayPreferences[DM_WIRE_FRAME] = true;
+	displayPreferences[DM_PHONG] = true;
 	displayPreferences[DM_BOUNDING_BOX] = true;
+	modelType = MESH_MODEL;
 }
 MeshModel::~MeshModel(){
 	GLint maxIndex;
@@ -103,6 +107,16 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 	case DM_FLAT:
 		break;
 	case DM_GOURAUD:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_GOURAUD].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_GOURAUD].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_GOURAUD].setUniform(material);
+		programs[PROGRAM_GOURAUD].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
 		break;
 	case DM_PHONG:
 		glBindVertexArray(vaos[RB_VAO]);			//bind vao
@@ -137,7 +151,6 @@ void MeshModel::setDisplayMode(DisplayMode mode){
 void MeshModel::frameActionSet(ActionType a){
 	actionType = a;
 }
-//////////////////////ASLDGJKFHNHAKLJDGAKLGLAN
 void MeshModel::rotateXYZ(vec3 vec){
 	/*create the rotating matrixs from the left:*/
 	//TODO: CHANGE TO OPENGL******************************************************************************
@@ -203,7 +216,11 @@ vec3 MeshModel::getNormalBeforeSelf(vec3 &v){
 	return selfNormalInvertedTransform * worldNormalInvertedTransform * v;
 }
 vec3 MeshModel::getCenterOfMass(){
-	return centerOfMass;
+	vec4 v = worldVertexTransform * selfVertexTransform * vec4(centerOfMass);
+	if (v[3] != 0){
+		v /= v[3];
+	}
+	return vec3(v[0], v[1], v[2]);
 }
 void MeshModel::featuresStateToggle(ActivationToggleElement e){
 	switch (e){
@@ -244,4 +261,63 @@ void MeshModel::setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 
 }
 void MeshModel::printUniformMateral(){
 	material.print();
+}
+
+/*====================================================
+			class primMeshModel:
+====================================================*/
+PrimMeshModel::PrimMeshModel(){
+	/*init the fields needed to make a pyramid:*/
+	vec3 vertexPositions[FACES_NUM_IN_PYRAMID * VERTEX_NUM_IN_FACE];
+
+	/*define the needed vertices:*/
+	float span = 0.3;
+	vec3 vHead(0, 0, 0);
+	vec3 vLeg1(span, span, -1);
+	vec3 vLeg2(span, -span, -1);
+	vec3 vLeg3(-span, -span, -1);
+	vec3 vLeg4(-span, span, -1);
+
+	/*use the vertices to create the wanted faces:*/
+	/*set sides of pyramid:*/
+	vertexPositions[0] = vHead;
+	vertexPositions[1] = vLeg1;
+	vertexPositions[2] = vLeg4;
+
+	vertexPositions[3] = vHead;
+	vertexPositions[4] = vLeg4;
+	vertexPositions[5] = vLeg3;
+
+	vertexPositions[6] = vHead;
+	vertexPositions[7] = vLeg3;
+	vertexPositions[8] = vLeg2;
+
+	vertexPositions[9] = vHead;
+	vertexPositions[10] = vLeg2;
+	vertexPositions[11] = vLeg1;
+
+	/*bottom of pyramid divided into 2 triangles:*/
+	vertexPositions[12] = vLeg1;
+	vertexPositions[13] = vLeg3;
+	vertexPositions[14] = vLeg4;
+
+	vertexPositions[15] = vLeg3;
+	vertexPositions[16] = vLeg1;
+	vertexPositions[17] = vLeg2;
+
+	vertexNum = FACES_NUM_IN_PYRAMID * VERTEX_NUM_IN_FACE;
+	MeshLoader loader(vertexPositions,vertexNum);
+	loader.getHandles(vaos);
+	normalsPresent	= loader.getNormalPresent();
+	texturesPresent = loader.getTexturePresent();
+	centerOfMass	= loader.getCenterOfMass();
+	axisDeltas		= loader.getAxisDeltas();
+	for (int i = 0; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
+		displayPreferences[i] = false;
+	}
+	displayPreferences[DM_WIRE_FRAME] = true;
+	modelType = PYRAMID_WIREFRAME;
+}
+void PrimMeshModel::setWorldTransform(mat4 trans){
+	worldVertexTransform = trans;
 }

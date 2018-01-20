@@ -28,9 +28,7 @@ enum ActivationToggleElement{
 };
 enum Program{
 	PROGRAM_MINIMAL,
-	PROGRAM_WIRE_FRAME,
 	PROGRAM_NORMAL,
-	PROGRAM_BOUNDING_BOX,
 	PROGRAM_PHONG,
 	PROGRAM_GOURAUD,
 	PROGRAM_NUMBER_OF_PROGRAMS
@@ -77,6 +75,7 @@ class Scene {
 	vector<Model*> models;
 	vector<Light*> lights;
 	vector<Camera*> cameras;
+	vector<Model*> camerasModels;
 	vector<ShaderProgram> programs;
 	
 	/*	scene current actives:	*/
@@ -86,7 +85,8 @@ class Scene {
 	
 	/*	scene preferences:		*/
 	ShadingMethod shading;
-	
+	bool renderCamerasFlag;
+
 	/*	private functions:		*/
 	void initPrograms();
 	void initData();
@@ -113,6 +113,7 @@ public:
 	void setProjection(ProjectionType &type, ProjectionParams &p);
 	void LookAtActiveModel();
 	void LookAtActiveModel(ProjectionType pType);
+	void LookAtCameraPyramid(ProjectionType pType, int cameraIndex);
 	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
 	void toggleFogMode();
 	void toggleAliasingMode();
