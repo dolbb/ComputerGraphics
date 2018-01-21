@@ -6,6 +6,9 @@
 #include "GL/freeglut.h"
 #include "GL/freeglut_ext.h"
 #include "ShaderProgram.h"
+#include "Texture.h"
+
+#define NUMBER_OF_VERTICES 36
 
 using std::vector;
 using std::string;
@@ -30,49 +33,5 @@ private:
 	GLuint boxVAO;
 	GLuint boxVerticesVBO;
 	ShaderProgram shader;
-	GLfloat boxVertices[] =
-	{
-		// positions          
-		-1.0f, 1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
-
-		-1.0f, -1.0f, 1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, -1.0f, 1.0f,
-
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f,
-		-1.0f, -1.0f, 1.0f,
-
-		-1.0f, 1.0f, -1.0f,
-		1.0f, 1.0f, -1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f
-	};
+	static GLfloat boxVertices[NUMBER_OF_VERTICES * 3];
 };

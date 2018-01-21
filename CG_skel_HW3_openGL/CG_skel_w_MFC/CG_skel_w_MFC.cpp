@@ -802,7 +802,7 @@ void initMenu()
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);
 	glutAddSubMenu("Tools", toolsMenu);
-	glutAddMenuEntry("Demo", DEMO);
+	glutAddMenuEntry("Demo", MAIN_DEMO);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 }

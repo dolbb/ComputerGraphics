@@ -2,7 +2,6 @@
 
 in vec3 fragNormal;
 in vec3 fragPos;
-in vec3 fragPosNDC;
 
 struct Material
 {
@@ -41,6 +40,8 @@ uniform Material material;
 uniform DirectionalLight directionalLight;
 uniform PointLight[NUMBER_OF_POINT_LIGHTS] pointLights;
 
+uniform samplerCube environmentMap; 
+
 out vec4 fragColor;
 
 vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, vec3 viewDirection, Material material);
@@ -51,15 +52,15 @@ void main()
 	vec3 normal = normalize(fragNormal);
 	vec3 viewDirection = normalize(eye - fragPos);
 	vec3 outColor = vec3(0.0);
+	vec3 reflectionVector = reflect(viewDirection, normal);
+	vec4 reflectedColor = texture(environmentMap, reflectionVector);
 	outColor += calculateDirectionalLight(directionalLight, normal, viewDirection, material);
 	for(int i=0; i<activePointLights; i++)
 	{
 		outColor += calculatePointLight(pointLights[i], normal, viewDirection,fragPos, material);
 	}
-	float dist = fragPosNDC.z;
-	float visibility = (1 - dist);
-	visibility = clamp(visibility, 0.0, 1.0);
-	fragColor = mix(vec4(0.0),vec4(outColor,1.0),visibility);
+	fragColor = vec4(outColor,1.0);
+	fragColor = mix(fragColor,reflectedColor,0.6);
 	fragColor = clamp(fragColor, 0.0, 1.0);
 }
 
