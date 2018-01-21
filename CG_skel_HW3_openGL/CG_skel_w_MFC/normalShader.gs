@@ -21,14 +21,15 @@ void main()
   int i;
   for(i=0; i<gl_in.length(); i++)
   {
-    vec3 pos = model * gl_in[i].gl_Position.xyz;
+    vec3 startPoint = model * gl_in[i].gl_Position.xyz;
     vec3 nor = normalTransform * vertex[i].normal.xyz;
+    vec3 endPoint = normalize(startPoint + nor);
     
-    gl_Position = projection * view * vec4(pos, 1.0);
+    gl_Position = projection * view * vec4(startPoint, 1.0);
     vertex_color = vertex[i].color;
     EmitVertex();
     
-    gl_Position = projection * view * vec4(normalize(P + N), 1.0);
+    gl_Position = projection * view * vec4(endPoint, 1.0);
     vertex_color = vertex[i].color;
     EmitVertex();
     
