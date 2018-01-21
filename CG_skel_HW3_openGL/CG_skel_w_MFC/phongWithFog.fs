@@ -2,7 +2,7 @@
 
 in vec3 fragNormal;
 in vec3 fragPos;
-in float visibility;
+in vec3 fragPosNDC;
 
 struct Material
 {
@@ -56,6 +56,9 @@ void main()
 	{
 		outColor += calculatePointLight(pointLights[i], normal, viewDirection,fragPos, material);
 	}
+	float dist = fragPosNDC.z;
+	float visibility = (1 - dist) / 2;
+	visibility = clamp(visibility, 0.0, 1.0);
 	fragColor = mix(vec4(0.0),vec4(outColor,1.0),visibility);
 	fragColor = clamp(fragColor, 0.0, 1.0);
 }

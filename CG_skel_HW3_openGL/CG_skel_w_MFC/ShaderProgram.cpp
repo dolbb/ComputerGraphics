@@ -26,6 +26,12 @@ void ShaderProgram::deleteProgram()
 	glUseProgram(0);
 	glDeleteProgram(id);	
 }
+
+GLuint ShaderProgram::getId()
+{
+	return id;
+}
+
 void ShaderProgram::setUniform(const string& uniformName, bool uniformVal)
 {
 	activate();

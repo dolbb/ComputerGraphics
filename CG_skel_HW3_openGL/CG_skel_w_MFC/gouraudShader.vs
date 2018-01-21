@@ -1,4 +1,4 @@
-#version 150
+#version 330
 
 in vec3 vPosition;
 in vec3 vNormal;
@@ -52,17 +52,16 @@ vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 vertexPosition
 void main()
 {
 	vec3 normal = normalize(normalTransform * vNormal);
-	vec3 worldPos = model * vPosition;
-	vec3 viewDirection = normalize(eye-worldPos);
+	vec3 worldPos = vec3(model * vec4(vPosition,1.0));
+	vec3 viewDirection = normalize(eye - worldPos);
 	vec3 outColor = vec3(0.0);
 	outColor += calculateDirectionalLight(directionalLight, normal, viewDirection, material);
 	for(int i=0; i<activePointLights; i++)
 	{
-		outColor += calculatePointLight(pointLights[i], normal, viewDirection,vPosition, material);
+		outColor += calculatePointLight(pointLights[i], normal, worldPos,viewDirection, material);
 	}
 	vColor = vec4(outColor,1.0);
-	vColor = clamp(vColor, 0.0, 1.0);
-	gl_position=projection*view * model * vec4(vPosition,1.0);
+	gl_Position = projection * view * model * vec4(vPosition,1.0);
 }
 
 vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, vec3 viewDirection, Material material)
