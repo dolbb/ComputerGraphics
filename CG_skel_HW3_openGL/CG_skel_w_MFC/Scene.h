@@ -5,6 +5,9 @@
 #include "Camera.h"
 #include "Light.h"
 #include "ShaderProgram.h"
+#include "FrameBufferObj.h"
+#include "ScreenRenderer.h"
+#include "Texture.h"
 
 using namespace std;
 /*===============================================================

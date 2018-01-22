@@ -39,6 +39,8 @@ uniform vec3 eye;
 uniform Material material;
 uniform DirectionalLight directionalLights[MAX_NUM_OF_LIGHTS];
 uniform PointLight pointLights[MAX_NUM_OF_LIGHTS];
+uniform bool isUniformMat;
+uniform bool fogFlag;
 
 out vec4 fragColor;
 
@@ -62,8 +64,18 @@ void main()
 	{
 		outColor += calculatePointLight(pointLights[i], normal, viewDirection,localFragPos, material);
 	}
-	fragColor = vec4(outColor,1.0);
-	fragColor = clamp(fragColor, 0.0, 1.0);
+	if(fogFlag)
+	{
+		float dist = gl_FragCoord.z;
+		float visibility = (1 - dist)/2;
+		fragColor = mix(vec4(0.0),vec4(outColor,1.0),visibility);
+		fragColor = clamp(fragColor, 0.0, 1.0);	
+	}
+	else
+	{
+		fragColor = vec4(outColor,1.0);
+		fragColor = clamp(fragColor, 0.0, 1.0);	
+	}
 }
 
 vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, vec3 viewDirection, Material material)

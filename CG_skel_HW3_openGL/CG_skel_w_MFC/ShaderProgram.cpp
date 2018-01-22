@@ -9,6 +9,11 @@ ShaderProgram::ShaderProgram(const string& vShader,const string& fShader)
 	id = InitShader(vShader.c_str(), fShader.c_str());
 }
 
+ShaderProgram::ShaderProgram(const string& vShader, const string& gShader, const string& fShader)
+{
+	id = InitShader(vShader.c_str(), gShader.c_str(), fShader.c_str());
+}
+
 ShaderProgram::~ShaderProgram(){}
 
 void ShaderProgram::activate()

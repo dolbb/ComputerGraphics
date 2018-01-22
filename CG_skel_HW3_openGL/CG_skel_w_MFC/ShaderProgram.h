@@ -19,6 +19,7 @@ private:
 
 public:
 	ShaderProgram(const string& vShader,const string& fShader);
+	ShaderProgram(const string& vShader,const string& gShader, const string& fShader);
 	~ShaderProgram();
 
 	void	activate();

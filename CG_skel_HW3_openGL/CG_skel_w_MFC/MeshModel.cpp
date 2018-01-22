@@ -58,6 +58,8 @@ MeshModel::MeshModel(string fileName){
 	}
 	displayPreferences[DM_PHONG] = true;
 	displayPreferences[DM_BOUNDING_BOX] = true;
+	//displayPreferences[DM_VERTEX_NORMALS] = true;
+	//displayPreferences[DM_FACES_NORMALS] = true;
 	modelType = MESH_MODEL;
 }
 MeshModel::~MeshModel(){
@@ -131,8 +133,26 @@ void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
 		glDisableVertexAttribArray(1);				//disble attributes
 		break;
 	case DM_VERTEX_NORMALS:
+		glBindVertexArray(vaos[VNB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_NORMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_NORMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_NORMAL].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
 		break;
 	case DM_FACES_NORMALS:
+		glBindVertexArray(vaos[FNB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_NORMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_NORMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_NORMAL].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);		//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
 		break;
 	case DM_BOUNDING_BOX:
 		glBindVertexArray(vaos[BB_VAO]);			//bind vao

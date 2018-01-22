@@ -25,10 +25,10 @@ static void initState(){
 ===============================================================*/
 void Scene::initPrograms(){
 	//must push the data in accordance with Programs enumeration.
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_MINIMAL
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));	//PROGRAM_NORMAL
-	programs.push_back(ShaderProgram("phongShader.vs", "phongShader.fs"));				//PROGRAM_PHONG
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));			//PROGRAM_GOURAUD
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));				//PROGRAM_MINIMAL
+	programs.push_back(ShaderProgram("normalShader.vs", "normalShader.gs", "normalShader.fs"));		//PROGRAM_NORMAL
+	programs.push_back(ShaderProgram("phongWithFog.vs", "phongWithFog.fs"));						//PROGRAM_PHONG
+	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));				//PROGRAM_GOURAUD
 	//TODO: add more shaders' programs.
 }
 void Scene::initData(){
