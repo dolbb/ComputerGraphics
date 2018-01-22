@@ -33,7 +33,9 @@ public:
 	void	setUniform(const string& uniformName, const vec4& uniformVal);
 	void	setUniform(const string& uniformName, const mat3& uniformVal);
 	void	setUniform(const string& uniformName, const mat4& uniformVal);
+	/*
 	void	setUniform(const Light& light);
+	*/
 	void	setUniform(const Material& material);
 	void	setUniform(const vector<Light*>& lights);
 };

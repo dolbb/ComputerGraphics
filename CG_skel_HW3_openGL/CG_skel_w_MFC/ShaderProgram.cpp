@@ -96,27 +96,30 @@ void ShaderProgram::setUniform(const string& uniformName, const mat4& uniformVal
 	glUniformMatrix4fv(location, 1, GL_FALSE, static_cast<const GLfloat*>(transpose(uniformVal)));
 	deactivate();
 }
+/*
 void ShaderProgram::setUniform(const Light& light)
 {
-	if (light.type == PARALLEL_LIGHT)
-	{
-		setUniform("directionalLight.direction", light.direction);
-		setUniform("directionalLight.ambient", light.ambientIntensity);
-		setUniform("directionalLight.diffuse", light.diffuseIntensity);
-		setUniform("directionalLight.specular", light.specularIntensity);
-	}
-	else
-	{
-		setUniform("pointLight.position", light.position);
-		setUniform("pointLight.ambient", light.ambientIntensity);
-		setUniform("pointLight.diffuse", light.diffuseIntensity);
-		setUniform("pointLight.specular", light.specularIntensity);
-		setUniform("pointLight.constant", (float)CONSTANT_ATTENUATION);
-		setUniform("pointLight.linear", (float)LINEAR_ATTENUATION);
-		setUniform("pointLight.quadratic", (float)QUADRATIC_ATTENUATION);
-	}
-	
+if (light.type == PARALLEL_LIGHT)
+{
+setUniform("directionalLight.direction", light.direction);
+setUniform("directionalLight.ambient", light.ambientIntensity);
+setUniform("directionalLight.diffuse", light.diffuseIntensity);
+setUniform("directionalLight.specular", light.specularIntensity);
 }
+else
+{
+setUniform("pointLight.position", light.position);
+setUniform("pointLight.ambient", light.ambientIntensity);
+setUniform("pointLight.diffuse", light.diffuseIntensity);
+setUniform("pointLight.specular", light.specularIntensity);
+setUniform("pointLight.constant", (float)CONSTANT_ATTENUATION);
+setUniform("pointLight.linear", (float)LINEAR_ATTENUATION);
+setUniform("pointLight.quadratic", (float)QUADRATIC_ATTENUATION);
+}
+
+}
+*/
+
 void ShaderProgram::setUniform(const Material& material)
 {
 	setUniform("material.emissive", /*material.emissiveColor*/ vec3(0,0,0));
