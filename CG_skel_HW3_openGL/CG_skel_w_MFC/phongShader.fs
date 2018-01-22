@@ -1,4 +1,4 @@
-#version 330
+#version 400
 
 in vec3 fragNormal;
 in vec3 fragPos;
@@ -32,13 +32,14 @@ struct PointLight
 	float quadratic;
 };
 
-#define NUMBER_OF_POINT_LIGHTS 6
+#define MAX_NUM_OF_LIGHTS 4
 
 uniform int activePointLights;
+uniform int activeDirectionalLights;
 uniform vec3 eye;
 uniform Material material;
-uniform DirectionalLight directionalLight;
-uniform PointLight[NUMBER_OF_POINT_LIGHTS] pointLights;
+uniform DirectionalLight directionalLights[MAX_NUM_OF_LIGHTS];
+uniform PointLight pointLights[MAX_NUM_OF_LIGHTS];
 
 out vec4 fragColor;
 
@@ -50,8 +51,14 @@ void main()
 	vec3 normal = normalize(fragNormal);
 	vec3 viewDirection = normalize(eye - fragPos);
 	vec3 outColor = vec3(0.0);
-	outColor += calculateDirectionalLight(directionalLight, normal, viewDirection, material);
-	for(int i=0; i<activePointLights; i++)
+	int i=0;
+
+	for(; i<activeDirectionalLights; i++)
+	{
+		outColor += calculateDirectionalLight(directionalLights[i], normal, viewDirection, material);
+	}
+	i=0;
+	for(; i<activePointLights; i++)
 	{
 		outColor += calculatePointLight(pointLights[i], normal, viewDirection,fragPos, material);
 	}
@@ -89,7 +96,7 @@ vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 
 
 	//light attenuation
 	float d = length(pointLight.position - fragPos);
-	float attenuation = 1 / (pointLight.constant + pointLight.linear * d + pointLight.quadratic * d * d);
+	float attenuation = 1; // (pointLight.constant + pointLight.linear * d + pointLight.quadratic * d * d);
 
 	//ambient
 	vec3 ambient=pointLight.ambient*(material.ambient*attenuation);
