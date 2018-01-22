@@ -22,8 +22,6 @@
 #define BUFFER_OFFSET( offset )   ((GLvoid*) (offset))
 
 #define FILE_OPEN 1
-#define MAIN_DEMO 1
-#define MAIN_ABOUT 2
 
 #define DEFAULT_WIDTH 512
 #define DEFAULT_HEIGHT 512
@@ -417,11 +415,8 @@ void mainMenu(int id)
 {
 	switch (id)
 	{
-	case MAIN_DEMO:
+	case DEMO:
 		scene->drawDemo();
-		break;
-	case MAIN_ABOUT:
-		AfxMessageBox(_T("Computer Graphics"));
 		break;
 	}
 }
@@ -802,7 +797,7 @@ void initMenu()
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);
 	glutAddSubMenu("Tools", toolsMenu);
-	glutAddMenuEntry("Demo", MAIN_DEMO);
+	glutAddMenuEntry("Demo", DEMO);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 }

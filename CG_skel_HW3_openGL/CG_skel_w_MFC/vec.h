@@ -195,7 +195,7 @@ struct vec3 {
 
     vec3( GLfloat x, GLfloat y, GLfloat z ) : x(x), y(y), z(z) {}
 
-    vec3( const vec3& v ) 
+	vec3( const vec3& v ) 
 	{
 		x = v.x;
 		y = v.y;
@@ -532,6 +532,15 @@ struct vec4 {
     operator GLfloat* ()
 	{
 		return static_cast<GLfloat*>( &x ); 
+	}
+	
+	vec3 vec4ToVec3(){
+		if (w == 0){
+			return vec3(x, y, z);
+		}
+		else{
+			return vec3(x/w , y/w, z/w);
+		}
 	}
 };
 

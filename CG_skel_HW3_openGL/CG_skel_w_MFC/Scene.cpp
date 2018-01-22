@@ -74,8 +74,7 @@ void Scene::handleCameraFrame(OperateParams &p){
 void Scene::updateLights(){
 	int size = programs.size();
 	for (int i = 0; i < size; ++i){
-		//TODO: CHANGE TO CALL ALL LIGHTS:
-		programs[i].setUniform(*lights[0]);
+		programs[i].setUniform(lights);
 	}
 }
 /*===============================================================
@@ -212,7 +211,7 @@ void Scene::LookAtActiveModel(ProjectionType pType){
 	vec4 eye(meshCenter);
 	eye[2] += 5 * dMax;	//set the x value of the eye to be far enough from the box
 	vec4 at(meshCenter);	//look at center of mesh
-	vec4 up(0, 1, 0, 0);	//up is set to z axis
+	vec4 up(0, 1, 0, 1);	//up is set to z axis
 
 	cameras[activeCamera]->LookAt(eye, at, up);
 

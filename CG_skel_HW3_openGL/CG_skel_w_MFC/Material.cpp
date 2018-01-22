@@ -1,7 +1,13 @@
 #include "stdafx.h"
 #include "Material.h"
 //Material::Material() :emissiveColor(0.1), ambientCoeff(0.25), diffuseCoeff(0.7), specularCoeff(0.99),isUniform(true), alpha(20){}
-Material::Material() :emissiveColor(0.24725, 0.1995, 0.0745), ambientCoeff(0.24725, 0.1995, 0.0745), diffuseCoeff(0.75164, 0.60648, 0.22648), specularCoeff(0.628281, 0.555802, 0.366065), isUniform(true), alpha(30){}
+Material::Material() :
+emissiveColor(0.24725, 0.1995, 0.0745), 
+ambientCoeff(0.24725, 0.1995, 0.0745), 
+diffuseCoeff(0.75164, 0.60648, 0.22648), 
+specularCoeff(0.628281, 0.555802, 0.366065), 
+isUniform(true), alpha(30)
+{}
 
 Material::Material(vec3 chosenEmissive, vec3 chosenAmbient, vec3 chosenDiffuse, vec3 chosenSpecular, GLfloat chosenAlpha)
 {

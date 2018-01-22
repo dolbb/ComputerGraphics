@@ -59,6 +59,8 @@ Camera& Camera::operator =(const Camera& c) {
 void Camera::setTransformation(const mat4& transform, const mat4& invertedTransform){
 	cTransform = cTransform * transform;
 	cameraToWorld = invertedTransform * cameraToWorld;
+	vec4 tmp = cameraToWorld * vec4(0, 0, 0, 1);
+	cEye = vec4(tmp.vec4ToVec3(), 1.0);
 }
 //TODO: rethink in accordance with CG HW3:
 void Camera::LookAt(const vec4& eye, const vec4& at, const vec4& up){
@@ -229,7 +231,7 @@ void Camera::updatePrograms(vector<ShaderProgram> &programs){
 	int size = programs.size();
 	for (int i = 0; i < size; ++i){
 		programs[i].setUniform("view"		, cTransform);
-		programs[i].setUniform("eye"		, cEye);
+		programs[i].setUniform("eye"		, cEye.vec4ToVec3());
 		programs[i].setUniform("projection"	, projection);
 	}
 }
