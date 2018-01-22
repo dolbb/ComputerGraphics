@@ -55,18 +55,6 @@ struct ProjectionParams{
 		right *= scale;
 		bottom *= scale;
 		top *= scale;		
-		/*	set data :								
-		float dx = right - left;
-		float dy = top - bottom;
-		float centerX = (right + left) / 2;
-		float centerY = (top + bottom) / 2;
-
-		dx *= scale / 2; //times 0.5 since we move only one side at a shift.
-		dy *= scale / 2;
-		left = centerX - dx;
-		right = centerX + dx;
-		bottom = centerY - dy;
-		top = centerY + dy;*/
 	}
 };
 /*===============================================================

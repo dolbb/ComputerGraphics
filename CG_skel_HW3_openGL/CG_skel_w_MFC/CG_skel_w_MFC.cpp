@@ -157,14 +157,17 @@ void keyboard(unsigned char key, int x, int y){
 	if (key >= '0' && key <= '2')
 	{
 		int index = key - '0';
+		cout << "0-2 lights, you've picked " << key << endl;
 		scene->setActiveLight(index);
 	}
 	else if (key >= '3' && key <= '5'){
 		int index = key - '3';
+		cout << "3-5 cameras, you've picked " << key << endl;
 		scene->setActiveCamera(index);
 	}
 	else if (key >= '6' && key <= '9'){
 		int index = key - '6';
+		cout << "6-9 models, you've picked " << key << endl;
 		scene->setActiveModel(index);
 	}
 	OperateParams p;
@@ -201,6 +204,38 @@ void keyboard(unsigned char key, int x, int y){
 	case 'H':
 		scene->activeLightDecrementStats(SPECULAR);
 		cout << "current light was decremented in its SPECULAR field" << endl;
+		break;
+	case 'W':
+		scene->addToLightPosition(vec3(0, 1, 0) * translationStep / 100);
+		cout << "current light sent UP" << endl;
+		break;
+	case 'S':
+		scene->addToLightPosition(vec3(0, -1, 0) * translationStep / 100);
+		cout << "current light sent DOWN" << endl;
+		break;
+	case 'D':
+		scene->addToLightPosition(vec3(1, 0, 0) * translationStep / 100);
+		cout << "current light sent RIGHT" << endl;
+		break;
+	case 'A':
+		scene->addToLightPosition(vec3(-1, 0, 0) * translationStep / 100);
+		cout << "current light sent LEFT" << endl;
+		break;
+	case 'Z':
+		scene->addToLightPosition(vec3(0, 0, -1) * translationStep / 100);
+		cout << "current light pushed BACK" << endl;
+		break;
+	case 'X':
+		scene->addToLightPosition(vec3(0, 0, 1) * translationStep / 100);
+		cout << "current light pushed FRONT" << endl;
+		break;
+	case 'I':
+		translationStep += 5;
+		cout << "translationStep was changed to: " << translationStep << endl;
+		break;
+	case 'K':
+		translationStep -= 5;
+		cout << "translationStep was changed to: " << translationStep << endl;
 		break;
 		/*object transform operations:*/
 	case 'w':
@@ -386,7 +421,7 @@ void mouseWheel(int wheel, int direction, int x, int y)
 {
 	operationParams.frame = CAMERA;
 	operationParams.type = SCALE;
-	if (direction > 0)
+	if (direction <= 0)
 	{
 		operationParams.floatData = DEFAULT_ZOOM_FACTOR;
 	}
@@ -777,7 +812,7 @@ void initMenu()
 	glutAddMenuEntry("set a UNIFORM material for model", SET_UNIFORM_MODEL_MATERIAL);
 	glutAddMenuEntry("set a new general color for the model", SET_MODEL_GENERAL_COLOR);
 	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
-	glutAddMenuEntry("set a direction\position for the current light", SET_LIGHT_DIRECTION);
+	glutAddMenuEntry("set a direction \\ position for the current light", SET_LIGHT_DIRECTION);
 	glutAddMenuEntry("set intensity for the current light", SET_LIGHT_INTENSITY);
 	int toggleMenu = glutCreateMenu(toggleMenuCallback);
 	glutAddMenuEntry("Face normals", FACE_NORMALS);

@@ -122,9 +122,9 @@ setUniform("pointLight.quadratic", (float)QUADRATIC_ATTENUATION);
 
 void ShaderProgram::setUniform(const Material& material)
 {
-	setUniform("material.emissive", /*material.emissiveColor*/ vec3(0,0,0));
-	setUniform("material.ambient", /*material.ambientCoeff*/ vec3(0,0,0));
-	setUniform("material.diffuse", /*material.diffuseCoeff*/ vec3(0, 0, 0));
+	setUniform("material.emissive", material.emissiveColor);
+	setUniform("material.ambient", material.ambientCoeff);
+	setUniform("material.diffuse", material.diffuseCoeff);
 	setUniform("material.specular", material.specularCoeff);
 	setUniform("material.shininess", material.alpha);
 }

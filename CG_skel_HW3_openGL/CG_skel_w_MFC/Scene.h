@@ -131,6 +131,7 @@ public:
 	void changeLightDirPos(vec3 dir);
 	void changeLightDirection(vec3 dir);
 	void changeLightPosition(vec3 pos);
+	void addToLightPosition(vec3 pos);
 	void changeLightIntensity(vec3 intensity);
 	void changeModelColor(vec3 c);
 	void setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);

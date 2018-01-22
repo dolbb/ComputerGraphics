@@ -367,6 +367,12 @@ void Scene::changeLightDirection(vec3 dir){
 void Scene::changeLightPosition(vec3 pos){
 	lights[activeLight]->position = cameras[activeCamera]->getWorldVector(pos);
 }
+void Scene::addToLightPosition(vec3 pos){
+	if (lights[activeLight]->type != POINT_LIGHT){
+		cout << "current light is parallel - you will not see any diffrence.." << endl;
+	}
+	lights[activeLight]->position += cameras[activeCamera]->getWorldVector(pos);
+}
 void Scene::changeLightIntensity(vec3 v){
 	lights[activeLight]->changeIntensity(v);
 }

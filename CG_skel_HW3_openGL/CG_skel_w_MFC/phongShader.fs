@@ -1,7 +1,7 @@
 #version 400
 
 in vec3 fragNormal;
-in vec3 fragPos;
+in vec4 fragPos;
 
 struct Material
 {
@@ -26,7 +26,6 @@ struct PointLight
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
-
 	float constant;
 	float linear;
 	float quadratic;
@@ -49,8 +48,9 @@ vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 
 void main()
 {
 	vec3 normal = normalize(fragNormal);
-	vec3 viewDirection = normalize(eye - fragPos);
-	vec3 outColor = vec3(0.0);
+	vec3 localFragPos = vec3(fragPos);
+	vec3 viewDirection = normalize(eye - localFragPos);
+	vec3 outColor = material.emissive;
 	int i=0;
 
 	for(; i<activeDirectionalLights; i++)
@@ -60,7 +60,7 @@ void main()
 	i=0;
 	for(; i<activePointLights; i++)
 	{
-		outColor += calculatePointLight(pointLights[i], normal, viewDirection,fragPos, material);
+		outColor += calculatePointLight(pointLights[i], normal, viewDirection,localFragPos, material);
 	}
 	fragColor = vec4(outColor,1.0);
 	fragColor = clamp(fragColor, 0.0, 1.0);
@@ -71,8 +71,6 @@ vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, v
 
 	vec3 nLightDirection = normalize(-directionalLight.direction);
 	
-	//emmissive
-	vec3 emissive = material.emissive;
 
 	//ambient
 	vec3 ambient = material.ambient * directionalLight.ambient;
@@ -86,7 +84,7 @@ vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, v
 	float specFactor = pow( max( dot( viewDirection,nReflectDirection ) , 0.0 ) , material.shininess);
 	vec3 specular = directionalLight.specular * (specFactor * material.specular);
 
-	return emissive + ambient + diffuse + specular;
+	return ambient + diffuse + specular;
 }
 
 vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDirection, Material material)
@@ -96,7 +94,7 @@ vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 
 
 	//light attenuation
 	float d = length(pointLight.position - fragPos);
-	float attenuation = 1; // (pointLight.constant + pointLight.linear * d + pointLight.quadratic * d * d);
+	float attenuation = 1.0 / (pointLight.constant + pointLight.linear * d + pointLight.quadratic * d * d);
 
 	//ambient
 	vec3 ambient=pointLight.ambient*(material.ambient*attenuation);
