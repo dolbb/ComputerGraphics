@@ -14,36 +14,41 @@ using std::vector;
 
 class Texture
 {
+	GLuint id;
 public:
+	Texture(){}
 	Texture(const string& texturePath);
 	~Texture();
 	void destroy();
 	void bind();
 	void unbind();
 	GLuint getId();
-private:
-	GLuint id;
 };
 
 class Environment
 {
-public:
-	//expected cube images in the following order: right, left, top, bottom, back, front
-	Environment(const vector<string>& textureLocations, ShaderProgram shader);
-	~Environment();
-	void draw();
-	void destroy();
-
-private:
-
-	void bind();
-	void unbind();
-	void createCubeMap(const vector<string>& textureLocations);
-	void initBuffers();
-
 	GLuint id;
 	GLuint boxVAO;
 	GLuint boxVerticesVBO;
 	ShaderProgram shader;
 	static GLfloat boxVertices[NUMBER_OF_VERTICES * 3];
+
+	vector<string> generateFacesFilesLocations();
+	void bindWithDraw();
+	void unbindAfterDraw();
+	void createCubeMap(const vector<string>& textureLocations);
+	void initBuffers();
+
+public:
+	//expected cube images in the following order: right, left, top, bottom, back, front
+	Environment();
+	Environment(ShaderProgram &shader);
+	Environment(const vector<string>& textureLocations, ShaderProgram shader);
+	Environment(const Environment &e);
+	~Environment(){}
+	void draw();
+	void bind();
+	void unbind();
+	void destroy();
+	void updateViewAndProjection(mat4 view, mat4 projection, vec4 eye);
 };

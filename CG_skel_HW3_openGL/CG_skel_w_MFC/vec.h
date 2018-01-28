@@ -357,6 +357,28 @@ inline vec3 cross(const vec3& a, const vec3& b )
     return vec3((a.y*b.z - a.z*b.y),(a.z*b.x - a.x*b.z),(a.x*b.y - a.y*b.x));
 }
 
+inline void clamp(vec3& u, const GLfloat min, const GLfloat max)
+{
+	if (u.x < min){
+		u.x = min;
+	}
+	if (u.x > max){
+		u.x = max;
+	}
+	if (u.y < min){
+		u.y = min;
+	}	  
+	if (u.y > max){
+		u.y = max;
+	}
+	if (u.z < min){
+		u.z = min;
+	}	  
+	if (u.z > max){
+		u.z = max;
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  vec4 - 4D vector

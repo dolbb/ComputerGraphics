@@ -26,23 +26,23 @@ struct PointLight
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
-
 	float constant;
 	float linear;
 	float quadratic;
 };
 
-#define NUMBER_OF_POINT_LIGHTS 6
+#define MAX_NUM_OF_LIGHTS 4
 
 uniform int activePointLights;
+uniform int activeDirectionalLights;
 uniform vec3 eye;
 uniform mat3 normalTransform;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform Material material;
-uniform DirectionalLight directionalLight;
-uniform PointLight[NUMBER_OF_POINT_LIGHTS] pointLights;
+uniform DirectionalLight directionalLights[MAX_NUM_OF_LIGHTS];
+uniform PointLight pointLights[MAX_NUM_OF_LIGHTS];
 
 out vec4 vColor;
 
@@ -53,10 +53,16 @@ void main()
 {
 	vec3 normal = normalize(normalTransform * vNormal);
 	vec3 worldPos = vec3(model * vec4(vPosition,1.0));
+	
 	vec3 viewDirection = normalize(eye - worldPos);
-	vec3 outColor = vec3(0.0);
-	outColor += calculateDirectionalLight(directionalLight, normal, viewDirection, material);
-	for(int i=0; i<activePointLights; i++)
+
+	vec3 outColor = material.emissive;
+	int i;
+	for(i=0; i<activeDirectionalLights; ++i)
+	{
+		outColor += calculateDirectionalLight(directionalLights[i], normal, viewDirection, material);
+	}
+	for(i=0; i<activePointLights; ++i)
 	{
 		outColor += calculatePointLight(pointLights[i], normal, worldPos,viewDirection, material);
 	}
@@ -68,9 +74,6 @@ vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, v
 {
 
 	vec3 nLightDirection = normalize(-directionalLight.direction);
-	
-	//emmissive
-	vec3 emissive = material.emissive;
 
 	//ambient
 	vec3 ambient = material.ambient * directionalLight.ambient;
@@ -84,7 +87,7 @@ vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, v
 	float specFactor = pow( max( dot( viewDirection,nReflectDirection ) , 0.0 ) , material.shininess);
 	vec3 specular = directionalLight.specular * (specFactor * material.specular);
 
-	return emissive + ambient + diffuse + specular;
+	return ambient + diffuse + specular;
 }
 
 vec3 calculatePointLight(PointLight pointLight, vec3 normal, vec3 vertexPosition, vec3 viewDirection, Material material)

@@ -18,6 +18,7 @@ private:
 	GLuint id;
 
 public:
+	ShaderProgram(){}
 	ShaderProgram(const string& vShader,const string& fShader);
 	ShaderProgram(const string& vShader,const string& gShader, const string& fShader);
 	~ShaderProgram();

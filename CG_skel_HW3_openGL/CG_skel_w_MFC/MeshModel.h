@@ -30,6 +30,7 @@ protected:
 	bool texturesPresent;		//are texture coords in the DB
 	Material material;
 	MeshModelType modelType;
+	Texture texture;
 
 	/*	vertices transformations:	*/	
 	mat4 worldVertexTransform;
@@ -48,9 +49,12 @@ protected:
 	ActionType actionType;
 
 	/*	private function		*/
-	void drawAux(vector<ShaderProgram> &programs, DisplayMode mode);
 	void vertexTransformation(mat4& mat, mat4& invMat);
 	void normalTransformation(mat4& m4, mat4& a4);
+	void normalDrawAux(vector<ShaderProgram> &programs);
+	void drawAux(vector<ShaderProgram> &programs, DisplayMode mode);
+	void resetDisplay();
+
 public:
 	MeshModel(){}
 	MeshModel(string fileName);
@@ -70,12 +74,15 @@ public:
 	vec3 getCenterOfMass();
 	void featuresStateToggle(ActivationToggleElement e);
 	vec3 getVolume();
+	bool isTexturePresent();
+	void setTextureFile(string fileName);
 
 	/*setMaterial can be used for uniform materials only*/
 	void setNonUniformMaterial();
-	void setUniformMaterial(Material m);	
+	void setUniformMaterial(Material m);
 	void setUniformColor(vec3 c);	
 	void setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);	
+	vec3 getColor();
 	void printUniformMateral();
 };
 

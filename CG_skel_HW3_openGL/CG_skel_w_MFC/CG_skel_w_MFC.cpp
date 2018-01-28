@@ -36,7 +36,8 @@ enum DebugMode{
 	OFF 
 };
 enum MainMenuIdentifier{ 
-	DEMO 
+	DEMO,
+	ANIMATION
 };
 enum NewMenuIdentifier{ 
 	NEW_MODEL, 
@@ -52,6 +53,7 @@ enum SetMenuIdentifier{
 	SET_CAMERA_PRESPECTIVE, 
 	SET_MODEL_GENERAL_COLOR, 
 	SET_NON_UNIFORM_MODEL_MATERIAL, 
+	SET_UNIFORM_MODEL_DEFAULT_MATERIAL,
 	SET_UNIFORM_MODEL_MATERIAL, 
 	SET_LIGHT_COLOR, 
 	SET_LIGHT_DIRECTION, 
@@ -65,8 +67,8 @@ enum ToggleMenuIdentifier{
 	ACTIVE_LIGHT_TYPE, 
 	ANTI_ALIASING, 
 	FOG,
-	BLOOM, 
-	BLUR 
+	ENVIRONMENT_MAPPING,
+	TOON_SHADING
 };
 //enum numOfFrames{ OBJECT_FRAMES = 2, CAMERA_FRAMES = 2 };
 
@@ -314,6 +316,10 @@ void keyboard(unsigned char key, int x, int y){
 			cout << "model" << endl;
 		}
 		break;
+	case 'p':
+		scene->resetPrograms();
+		cout << "program shaders reloaded" << endl;
+		break;
 	}
 	redraw = true;
 }
@@ -448,10 +454,28 @@ void fileMenu(int id)
 }
 void mainMenu(int id)
 {
+	CXyzDialog animationRotation("enter animation rotation in XYZ coords - 3d coords");
+	CXyzDialog animationTranslation("enter animation translation in XYZ coords - 3d coords");
+	CXyzDialog animationColor("enter animation color change in XYZ coords - 3d coords");
 	switch (id)
 	{
 	case DEMO:
 		scene->drawDemo();
+		break;
+	case ANIMATION:
+		vec3 rotationVec(208.5, 208.5, 208.5);
+		vec3 translationVec(0,0,0);
+		vec3 colorVec(0,0,255);
+		if (animationRotation.DoModal() == IDOK){
+			rotationVec = animationRotation.GetXYZ();
+		}
+		if (animationTranslation.DoModal() == IDOK){
+			translationVec = animationTranslation.GetXYZ();
+		}
+		if (animationColor.DoModal() == IDOK){
+			colorVec = animationColor.GetXYZ();
+		}
+		scene->animate(rotationVec, translationVec, colorVec);
 		break;
 	}
 }
@@ -459,10 +483,17 @@ void newMenuCallback(int id)
 {
 	if (id == NEW_MODEL){
 		CFileDialog dlg(TRUE, _T(".obj"), NULL, NULL, _T("*.obj|*.*"));
+		CFileDialog dlgTexture(TRUE, _T(".png"), NULL, NULL, _T("*.obj|*.*"));
 		if (dlg.DoModal() == IDOK)
 		{
 			std::string s((LPCTSTR)dlg.GetPathName());
 			scene->loadOBJModel((LPCTSTR)dlg.GetPathName());
+			if (scene->doesActiveModelNeedTextureFile()){
+				if (dlgTexture.DoModal() == IDOK){
+					std::string textureFile((LPCTSTR)dlgTexture.GetPathName());
+					scene->loadTextureToActiveModel(textureFile);
+				}
+			}
 		}
 		else{
 			return;
@@ -611,10 +642,12 @@ void setCameraPerspective()
 	scene->setProjection(projType, projection);
 	redraw = true;
 }
-
 void shadingMenuCallback(int id){
 	scene->setShading(static_cast<ShadingMethod>(id));
 	switch (id){
+	case SILHOUETTE:
+		cout << "changed to SILHOUETTE mode" << endl;
+		break;
 	case FLAT:
 		cout << "changed to FLAT mode" << endl;
 		break;
@@ -638,7 +671,9 @@ void setMenuCallback(int id){
 		redraw = true;
 		break;
 	}
-
+	if (id == SET_UNIFORM_MODEL_DEFAULT_MATERIAL){
+		scene->setUniformMaterialForActiveModel();
+	}
 	if (id == SET_UNIFORM_MODEL_MATERIAL){
 		vec3 emissive;
 		vec3 ambient;
@@ -727,22 +762,18 @@ void toggleMenuCallback(int id){
 	{
 	case BOUNDING_BOX:
 		scene->featuresStateSelection(TOGGLE_BOUNDING_BOX);
-		redraw = true;
 		break;
 
 	case VERTEX_NORMALS:
 		scene->featuresStateSelection(TOGGLE_VERTEX_NORMALS);
-		redraw = true;
 		break;
 
 	case FACE_NORMALS:
 		scene->featuresStateSelection(TOGGLE_FACE_NORMALS);
-		redraw = true;
 		break;
 
 	case CAMERA_RENDERING:
 		scene->featuresStateSelection(TOGGLE_CAMERA_RENDERING);
-		redraw = true;
 		break;
 	case ACTIVE_LIGHT_TYPE:
 		if (scene->getLightType() == POINT_LIGHT){
@@ -760,36 +791,34 @@ void toggleMenuCallback(int id){
 			else{ return; }
 		}
 		scene->toggleActiveLightType();
-		redraw = true;
 		break;
 	case ANTI_ALIASING:
 		scene->toggleAliasingMode();
 		cout << "anti-aliasing toggled" << endl;
-		redraw = true;
 		break;
 	case FOG:
 		scene->toggleFogMode();
 		cout << "fog toggled" << endl;
-		redraw = true;
 		break;
-	case BLOOM:
-		scene->toggleBloomMode();
-		cout << "bloom toggled" << endl;
-		redraw = true;
+	case ENVIRONMENT_MAPPING:
+		scene->toggleEnvironmentMapping();
+		cout << "environment mapping toggled" << endl;
 		break;
-	case BLUR:
-		scene->toggleBlurMode();
-		cout << "blur toggled" << endl;
-		redraw = true;
+	case TOON_SHADING:
+		scene->toggleToonShading();
+		cout << "toon shading toggled" << endl;
 		break;
 	}
+	redraw = true;
 }
 void lookAtMenuCallback(int id)
 {
 	scene->LookAtActiveModel((ProjectionType)id);
 	redraw = true;
 }
-void toolsMenuCallback(int id){}
+void toolsMenuCallback(int id){
+	scene->resetActiveModelTransformations();
+}
 void initMenu()
 {
 	int newMenu = glutCreateMenu(newMenuCallback);
@@ -799,6 +828,7 @@ void initMenu()
 	glutAddMenuEntry("default Light source", NEW_DEFAULT_LIGHT);
 	glutAddMenuEntry("customized Light source", NEW_CUSTOM_LIGHT);
 	int shadingMenu = glutCreateMenu(shadingMenuCallback);
+	glutAddMenuEntry("silhouette", SILHOUETTE);
 	glutAddMenuEntry("Flat", FLAT);
 	glutAddMenuEntry("Gouraud", GOURAUD);
 	glutAddMenuEntry("Phong", PHONG);
@@ -809,7 +839,8 @@ void initMenu()
 	int setMenu = glutCreateMenu(setMenuCallback);
 	glutAddMenuEntry("Set camera perspective", SET_CAMERA_PRESPECTIVE);
 	glutAddMenuEntry("set a NON UNIFORM material for model", SET_NON_UNIFORM_MODEL_MATERIAL);
-	glutAddMenuEntry("set a UNIFORM material for model", SET_UNIFORM_MODEL_MATERIAL);
+	glutAddMenuEntry("set a DEFAULT UNIFORM material for model", SET_UNIFORM_MODEL_DEFAULT_MATERIAL);
+	glutAddMenuEntry("set a UNIFORM material for model", SET_UNIFORM_MODEL_MATERIAL); 
 	glutAddMenuEntry("set a new general color for the model", SET_MODEL_GENERAL_COLOR);
 	glutAddMenuEntry("set a new color for the current light", SET_LIGHT_COLOR);
 	glutAddMenuEntry("set a direction \\ position for the current light", SET_LIGHT_DIRECTION);
@@ -822,16 +853,18 @@ void initMenu()
 	glutAddMenuEntry("active light type", ACTIVE_LIGHT_TYPE);
 	glutAddMenuEntry("Anti-Aliasing", ANTI_ALIASING);
 	glutAddMenuEntry("fog", FOG);
-	glutAddMenuEntry("bloom", BLOOM);
-	glutAddMenuEntry("blur", BLUR);
+	glutAddMenuEntry("environment mapping", ENVIRONMENT_MAPPING);
+	glutAddMenuEntry("toon shading", TOON_SHADING);
 	int toolsMenu = glutCreateMenu(toolsMenuCallback);
 	glutAddSubMenu("LookAt active model", lookAtActiveModleMenu);
 	glutAddSubMenu("set elements", setMenu);
 	glutAddSubMenu("Shading method", shadingMenu);
 	glutAddSubMenu("Toggle", toggleMenu);
+	glutAddMenuEntry("reset active models' transformations", 0);
 	glutCreateMenu(mainMenu);
 	glutAddSubMenu("New", newMenu);
 	glutAddSubMenu("Tools", toolsMenu);
+	glutAddMenuEntry("Animation", ANIMATION);
 	glutAddMenuEntry("Demo", DEMO);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 

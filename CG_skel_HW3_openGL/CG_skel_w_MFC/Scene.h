@@ -33,11 +33,14 @@ enum Program{
 	PROGRAM_MINIMAL,
 	PROGRAM_NORMAL,
 	PROGRAM_PHONG,
+	PROGRAM_PHONG_WITH_ENV,
 	PROGRAM_GOURAUD,
+	PROGRAM_TEXTURE,
 	PROGRAM_NUMBER_OF_PROGRAMS
 };
 enum ShadingMethod{ 
-	FLAT, 
+	SILHOUETTE,
+	FLAT,
 	GOURAUD, 
 	PHONG 
 };
@@ -47,9 +50,12 @@ enum DisplayMode{
 	DM_FLAT,
 	DM_GOURAUD,
 	DM_PHONG,
+	DM_PHONG_WITH_ENVIRONMENT,
 	DM_VERTEX_NORMALS,
 	DM_FACES_NORMALS,
 	DM_BOUNDING_BOX,
+	DM_TOON_SHADING,
+	DM_TEXTURE,
 	DM_NUMBER_OF_DISPLAY_MODES
 };
 
@@ -80,6 +86,7 @@ class Scene {
 	vector<Camera*> cameras;
 	vector<Model*> camerasModels;
 	vector<ShaderProgram> programs;
+	Environment environment;
 	
 	/*	scene current actives:	*/
 	int activeModel;
@@ -89,6 +96,7 @@ class Scene {
 	/*	scene preferences:		*/
 	ShadingMethod shading;
 	bool renderCamerasFlag;
+	bool environmentDisplayFlag;
 
 	/*	private functions:		*/
 	void initPrograms();
@@ -105,11 +113,14 @@ public:
 	void draw();
 	void createCamera();
 	void selectActiveModel(int index);
+
 	/*	set actives:			*/
 	void setActiveModel(int i);
 	void setActiveLight(int i);
 	void setActiveCamera(int i);
-	/*	other features:		*/
+	void resetActiveModelTransformations();
+
+	/*	other features:			*/
 	void operate(OperateParams &p);
 	void featuresStateSelection(ActivationToggleElement e);
 	void addPyramidMesh();
@@ -120,8 +131,8 @@ public:
 	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
 	void toggleFogMode();
 	void toggleAliasingMode();
-	void toggleBloomMode();
-	void toggleBlurMode();
+	void toggleEnvironmentMapping();
+	void toggleToonShading();
 	void setShading(ShadingMethod s);
 	void addDefaultLight();
 	void addLight(Light l);
@@ -140,9 +151,13 @@ public:
 	void setActiveModelMaterial(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular);
 	void printActiveModelMaterial();
 	void printActiveLight();
-	void setNonUniformMaterialForActiveModel();	//TODO: RETHINK
-	void setUniformMaterialForActiveModel();//TODO: RETHINK
+	void setNonUniformMaterialForActiveModel();	
+	void setUniformMaterialForActiveModel();
 	void setDisplayMode(DisplayMode mode);
+	void resetPrograms();
+	void animate(vec3 degrees, vec3 translationVec, vec3 colorVec);
+	bool doesActiveModelNeedTextureFile();
+	void loadTextureToActiveModel(string fileName);
 
 	/*	demos:					*/
 	void drawDemo();

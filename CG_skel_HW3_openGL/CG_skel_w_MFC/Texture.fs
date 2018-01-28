@@ -1,8 +1,9 @@
 #version 400
-
+  
 in vec3 fragNormal;
 in vec4 fragPos;
 in vec3 rawPosVal;
+in vec2 TexCoord;
 
 struct Material
 {
@@ -43,7 +44,7 @@ uniform PointLight pointLights[MAX_NUM_OF_LIGHTS];
 uniform bool isUniformFlag;
 uniform bool fogFlag;
 uniform bool fToonFlag;
-uniform samplerCube environmentMap; 
+uniform sampler2D ourTexture;
 
 out vec4 fragColor;
 
@@ -59,8 +60,6 @@ void main()
 	vec3 outColor = material.emissive;
 	int i=0;
 	vec3 tmpV;
-	vec3 reflectionVector = reflect(viewDirection, normal);
-	vec4 reflectedColor = texture(environmentMap, reflectionVector);
 	if(isUniformFlag != true){
 		if(rawPosVal.x > 0){
 			if(rawPosVal.y > 0){
@@ -94,13 +93,14 @@ void main()
 		float dist = gl_FragCoord.z;
 		float visibility = (1 - dist)/2;
 		fragColor = mix(vec4(0.0),vec4(outColor,1.0),visibility);
+		fragColor = clamp(fragColor, 0.0, 1.0);	
 	}
 	else
 	{
 		fragColor = vec4(outColor,1.0);
+		fragColor = clamp(fragColor, 0.0, 1.0);	
 	}
-	fragColor = mix(fragColor,reflectedColor,0.6);
-	fragColor = clamp(fragColor, 0.0, 1.0);	
+	fragColor *= texture(ourTexture, TexCoord);
 }
 
 vec3 calculateDirectionalLight(DirectionalLight directionalLight, vec3 normal, vec3 viewDirection, Material innerMaterial)

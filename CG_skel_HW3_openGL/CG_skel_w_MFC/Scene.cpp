@@ -25,10 +25,12 @@ static void initState(){
 ===============================================================*/
 void Scene::initPrograms(){
 	//must push the data in accordance with Programs enumeration.
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));				//PROGRAM_MINIMAL
-	programs.push_back(ShaderProgram("normalShader.vs", "normalShader.gs", "normalShader.fs"));		//PROGRAM_NORMAL
-	programs.push_back(ShaderProgram("phongWithFog.vs", "phongWithFog.fs"));						//PROGRAM_PHONG
-	programs.push_back(ShaderProgram("minimal_vshader.glsl", "minimal_fshader.glsl"));				//PROGRAM_GOURAUD
+	programs.push_back(ShaderProgram("minimal_vshader.glsl"			, "minimal_fshader.glsl"							));	//PROGRAM_MINIMAL
+	programs.push_back(ShaderProgram("normalShader.vs"				, "normalShader.gs"				, "normalShader.fs"	));	//PROGRAM_NORMAL
+	programs.push_back(ShaderProgram("phongShader.vs"				, "phongShader.fs"									));	//PROGRAM_PHONG
+	programs.push_back(ShaderProgram("phongWithEnvironmentMap.vs"	, "phongWithEnvironmentMap.fs"						));	//PROGRAM_PHONG_WITH_ENV
+	programs.push_back(ShaderProgram("gouraudShader.vs"				, "gouraudShader.fs"								));	//PROGRAM_GOURAUD
+	programs.push_back(ShaderProgram("Texture.vs"					, "Texture.fs"										));	//PROGRAM_TEXTURE
 	//TODO: add more shaders' programs.
 }
 void Scene::initData(){
@@ -40,6 +42,7 @@ void Scene::initData(){
 	activeCamera = 0;
 	shading = FLAT;
 	renderCamerasFlag = false;
+	environmentDisplayFlag = false;
 }
 void Scene::handleMeshModelFrame(OperateParams &p){
 	if (activeModel == INVALID_INDEX){ return; }
@@ -64,6 +67,7 @@ void Scene::handleCameraFrame(OperateParams &p){
 	case ROTATE:	
 		A = RotateZ(p.v[Z]) * RotateY(p.v[Y]) * RotateX(p.v[X]);
 		invA = RotateX(-p.v[X]) * RotateY(-p.v[Y]) * RotateZ(-p.v[Z]);
+		cameras[activeCamera]->updateEnvironmentMat(A);
 		break;
 	case SCALE:		
 		cameras[activeCamera]->zoom(p.floatData);
@@ -113,6 +117,11 @@ void Scene::draw(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	cameras[activeCamera]->updatePrograms(programs);
 	updateLights();
+	if (environmentDisplayFlag){
+		cameras[activeCamera]->updateEvironment(environment);
+		environment.draw();
+		environment.bind();
+	}
 	for (int i = 0; i < models.size(); ++i){
 		changeToMeshModel(models[i])->draw(programs);
 	}
@@ -124,6 +133,9 @@ void Scene::draw(){
 				m->draw(programs);
 			}
 		}
+	}
+	if (environmentDisplayFlag){
+		environment.unbind();
 	}
 	glutSwapBuffers();
 }
@@ -162,6 +174,12 @@ void Scene::setActiveCamera(int i){
 		cout << "are in the system" << endl;
 		cout << "please enter int value in the range [0, " << cameras.size() - 1 << "]" << endl;
 	}
+}
+void Scene::resetActiveModelTransformations(){
+	if (activeModel != INVALID_INDEX){
+		changeToMeshModel(models[activeModel])->resetTransformations();
+	}
+	LookAtActiveModel(cameras[activeCamera]->getType());
 }
 void Scene::operate(OperateParams &p){
 	switch (p.frame){
@@ -312,20 +330,63 @@ void Scene::changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioC
 	cameras[activeCamera]->changeProjectionRatio(widthRatioChange, heightRatioChage);
 }
 void Scene::toggleFogMode(){
-	//TODO: IMPLEMENT
+	static bool flag = false;
+	flag = !flag;
+	programs[PROGRAM_PHONG].setUniform("fogFlag",flag);
 }
 void Scene::toggleAliasingMode(){
-	//TODO: IMPLEMENT
-	//glenable(ANTI_ALIASING);
+	static bool state = false;
+	if (state){
+		state = false;
+		glDisable(GL_POLYGON_SMOOTH);
+	}
+	else{
+		state = true;
+		glEnable(GL_POLYGON_SMOOTH);
+	}
 }
-void Scene::toggleBloomMode(){
-	//TODO: IMPLEMENT
+void Scene::toggleEnvironmentMapping(){
+	environmentDisplayFlag = !environmentDisplayFlag;
+	if (environmentDisplayFlag){
+		for (int i = 0; i < models.size(); ++i){
+			changeToMeshModel(models[i])->setDisplayMode(DM_PHONG_WITH_ENVIRONMENT); //TODO: RETHINK
+		}
+	}
+	else{
+		for (int i = 0; i < models.size(); ++i){
+			changeToMeshModel(models[i])->setDisplayMode(DM_PHONG);//TODO: RETHINK
+		}
+	}
 }
-void Scene::toggleBlurMode(){
-	//TODO: IMPLEMENT
+void Scene::toggleToonShading(){
+	static bool toonShadingFlag = false;
+	toonShadingFlag = !toonShadingFlag;
+	DisplayMode mode = DM_PHONG;
+	if (toonShadingFlag){
+		mode = DM_TOON_SHADING;
+	}
+	changeToMeshModel(models[activeModel])->setDisplayMode(mode);
 }
 void Scene::setShading(ShadingMethod s){
 	shading = s;
+	DisplayMode mode;
+	switch (s){
+	case SILHOUETTE:
+		mode = DM_FILLED_SILHOUETTE;
+		break;
+	case FLAT:
+		mode = DM_FLAT;
+		break;
+	case GOURAUD:
+		mode = DM_GOURAUD;
+		break;
+	case PHONG:
+		mode = DM_PHONG;
+		break;
+	}
+	for (int i = 0; i < models.size(); ++i){
+		changeToMeshModel(models[activeModel])->setDisplayMode(mode);
+	}
 }
 void Scene::addDefaultLight(){
 	Light l;
@@ -402,29 +463,42 @@ void Scene::setDisplayMode(DisplayMode mode){
 	if (models.empty()){ return; }
 	changeToMeshModel(models[activeModel])->setDisplayMode(mode);
 }
-
+void Scene::resetPrograms(){
+	programs.clear();
+	initPrograms();
+}
+void Scene::animate(vec3 rotationVec, vec3 translationVec, vec3 colorVec){
+	int iterationNumber			= 200;
+	float iterationFraction		= ((float)1 / (float)iterationNumber);
+	vec3 rotationFracture		= rotationVec * iterationFraction;
+	vec3 translationFracture	= translationVec * iterationFraction;
+	vec3 originColor = 255 * changeToMeshModel(models[activeModel])->getColor();
+	vec3 colorFracture = iterationFraction * (colorVec - originColor);
+	vec3 currentColor;
+	for (int i = 0; i < iterationNumber; ++i){
+		changeToMeshModel(models[activeModel])->rotateXYZ(rotationFracture);
+		changeToMeshModel(models[activeModel])->translate(translationFracture);
+		currentColor = originColor + colorFracture*i;
+		clamp(currentColor, 0.0, 255.0);
+		changeToMeshModel(models[activeModel])->setUniformColor(currentColor);
+		draw();
+	}
+}
+bool Scene::doesActiveModelNeedTextureFile(){
+	bool result = false;
+	if (models.size() > 0){
+		result = changeToMeshModel(models[activeModel])->isTexturePresent();
+	}
+	return result;
+}
+void Scene::loadTextureToActiveModel(string fileName){
+	changeToMeshModel(models[activeModel])->setTextureFile(fileName);
+}
 /*===============================================================
 							demos:
 ===============================================================*/
 void Scene::drawDemo(){
-	glClearColor(0.0, 1.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);	
-
-	GLuint program = InitShader("minimal_vshader.glsl",
-		"minimal_fshader.glsl");
-
-	glUseProgram(program);
-//	static_cast<MeshModel*>(models[0])->draw();
-
-	//MeshModel *mesh = static_cast<MeshModel*>(models[0]);
-	//GLuint program = InitShader("minimal_vshader.glsl","minimal_fshader.glsl");
-	//glUseProgram(program);
-	//glClearColor(0.0, 0.0, 0.0, 1.0);
-	//glClear(GL_COLOR_BUFFER_BIT);
-	//
-	//static_cast<MeshModel*>(models[0])->draw();
-	//
-	//glFlush();
+	changeToMeshModel(models[activeModel])->draw(programs);
 	glutSwapBuffers();
 	int x;
 	cin >> x;

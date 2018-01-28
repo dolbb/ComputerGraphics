@@ -9,10 +9,11 @@
 #define BOUNDING_BOX_NUM_OF_EDGES 12
 
 enum VaoTypes{
-	RB_VAO,		//regular buffers
+	RB_VAO,		//regular buffers - phong
+	FB_VAO,		//flat buffers
 	FNB_VAO,	//face normals buffers
 	VNB_VAO,	//vertex normals buffers
-	BB_VAO,
+	BB_VAO,		//bounding box buffer
 	NUMBER_OF_VAOS
 };
 enum RegularBuffers{
@@ -20,6 +21,12 @@ enum RegularBuffers{
 	RB_VERTEX_NORMALS_BUFFER,
 	RB_TEXTURE_BUFFER,
 	RB_NUMBER_OF_BUFFERS
+};
+enum FlatBuffers{
+	FB_POSITIONS_BUFFER,
+	FB_VERTEX_NORMALS_BUFFER,
+	FB_TEXTURE_BUFFER,
+	FB_NUMBER_OF_BUFFERS
 };
 enum FaceNormalsBuffers{
 	FNB_FACE_CENTER_BUFFER,
@@ -59,6 +66,7 @@ class MeshLoader{
 	struct FaceIdcs;
 	GLuint vaos[NUMBER_OF_VAOS];
 	GLuint vboR[RB_NUMBER_OF_BUFFERS];
+	GLuint vboF[FB_NUMBER_OF_BUFFERS];
 	GLuint vboFN[FNB_NUMBER_OF_BUFFERS];
 	GLuint vboVN[VNB_NUMBER_OF_BUFFERS];
 	GLuint vboBB[BB_NUMBER_OF_BUFFERS];
@@ -83,6 +91,7 @@ class MeshLoader{
 	/*	VAOs & VBOs					*/
 	void	init();
 	void	initRegularBuffers();
+	void	initFlatBuffers();
 	void	initFaceNormalsBuffers();
 	void	initVertexNormalsBuffers();
 	void	initBBoxBuffers();

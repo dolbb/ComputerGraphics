@@ -4,8 +4,10 @@
 #include "mat.h"
 #include "vec.h"
 #include "ShaderProgram.h"
+#include "Texture.h"
 #include <string>
 #include "glm/glm/glm.hpp"
+
 
 
 using namespace std;
@@ -74,6 +76,8 @@ class Camera{
 	bool cameraRendered;
 	int id;
 
+	mat4 environmentRotationMat;
+
 public:
 	Camera(int ID);
 	~Camera(){
@@ -91,6 +95,8 @@ public:
 	void toggleRenderMe();
 	void changeProjectionRatio(GLfloat widthRatioChange, GLfloat heightRatioChage);
 	void updatePrograms(vector<ShaderProgram> &programs);
+	void updateEvironment(Environment& environment);
+	void updateEnvironmentMat(mat4 rotationMat);
 
 	//getters:
 	mat4 getCameraTransformation();
@@ -102,4 +108,5 @@ public:
 	vec3 getWorldVector(vec3 in);
 	mat4 getCameraToWorld();
 	int getId();
+	ProjectionType getType();
 };

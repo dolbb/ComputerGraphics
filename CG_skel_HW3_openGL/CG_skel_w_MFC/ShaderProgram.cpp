@@ -132,6 +132,7 @@ void ShaderProgram::setUniform(const Material& material)
 	setUniform("material.diffuse", material.diffuseCoeff);
 	setUniform("material.specular", material.specularCoeff);
 	setUniform("material.shininess", material.alpha);
+	setUniform("isUniformFlag", material.isUniform);
 }
 
 void ShaderProgram::setUniform(const vector<Light*>& lights)

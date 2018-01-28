@@ -235,6 +235,22 @@ void Camera::updatePrograms(vector<ShaderProgram> &programs){
 		programs[i].setUniform("projection"	, projection);
 	}
 }
+void Camera::updateEvironment(Environment& environment){
+	
+	mat4 view;
+	glm::vec3 glEye = glm::vec3(0.0,0.0,0.0);
+	glm::vec3 glAt = glm::vec3(0.0,0.0,-1.0);
+	glm::vec3 glUp = glm::vec3(0.0,1.0,0.0);
+	glm::mat4x4 tmpView = glm::lookAt(glEye, glAt, glUp);
+	view.convertFrommat4x4(tmpView);
+	view = environmentRotationMat * view;
+
+	mat4 proj;
+	glm::mat4x4 tmpProj = glm::ortho(-1.0, 1.0, -1.0, 1.0, 0.1, sqrt(3));
+	proj.convertFrommat4x4(tmpProj);
+
+	environment.updateViewAndProjection(view, proj, cEye);
+}
 mat4 Camera::getCameraProjection()
 {
 	return projection;
@@ -272,4 +288,10 @@ mat4 Camera::getCameraToWorld(){
 }
 int Camera::getId(){
 	return id;
+}
+ProjectionType Camera::getType(){
+	return pType;
+}
+void Camera::updateEnvironmentMat(mat4 rotationMat){
+	environmentRotationMat = rotationMat * environmentRotationMat;
 }

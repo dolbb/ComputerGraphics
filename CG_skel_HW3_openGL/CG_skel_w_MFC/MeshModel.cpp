@@ -40,9 +40,142 @@ void MeshModel::normalTransformation(mat4& m4, mat4& a4){
 		worldNormalTransform = mat * worldNormalTransform;
 	}
 }
+void MeshModel::normalDrawAux(vector<ShaderProgram> &programs){
+	glEnableVertexAttribArray(0);				//enable attributes
+	glEnableVertexAttribArray(1);				//enable attributes
+	programs[PROGRAM_NORMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+	programs[PROGRAM_NORMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+	programs[PROGRAM_NORMAL].activate();
+	glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+	glDisableVertexAttribArray(0);				//disble attributes
+	glDisableVertexAttribArray(1);				//disble attributes
+}
+void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
+	switch (mode){
+	case DM_FILLED_SILHOUETTE:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_MINIMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_MINIMAL].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		programs[PROGRAM_MINIMAL].setUniform("vToonFlag", false);
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
+		break;
+	case DM_WIRE_FRAME:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_MINIMAL].activate();
+		glDrawArrays(GL_LINE_STRIP, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		break;
+	case DM_FLAT:
+		glBindVertexArray(vaos[FB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_PHONG].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_PHONG].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_PHONG].setUniform(material);
+		programs[PROGRAM_PHONG].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
+		break;
+	case DM_GOURAUD:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_GOURAUD].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_GOURAUD].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_GOURAUD].setUniform(material);
+		programs[PROGRAM_GOURAUD].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
+		break;
+	case DM_PHONG:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_PHONG].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_PHONG].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_PHONG].setUniform(material);
+		programs[PROGRAM_PHONG].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		programs[PROGRAM_PHONG].setUniform("fToonFlag", false);
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
+		break;
+	case DM_PHONG_WITH_ENVIRONMENT:
+		glBindVertexArray(vaos[RB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		glEnableVertexAttribArray(1);				//enable attributes
+		programs[PROGRAM_PHONG_WITH_ENV].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+		programs[PROGRAM_PHONG_WITH_ENV].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_PHONG_WITH_ENV].setUniform(material);
+		programs[PROGRAM_PHONG_WITH_ENV].activate();
+		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		glDisableVertexAttribArray(1);				//disble attributes
+		break;
+	case DM_VERTEX_NORMALS:
+		glBindVertexArray(vaos[VNB_VAO]);			//bind vao
+		normalDrawAux(programs);
+		break;
+	case DM_FACES_NORMALS:
+		glBindVertexArray(vaos[FNB_VAO]);			//bind vao
+		normalDrawAux(programs);
+		break;
+	case DM_BOUNDING_BOX:
+		glBindVertexArray(vaos[BB_VAO]);			//bind vao
+		glEnableVertexAttribArray(0);				//enable attributes
+		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
+		programs[PROGRAM_MINIMAL].activate();
+		glDrawArrays(GL_LINES, 0, vertexNum);		//draw the stored data
+		glDisableVertexAttribArray(0);				//disble attributes
+		break;
+	case DM_TOON_SHADING:
+		programs[PROGRAM_MINIMAL].setUniform("vToonFlag", true);
+		programs[PROGRAM_MINIMAL].setUniform("toonFactor", (float)0.04);
+		drawAux(programs, DM_FILLED_SILHOUETTE);
+		programs[PROGRAM_PHONG].setUniform("fToonFlag", true);
+		drawAux(programs, DM_PHONG);
+		break;
+	case DM_TEXTURE:
+		if (texturesPresent){
+			glBindVertexArray(vaos[RB_VAO]);			//bind vao
+			glEnableVertexAttribArray(0);				//enable attributes
+			glEnableVertexAttribArray(1);				//enable attributes
+			glEnableVertexAttribArray(2);				//enable attributes
+			texture.bind();
+			programs[PROGRAM_TEXTURE].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
+			programs[PROGRAM_TEXTURE].setUniform("model", worldVertexTransform * selfVertexTransform);
+			programs[PROGRAM_TEXTURE].setUniform(material);
+			programs[PROGRAM_TEXTURE].activate();
+			glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
+			texture.unbind();
+			glDisableVertexAttribArray(0);				//disble attributes
+			glDisableVertexAttribArray(1);				//disble attributes
+			glDisableVertexAttribArray(2);				//disble attributes
+		}
+		else{
+			drawAux(programs, DM_PHONG);
+		}
+		break;
+	}
+	glBindVertexArray(0);						//unbind vao
+}
+void MeshModel::resetDisplay(){
+	for (int i = 0; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
+		displayPreferences[i] = false;
+	}
+}
 
 /*===============================================================
-scene public functions:
+			scene public functions:
 ===============================================================*/
 
 MeshModel::MeshModel(string fileName){
@@ -53,13 +186,9 @@ MeshModel::MeshModel(string fileName){
 	texturesPresent = loader.getTexturePresent();
 	centerOfMass	= loader.getCenterOfMass();
 	axisDeltas		= loader.getAxisDeltas();
-	for (int i = 0; i < DM_NUMBER_OF_DISPLAY_MODES; ++i){
-		displayPreferences[i] = false;
-	}
-	displayPreferences[DM_PHONG] = true;
+	resetDisplay();
+	displayPreferences[DM_TOON_SHADING] = true;
 	displayPreferences[DM_BOUNDING_BOX] = true;
-	//displayPreferences[DM_VERTEX_NORMALS] = true;
-	//displayPreferences[DM_FACES_NORMALS] = true;
 	modelType = MESH_MODEL;
 }
 MeshModel::~MeshModel(){
@@ -88,85 +217,51 @@ void MeshModel::draw(vector<ShaderProgram> &programs){
 		}
 	}
 }
-void MeshModel::drawAux(vector<ShaderProgram> &programs, DisplayMode mode){
+void MeshModel::setDisplayMode(DisplayMode mode){
+	if (modelType != MESH_MODEL){return;}
 	switch (mode){
 	case DM_FILLED_SILHOUETTE:
-		glBindVertexArray(vaos[RB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_MINIMAL].activate();
-		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
+		resetDisplay();
+		displayPreferences[DM_FILLED_SILHOUETTE] = true;
 		break;
 	case DM_WIRE_FRAME:
-		glBindVertexArray(vaos[RB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_MINIMAL].activate();
-		glDrawArrays(GL_LINE_STRIP, 0, vertexNum);	//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
+		resetDisplay();
+		displayPreferences[DM_WIRE_FRAME] = true;
 		break;
 	case DM_FLAT:
+		resetDisplay();
+		displayPreferences[DM_FLAT] = true;
 		break;
 	case DM_GOURAUD:
-		glBindVertexArray(vaos[RB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		glEnableVertexAttribArray(1);				//enable attributes
-		programs[PROGRAM_GOURAUD].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
-		programs[PROGRAM_GOURAUD].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_GOURAUD].setUniform(material);
-		programs[PROGRAM_GOURAUD].activate();
-		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
-		glDisableVertexAttribArray(1);				//disble attributes
+		resetDisplay();
+		displayPreferences[DM_GOURAUD] = true;
 		break;
 	case DM_PHONG:
-		glBindVertexArray(vaos[RB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		glEnableVertexAttribArray(1);				//enable attributes
-		programs[PROGRAM_PHONG].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
-		programs[PROGRAM_PHONG].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_PHONG].setUniform(material);
-		programs[PROGRAM_PHONG].activate();
-		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
-		glDisableVertexAttribArray(1);				//disble attributes
+		resetDisplay();
+		displayPreferences[DM_PHONG] = true;
+		break;
+	case DM_PHONG_WITH_ENVIRONMENT:
+		resetDisplay();
+		displayPreferences[DM_PHONG_WITH_ENVIRONMENT] = true;
 		break;
 	case DM_VERTEX_NORMALS:
-		glBindVertexArray(vaos[VNB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		glEnableVertexAttribArray(1);				//enable attributes
-		programs[PROGRAM_NORMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
-		programs[PROGRAM_NORMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_NORMAL].activate();
-		glDrawArrays(GL_TRIANGLES, 0, vertexNum);	//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
-		glDisableVertexAttribArray(1);				//disble attributes
+		displayPreferences[DM_VERTEX_NORMALS] = true;
 		break;
 	case DM_FACES_NORMALS:
-		glBindVertexArray(vaos[FNB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		glEnableVertexAttribArray(1);				//enable attributes
-		programs[PROGRAM_NORMAL].setUniform("normalTransform", worldNormalTransform * selfNormalTransform);
-		programs[PROGRAM_NORMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_NORMAL].activate();
-		glDrawArrays(GL_TRIANGLES, 0, vertexNum);		//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
-		glDisableVertexAttribArray(1);				//disble attributes
+		displayPreferences[DM_FACES_NORMALS] = true;
 		break;
 	case DM_BOUNDING_BOX:
-		glBindVertexArray(vaos[BB_VAO]);			//bind vao
-		glEnableVertexAttribArray(0);				//enable attributes
-		programs[PROGRAM_MINIMAL].setUniform("model", worldVertexTransform * selfVertexTransform);
-		programs[PROGRAM_MINIMAL].activate();
-		glDrawArrays(GL_LINES, 0, vertexNum);		//draw the stored data
-		glDisableVertexAttribArray(0);				//disble attributes
+		displayPreferences[DM_BOUNDING_BOX] = true;
 		break;
-	}
-		glBindVertexArray(0);						//unbind vao
-}
-void MeshModel::setDisplayMode(DisplayMode mode){
-	//TODO:	IMPLEMENT.
+	case DM_TOON_SHADING:
+		resetDisplay();
+		displayPreferences[DM_TOON_SHADING] = true;
+	case DM_TEXTURE:
+		resetDisplay();
+		displayPreferences[DM_TEXTURE] = true;
+	default:
+		break; 
+	}		
 }
 void MeshModel::frameActionSet(ActionType a){
 	actionType = a;
@@ -188,7 +283,6 @@ void MeshModel::rotateXYZ(vec3 vec){
 	normalTransformation(totalRotation, totalInvertRotation);
 }
 void MeshModel::scale(vec3 vec){
-	//TODO: CHANGE TO OPENGL******************************************************************************
 	vec3 invV(1 / vec[X_AXIS], 1 / vec[Y_AXIS], 1 / vec[Z_AXIS]);
 
 	/*create the scaling matrix from the left:*/
@@ -202,15 +296,12 @@ void MeshModel::scale(vec3 vec){
 		normalTransformation(vInvertScalingMat, vScalingMat);
 	}
 }
-
 void MeshModel::uniformicScale(GLfloat a){
 	/*create the scaling matrix from the left:*/
 	scale(vec3(a, a, a));
 }
-
 void MeshModel::translate(vec3 vec){
 	/*create the translation matrix from the left:*/
-	//TODO: CHANGE TO OPENGL******************************************************************************
 	vertexTransformation(Translate(vec), Translate(-vec));
 }
 void MeshModel::resetTransformations(){
@@ -263,6 +354,12 @@ void MeshModel::featuresStateToggle(ActivationToggleElement e){
 vec3 MeshModel::getVolume(){
 	return axisDeltas;
 }
+bool MeshModel::isTexturePresent(){
+	return texturesPresent;
+}
+void MeshModel::setTextureFile(string fileName){
+	texture = Texture(fileName);
+}
 void MeshModel::setNonUniformMaterial(){
 	material.isUniform = false;
 }
@@ -278,6 +375,9 @@ void MeshModel::setUniformColor(vec3 c){
 void MeshModel::setUniformColor(vec3 emissive, vec3 ambient, vec3 diffuse, vec3 specular){
 	material.changeColor(emissive, ambient, diffuse, specular);
 	material.isUniform = true;
+}
+vec3 MeshModel::getColor(){
+	return material.diffuseCoeff;
 }
 void MeshModel::printUniformMateral(){
 	material.print();

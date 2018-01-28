@@ -10,15 +10,9 @@ using std::endl;
 /************************************************
 *				TEXTURE CLASS				    *
 ************************************************/
-
-Texture::Texture(const string& texturePath)
-{
+Texture::Texture(const string& texturePath){
 	glGenTextures(1, &id);
 	bind();
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height, channels;
 	//load texture image to an array, width and height will hold its width and height and channels will hold the number of color channels
 	stbi_set_flip_vertically_on_load(true);
@@ -33,29 +27,25 @@ Texture::Texture(const string& texturePath)
 	{
 		cout << "failed to load texture from the path: " + texturePath << endl;
 	}
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	unbind();
 	stbi_image_free(textureData);
 }
-
 Texture::~Texture()	{}
-
-void Texture::destroy()
-{
+void Texture::destroy(){
 	glDeleteTextures(1, &id);
 }
-
-void Texture::bind()
-{
+void Texture::bind(){
 	glBindTexture(GL_TEXTURE_2D, id);
 }
-
-void Texture::unbind()
-{
+void Texture::unbind(){
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
-
-GLuint Texture::getId()
-{
+GLuint Texture::getId(){
 	return id;
 }
 
@@ -113,64 +103,38 @@ GLfloat Environment::boxVertices[NUMBER_OF_VERTICES * 3] =
 	1.0f, -1.0f, 1.0f
 };
 
-////////////////////////////////////////////////////
-//				 PUBLIC FUNCTIONS   			 //
-//////////////////////////////////////////////////
-
-
-Environment::Environment(const vector<string>& textureLocations, ShaderProgram shader) :shader(shader)
-{
-	createCubeMap(textureLocations);
-	initBuffers();
-}
-
-Environment::~Environment()	{}
-
-void Environment::draw()
-{
-	glDepthMask(GL_FALSE);
-	shader.activate();
-	bind();
-	glEnableVertexAttribArray(0);
-	glDrawArrays(GL_TRIANGLES, 0, NUMBER_OF_VERTICES);
-	glDisableVertexAttribArray(0);
-	unbind();
-	shader.deactivate();
-	glDepthMask(GL_TRUE);
-}
-
-void Environment::destroy()
-{
-	shader.deleteProgram();
-	glDeleteVertexArrays(1, &boxVAO);
-	glDeleteTextures(1, &id);
-}
 
 ////////////////////////////////////////////////////
 //				 PRIVATE FUNCTIONS  			 //
 //////////////////////////////////////////////////
-
-void Environment::bind()
+vector<string> Environment::generateFacesFilesLocations(){
+	vector<string> locs;
+	locs.push_back("D:\\software\\gitProjects\\ComputerGraphics\\CG_skel_HW3_openGL\\CG_skel_w_MFC\\environmentFiles\\emerald-summit_rt.tga");
+	locs.push_back("D:\\software\\gitProjects\\ComputerGraphics\\CG_skel_HW3_openGL\\CG_skel_w_MFC\\environmentFiles\\emerald-summit_lf.tga");
+	locs.push_back("D:\\software\\gitProjects\\ComputerGraphics\\CG_skel_HW3_openGL\\CG_skel_w_MFC\\environmentFiles\\emerald-summit_up.tga");
+	locs.push_back("D:\\software\\gitProjects\\ComputerGraphics\\CG_skel_HW3_openGL\\CG_skel_w_MFC\\environmentFiles\\emerald-summit_dn.tga");
+	locs.push_back("D:\\software\\gitProjects\\ComputerGraphics\\CG_skel_HW3_openGL\\CG_skel_w_MFC\\environmentFiles\\emerald-summit_bk.tga");
+	locs.push_back("D:\\software\\gitProjects\\ComputerGraphics\\CG_skel_HW3_openGL\\CG_skel_w_MFC\\environmentFiles\\emerald-summit_ft.tga");
+	return locs;
+}
+void Environment::bindWithDraw()
 {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 	glBindVertexArray(boxVAO);
 }
-
-void Environment::unbind()
+void Environment::unbindAfterDraw()
 {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	glBindVertexArray(0);
 }
-
-
 void Environment::createCubeMap(const vector<string>& textureLocations)
 {
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-	int locations = textureLocations.size();
+	int locationsNum = textureLocations.size();
 	int width, height, channels;
 	unsigned char *texBuffer = NULL;
-	for (GLuint i = 0; i < locations; ++i)
+	for (GLuint i = 0; i < locationsNum; ++i)
 	{
 		texBuffer = stbi_load(textureLocations[i].c_str(), &width, &height, &channels, 0);
 		if (texBuffer)
@@ -180,13 +144,14 @@ void Environment::createCubeMap(const vector<string>& textureLocations)
 		}
 		else
 		{
-			std::cout << "failed to load environment texture in position: " + textureLocations[i] << std::endl;
+			std::cout << "failed to load environment texture in position: " << endl << textureLocations[i] << std::endl;
 			stbi_image_free(texBuffer);
+			cin >> width;
 			break;
 		}
 	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -203,4 +168,59 @@ void Environment::initBuffers()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+}
+
+////////////////////////////////////////////////////
+//				 PUBLIC FUNCTIONS   			 //
+//////////////////////////////////////////////////
+Environment::Environment(): 
+shader(ShaderProgram("environment.vs", "environment.fs")){
+	vector<string> locs = generateFacesFilesLocations();
+	createCubeMap(locs);
+	initBuffers();
+}
+Environment::Environment(ShaderProgram &shader) :
+shader(shader)
+{
+	vector<string> locs = generateFacesFilesLocations();
+	createCubeMap(locs);
+	initBuffers();
+}
+Environment::Environment(const vector<string>& textureLocations, ShaderProgram shader) :
+shader(shader){
+	createCubeMap(textureLocations);
+	initBuffers();
+}
+Environment::Environment(const Environment &e){
+	id				= e.id;
+	boxVAO			= e.boxVAO;
+	boxVerticesVBO	= e.boxVerticesVBO;
+	shader			= e.shader;
+}
+void Environment::draw(){
+	glDepthMask(GL_FALSE);
+	shader.activate();
+	bindWithDraw();
+	glEnableVertexAttribArray(0);
+	glDrawArrays(GL_TRIANGLES, 0, NUMBER_OF_VERTICES);
+	glDisableVertexAttribArray(0);
+	unbindAfterDraw();
+	shader.deactivate();
+	glDepthMask(GL_TRUE);
+}
+void Environment::bind(){
+	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+}
+void Environment::unbind(){
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+void Environment::destroy(){
+	shader.deleteProgram();
+	glDeleteVertexArrays(1, &boxVAO);
+	glDeleteTextures(1, &id);
+}
+void Environment::updateViewAndProjection(mat4 view, mat4 projection, vec4 eye){
+	shader.setUniform("view", view);
+	//shader.setUniform("eye", eye.vec4ToVec3());
+	shader.setUniform("projection", projection);
 }
